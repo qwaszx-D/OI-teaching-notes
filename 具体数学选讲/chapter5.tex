@@ -1,0 +1,282 @@
+
+\begin{frame}{第五章}
+    \begin{itemize}
+        \item 二项式系数及相关恒等式
+        \item 练习，练习，练习！
+        \item 差分和二项式反演
+        \item 生成函数初步
+    \end{itemize}
+\end{frame}
+\begin{frame}{第五章习题}
+    接下来两周内，阅读 5.1-5.4。第一周至少需要读完 5.1-5.2 并把 5.2 中所有练习自己推一遍。
+    
+    习题中需要写下来的（需要对每道题自行判断目前学完的东西能不能让你完成这道题）：
+    
+    2 3 4 5 8 14 15 16 35 36 37 40 41 43 45 46 47 59 61 63 64 67 70 71 73 74 76 77 79
+    
+\end{frame}
+\begin{frame}{组合计数}
+    \begin{itemize}
+        \item 加法原理：$|A\uplus B|=|A|+|B|$
+        \item 乘法原理：$|A\times B|=|A||B|$
+        \begin{itemize}
+            \item 扩展的乘法原理：假设 $S$ 是 $A\times V$ 的一个子集。如果对每个 $x\in A$，都有 $\#\{y:(x,y)\in S\}=m$，则 $|S|=m|A|$
+        \end{itemize}
+        \item 减法（容斥）原理：$|A-B|=|A|-|A\cap B|$
+        \item 除法原理：假设 $S$ 是 $A\times V$ 的一个子集。如果对每个 $x\in A$，$\#\{y:(x,y)\in S\}$ 都相等，则 $\#\{y:(x,y)\in S\}=|S|/|A|$
+    \end{itemize}
+\end{frame}
+\begin{frame}{球与盒子}
+    洛谷 P5824 十二重计数法（由于本题实际需要 FFT，我们只列式子）
+\end{frame}
+\begin{frame}{变量计数}
+    对于整数 $x_1,\ldots,x_m\ge 0$，求
+
+    \begin{itemize}
+        \item $x_1+x_2+\cdots+x_m=S$ 的方案数
+        \item 在上一条的基础上，加上 $l_i\le x_i\le r_i$ 的限制
+        \item $x_1\le x_2\le\cdots\le x_m\le n$ 的方案数
+        \item 在上一条的基础上，加上 $l_i\le x_i-x_{i-1}\le r_i$ 的限制（设 $x_0=0$）
+        \item 把以上四条的限制拼到一起 
+    \end{itemize}
+\end{frame}
+\begin{frame}{排列}
+    $n$ 个数的环排列个数
+
+    $k$ 种颜色的球，第 $i$ 种颜色的有 $n_i$ 个，求方案数
+
+    P2476 [SCOI2008] 着色方案：同上，但是要求相邻颜色不相同
+
+    *P6151 [集训队作业2019] 青春猪头少年不会梦到兔女郎学姐
+
+    P5339 [TJOI2019] 唱、跳、rap和篮球
+\end{frame}
+\begin{frame}{数列}
+    P6076 [JSOI2015] 染色问题
+
+    P4491 [HAOI2018] 染色
+
+    长为 $n$ 的字符集大小为 $m$ 的字符串，不能出现连续 $k$ 个相同字符，求方案数
+
+    *长为 $n$ 的字符集大小为 $m$ 的字符串，不能出现子串 $S$，求方案数
+\end{frame}
+\begin{frame}{路径}
+    从 $(0,0)$ 走到 $(n,m)$，只能向上向右走，求方案数
+
+    从 $(0,0)$ 走到 $(n,m)$，只能向上向右走，且任一时刻不能跨过直线 $y=x$，求方案数
+
+    从 $(0,0)$ 走到 $(n,m)$，可以向上向右向右上走，求方案数
+
+    把以上问题顺时针旋转 $45^\circ$
+
+    *Dyck 路：从 $(0,0)$ 走到 $(n,m)$，不跨过直线 $y=kx+b$ 的方案数
+\end{frame}
+\begin{frame}{卡特兰数}
+    长为 $2n$ 的合法括号序列数量
+
+    长为 $2n$ 的 $\pm 1$ 组成的数列，要求任意前缀和非负，求方案数
+
+    儿子有序的二叉树/多叉树数量
+
+    出栈序
+\end{frame}
+\begin{frame}{Raney 引理}
+    \begin{lemma}
+        对于一个和为 $1$ 的整数序列，其所有循环移位中恰好有一个满足：所有前缀和都是正的
+    \end{lemma}
+    \begin{lemma}
+        对于一个和为 $\ell$ 且所有元素都 $\le 1$ 的整数序列，其所有循环移位中恰好有 $\ell$ 个满足：所有前缀和都是正的
+    \end{lemma}
+\end{frame}
+\begin{frame}{根据组合结构 dp}
+    组合结构往往具有自然的子结构。最常见的包括：
+
+    \begin{itemize}
+        \item 序列：前缀/区间
+        \item 树：子树/链
+        \item 集合：子集
+        \item 网格：1/2-side 子矩形；轮廓线
+        \item DAG：子 DAG（拓扑序）
+    \end{itemize}
+\end{frame}
+\begin{frame}{[CSP-S 2021] 括号序列}
+\end{frame}
+\begin{frame}{利用乘法原理 dp}
+    合适地刻画子问题，使得每种子问题对后续状态的转移系数都相同。
+
+    例：[CSP-S 2025] 员工招聘
+\end{frame}
+
+\begin{frame}
+    做法零：将 (前 $i$ 个人，要求形成的部分排列为 $P$，的部分排列数量) 作为子问题。$\tilde O(n!)$
+
+    做法一：将 (前 $i$ 个人，要求构成的集合为 $S$、目前未录用的人数为 $j$，的部分排列数) 作为子问题。$\tilde O(2^n)$。这个刻画对大部分排列类计数都适用。
+
+    做法二（伪）：将 (前 $i$ 个人，要求目前未录用的人数为 $j$、$c>j$ 的人中还没放的人数为 $k$，的部分排列数) 作为子问题。然而，这样不能转移，因为无法知道下一个位置不录用时再下一个位置的候选人数会如何变化。
+
+    做法二（真）：上一个做法中，“无法知道下一个位置不录用时再下一个位置的候选人数会如何变化”的原因如下：假设目前不录用人数是 $j$，而之前可能已经录用了一些 $c=j+1$ 的人，但这个人数没有在状态中记录。所以我们可以考虑把 $c=j+1$ 的人等到最后再一起放了。也就是将 (前 $i$ 个人，要求目前未录用的人数为 $j$、$c>j$ 的人中还没放的人数为 $k$、只确定了 $c\le j$ 的人的位置，形成的部分排列数) 作为子问题。这个技巧也称为“贡献延后计算”。
+\end{frame}
+\begin{frame}
+    做法三：容斥。假设我们钦定了所有位置的录取情况，那么如何计算方案数？对于一个录取的位置，必须有 $s_i=1$ 且 $c_{\pi_i}>f_i$，其中 $f_i$ 为 $i$ 前面的未录取人数；对于一个未录取的位置，需要 $s_i=0$ 或者 $c_{\pi_i}\le f_i$。如果每个位置的限制都是无限制或者 $c_{\pi_i}\le f_i$，那么这样的方案数是容易计算的。所以我们可以把 $[c_{\pi_i}>f_i]$ 容斥成 $1-[c_{\pi_i}\le f_i]$，在 dp 状态中记录目前钦定的未录取位置数量以及具有 $c_{\pi_i}\le f_i$ 限制的位置数量即可转移。
+\end{frame}
+
+\begin{frame}{生成函数初步}
+    这里主要介绍怎么用生成函数（Generating Function, GF）处理序列（假设已经得到序列的某些性质，如递推关系等）。事实上更多情况下可以直接对着问题的结构写出生成函数，而无需额外经过一步 dp 转化。绝大多数的推式子问题都有办法用生成函数处理。但需要强调的是生成函数\textbf{并非万能}，不应忽视其他的技巧和组合意义。在使用生成函数之前先做一些基本的处理往往能简化推导。
+
+    最基本和主要的手段就是把需要处理的序列 $(f_i)$ 挂到幂级数 $\sum_{i\ge 0}f_i a_i x^i$ 上去，其中 $a_i$ 是自己选定的另一组系数，通常是 $1$（普通生成函数，\textbf{O}rdinary GF）或 $1/i!$（指数生成函数，\textbf{E}xponential GF）。这样导出的幂级数几乎总是比序列容易处理的。注意在实践中一般需要假设 $x\approx 0$ 是一个小量。我们后面说的“幂级数”和“生成函数”都是指的同一个东西。
+
+    记 $[x^n]F(x)$ 为幂级数 $F(x)$ 的第 $n$ 次项系数。在上下文清楚时，有时我们也用 $f_n$ 代表这个事情。（注意：如果上面挂到幂级数上时使用了非 $1$ 的 $a_i$，那么这里的 $f_n$ 代表上面 $\sum_{n\ge 0}f_na_nx^n$ 中的 $f_na_n$ 而不是 $f_n$ 本身，后同）
+\end{frame}
+\begin{frame}{运算法则 I}
+    可以对幂级数与它的封闭形式做同样的运算来得到以下的对应关系：
+
+    线性运算 $H(x)=aF(x)+bG(x)$ 对应 $h_n=af_n+bg_n$
+
+    卷积 $H(x)=F(x)G(x)$ 对应 $h_n=\sum_{i=0}^n f_ig_{n-i}$。更一般地，
+    $$
+    [x^n]F_1(x)F_2(x)\cdots F_m(x)=\sum_{i_1+i_2+\cdots+i_m=n}([x^{i_1}]F_1(x))([x^{i_2}]F_2(x))\cdots ([x^{i_m}]F_m(x)).
+    $$
+
+    求导 $H(x)=F'(x)$ 对应 $h_n=(n+1)f_{n+1}$。
+\end{frame}
+\begin{frame}{求导}
+    导数有几个不同的记号，$f'(x)$、$\frac{\mathrm{d}}{\mathrm{d}x} f(x)$、$\mathbf D f(x)$ 都可以用来代表求导。如果需要反复求导（高阶导数），那么可以用 $f'''(x)$、$f^{(k)}(x)$、$\frac{\mathrm{d^k}}{\mathrm{d}x^k} f(x)$、$\mathbf D^k f(x)$ 这些记号。
+
+    我们做的所有操作都是\textbf{形式上的}。你只需要（熟练）记住以下这些事实：
+    \begin{itemize}
+        \item 运算性质 $(af(x)+bg(x))'=af'(x)+bg'(x)$，$(f(x)g(x))'=f'(x)g(x)+f(x)g'(x)$，$(f(g(x)))'=f'(g(x))g'(x)$
+        \item 初等函数的导数 $(x^{\alpha})'=\alpha x^{\alpha-1},\ (\ln x)'=x^{-1},\ (e^x)'=e^x$
+    \end{itemize}
+    下面是几个练习。这些结果也是有价值且值得记住的：
+    \begin{itemize}
+        \item 常数的导数是 $0$
+        \item $(f(x)/g(x))'=\frac{f'(x)g(x)-f(x)g'(x)}{g(x)^2}$
+        \item $(\log f(x))'=\frac{f'(x)}{f(x)}$
+        % \footnotetext{这里 $\log$ 和 $\ln$ 指的是一个东西，这是常见的做法。在计算机科学中的另一个常见做法是默认 $\log=\log_2$。}
+        \item $(e^{f(x)})'=f'(x)e^{f(x)}$
+        \item $(fg)^{(k)}=\sum_i \binom{k}{i}f^{(i)}g^{(k-i)}$
+    \end{itemize}
+\end{frame}
+\begin{frame}{运算法则 II}
+    $H(x)=x^mF(x)$ 对应移位 $h_n=f_{n-m}$。注意：尽量不要让你的式子中出现\textbf{负下标项}，所以在 $m$ 为负时要小心。。
+
+    $H(x)=\frac{1}{1-x}F(x)$ 对应前缀和 $h_n=\sum_{i\le n}f_i$
+
+    $H(x)=(1-x)F(x)$ 对应差分 $h_n=f_n-f_{n-1}$
+
+    $H(x)=\vartheta F(x)\overset{\mathrm{def}}{=}xF'(x)$ 对应原地的求导 $h_n=nf_n$
+
+    $H(x)=F(x)\bmod (x^k-1)$ 对应 $h_r=\sum_n f_{kn+r}$。（事实上模一般的 $Q(x)$ 相当于按一个线性递推累加系数）
+
+    $H(x)=x^kF^{(k)}(x)$ 对应 $h_n=n^{\underline{k}}f_n$
+
+    $H(x)=(x\mathbf D)^kF(x)$ 对应 $h_n=n^k f_n$。然而，$(x\mathbf D x)^k$ 一般没有好的封闭形式（虽然 $(x\mathbf D)^k=\sum_i {k\brace i}x^i\mathbf D^i$）
+\end{frame}
+\begin{frame}{最重要的一些生成函数}
+    下面几个恒等式是应该（双向）记住的，因为它们实在是太常见了。
+    $$
+    \begin{aligned}
+    &(1+x)^{\alpha}=\sum_{n\ge 0}\binom{\alpha}{n}x^n,\quad \ln\left(\frac{1}{1-x}\right)=\sum_{n\ge 1}\frac{x^n}{n}\quad e^x=\sum_{n\ge 0}\frac{x^n}{n!}\\
+    \end{aligned}
+    $$
+    第一个恒等式——也就是二项式定理——的一些特殊情况也是值得记忆的（证明它们！）：
+    $$
+    \begin{aligned}
+    \frac{1}{(1-x)^k}=\sum_{n\ge 0}\binom{n+k-1}{n}x^n,\quad\frac{x^k}{(1-x)^{k+1}}=\sum_{n\ge 0}\binom{n}{k}x^n,\quad \frac{1}{\sqrt{1-4x}}=\sum_{n\ge 0}\binom{2n}{n}x^n
+    \end{aligned}
+    $$
+\end{frame}
+\begin{frame}{代入}
+    $x$ 可以代入为任何 $\approx 0$ 的东西（有些时候还可以代入别的东西\footnote{在 OI 里，你基本可以认为是\textit{任何东西}}，取决于\textbf{收敛半径}）。在生成函数的语境下，$\approx 0$ 的东西指的就是任何\textbf{常数项为} $\mathbf 0$ 的幂级数。
+
+    直接的例子：
+    $$
+    F(x^k)=\sum_{n\ge 0}f_nx^{nk},\quad F(rx)=\sum_{n\ge 0}f_nr^nx^n.
+    $$
+    复杂一点的例子：
+    $$
+    \sum_{n\ge 0}\left(\frac{x}{1-x}\right)^n=\frac{1}{1-\frac{x}{1-x}}=\frac{1-2x}{1-x}
+    $$
+    代值的例子：把 $x=1$ 和 $x=-1$ 分别代入 $(1+x)^n$。把 $|r|<1$ 的 $r$ 代入 $1/(1-x)^k$。 
+\end{frame}
+\begin{frame}{使用例}
+    化简范德蒙德卷积 $\sum_i\binom{r}{i}\binom{s}{n-i}$。我们只需要乘上 $x^n$ 然后对 $n$ 求和，化简得到的生成函数，最后再提取 $[x^n]$。也就是
+    $$
+    [x^n]\sum_n x^n\binom{r}{i}\binom{s}{n-i}.
+    $$
+    用这个方法化简（注意：你需要决定对哪个变量做我们前面说的事情）
+    $$
+    \sum_{k}\binom{l}{m+k}\binom{s+k}{n}(-1)^k,\quad \sum_{-q\le k\le l}\binom{l-k}{m}\binom{q+k}{n},\quad     \sum_{k\ge 0}\binom{n+k}{m+2k}\binom{2k}{k}\frac{(-1)^k}{k+1}.
+    $$
+    （然而问题 8 没有办法直接这样做...但是有另外的技巧可以做...）
+    
+    试着对下面的式子做同样的事情（我们一会再来教大家怎么提取这种系数）
+    $$
+    \sum_{k\le n}\binom{n-k}{k}(-1)^k
+    $$
+\end{frame}
+\begin{frame}{方程}
+    对斐波那契数列的递推公式 $f_n=f_{n-1}+f_{n-2}$ 使用前面的方法。根据得到的方程解出生成函数。通过对生成函数求导，导出一个 $\sum_{i=0}^nf_if_{n-i}$ 的简化形式。
+    
+    对卡特兰数的递推公式 $C_n=\sum_{i=0}^{n-1}C_iC_{n-i-1}$ 使用前面的方法。据此导出卡特兰数的封闭形式。
+
+    对错排的递推公式 $d_n=(n-1)(d_{n-1}+d_{n-2})$、$d_n=nd_{n-1}+(-1)^n$ 使用前面的方法（试试 OGF 和 EGF，也就是分别乘 $x^n$ 和 $x^n/n!$）。
+\end{frame}
+
+\begin{frame}{回顾}
+    我们看看如何用生成函数处理以前的一些问题。这里，我们可以先只关心生成函数的封闭形式，等会再考虑如何计算。
+    $$
+    \sum_{0\le i\le n}\mathrm{Fib}_i,\quad \sum_{1\le i_1\le i_2\le\cdots\le i_m\le n} 1,\quad     \sum_{i=0}^n r^ii^k,\quad \sum_i\binom{n}{i}r^ia_{i\bmod k}.
+    $$
+\end{frame}
+\begin{frame}{计算}
+    得到一个生成函数的封闭形式后，如何用于计算第 $n$ 项或者前 $n$ 项？下面是几种常见的方法：
+    \begin{itemize}
+        \item 对于比较简单的情况，可以直接使用前面的常见级数展开来得到系数。
+            \begin{itemize}
+                \item 这里可能能直接得到封闭形式，也可能得到一个卷积求和
+            \end{itemize}
+        \item 对于有理分式，可以分式分解，或者使用线性递推
+        \item 使用 FFT 来进行各种多项式运算
+        \item 使用暴力来进行各种多项式运算
+        \item 通过求导等手段得到递推式
+        \item 拉格朗日反演
+    \end{itemize}
+\end{frame}
+\begin{frame}{分式分解}
+    对于 $P(x)/Q(x)$（$P,Q$ 都是多项式）的形式，可以先将其变成 $P(x)\mathrm{div} Q(x)+\frac{P(x)\bmod Q(x)}{Q(x)}$。然后可以假设 $\deg P<\deg Q$。（有人不会多项式除法吗？）
+
+    真分式总是有如下的分解：
+    $$
+    \frac{P(x)}{\prod{(a_ix+b_i)^{k_i}}}=\sum_i\sum_{j=1}^{k_i}\frac{c_{ij}}{(a_ix+b_i)^{j}}.
+    $$
+
+    可以待定系数计算 $c_{ij}$。当 $k_i=1$ 时，有更方便的算法。两侧同乘 $a_ix+b_i$，然后代入 $x_i=-b_i/a_i$ 就得到
+    $$
+    \frac{P(x_i)}{\prod_{j\ne i}(a_jx_i+b_j)^{k_j}}=c_{i1}
+    $$
+\end{frame}
+\begin{frame}{线性递推}
+    对于有理真分式 $F(x)=P(x)/Q(x)$，两侧乘 $Q(x)$ 得到 $F(x)Q(x)=P(x)$。展开卷积就得到线性递推。
+
+    使用分式分解即可得到所有线性递推的相关结论。例如，你现在应该能够自行推出
+    $$
+    f_n=\sum_{i=1}^k a_if_{n-i}+r^n(\sum_{i=0}^m b_in^{\underline{i}})
+    $$
+    的生成函数的封闭形式。
+
+    我们现在有非常简单的 $O(\mathbf{M}(m)\log n)$ 算法来得到一个有理分式的第 $n$ 次项系数：注意到 $Q(x)Q(-x)$ 只有偶数项有值，考虑 $[x^n]\frac{P(x)}{Q(x)}=[x^n]\frac{P(x)Q(-x)}{Q(x)Q(-x)}$，后者只与分子的奇数/偶数次项有关（取决于 $n\bmod 2$），据此我们可以将 $n$ 减半，而分式的规模保持不变。
+\end{frame}
+\begin{frame}{$O(n^2)$ 多项式运算}
+    给定运算 $h$（主要是 $y^{-1}$、$\ln y$、$\exp y$）和幂级数 $F(x)$（的前 $n$ 项），需要计算 $G=h(F)$ 的前 $n$ 项。（注意 $F$ 的 $n$ 次以后的项对于结果没有影响）
+    \begin{itemize}
+        \item $G=F^{-1}$（需求 $f_0\ne 0$）：也就是 $G\cdot F=1$，直接展开卷积就得到一个递推式
+        \item $G=\ln F$（需要 $f_0=1$）：两侧求导得到 $G'=F'/F$，也就是 $FG'=F'$，展开卷积就得到一个递推式。初值 $g_0=0$。
+        \item $G=e^F$（需要 $f_0=0$）：两侧求导得到 $G'=F'G$，展开卷积得到递推式。初值 $g_0=1$。
+        \item $G=F^k$：两侧求导得到 $G'=kF'G/F$，也就是 $FG'=kF'G$，展开卷积得到递推式。初值 $g_0=f_0^k$。
+        \item 练习：假设 $F$ 是分子分母\textbf{项数}都不超过 $m$ 的有理分式，在 $O(nm)$ 时间内求出 $F$ 的前 $n$ 项。
+    \end{itemize}
+\end{frame}
+\begin{frame}{更多技巧}
+    还有值得再讲一个专题的例子和技巧，然而这里时间不够。
+\end{frame}

@@ -1,0 +1,17 @@
+# LaTeX 产生的中间文件
+*.aux
+*.log
+*.out
+*.toc
+*.snm
+*.nav
+*.synctex.gz
+*.vrb
+*.fls
+*.fdb_latexmk
+*.blg
+*.bbl
+
+# 临时文件和系统文件
+tmp.*
+.DS_Store

@@ -1,0 +1,591 @@
+\documentclass[11pt,aspectratio=169]{beamer}
+
+% --------------------
+% Theme
+% --------------------
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=0.5cm, text margin right=0.5cm}
+
+% --------------------
+% Packages
+% --------------------
+\usepackage{ctex}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --------------------
+% Code Style
+% --------------------
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single
+}
+
+\usepackage{tikz}
+\usetikzlibrary{trees, positioning}
+
+\setlength{\parskip}{0.7em}  % 调整段落间距
+
+% --------------------
+% Title Info
+% --------------------
+\title{枚举与 DFS}
+\author{qwaszx}
+\date{\today}
+
+% ====================
+% Document
+% ====================
+\begin{document}
+
+% --------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% --------------------
+\begin{frame}{本节课目标}
+\begin{itemize}
+    \item 学会使用 DFS（深度优先搜索）来实现一般的枚举
+    \item 初步理解图和树的概念，并用于对问题进行建模
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{枚举组合}
+    \begin{block}{问题}
+        从 $1$ 到 $n$ 选两个不同的数（$i,j$ 和 $j,i$ 算同一种）
+    \end{block}
+    
+    \pause
+\begin{lstlisting}
+for (int i = 1; i <= n; i++) {
+    for (int j = i + 1; j <= n; j++) {
+        // (i, j)
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{枚举组合：更多的数}
+    \begin{block}{问题}
+        从 $1$ 到 $n$ 选\textbf{五}个不同的数（不同顺序算同一种）
+    \end{block}
+    
+    \pause
+\begin{lstlisting}
+for (int i1 = 1; i1 <= n; i1++) {
+    for (int i2 = i1 + 1; i2 <= n; i2++) {
+        for (int i3 = i2 + 1; i3 <= n; i3++) {
+            for (int i4 = i3 + 1; i4 <= n; i4 ++) {
+                for (int i5 = i4 + 1; i5 <= n; i5 ++) {
+                    // (i1, i2, i3, i4, i5)
+                }
+            }
+        }
+    }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{枚举组合：更多更多的数}
+    \begin{block}{问题}
+        从 $1$ 到 $n$ 选 $\mathbf{k}$ 个不同的数（不同顺序算同一种）
+    \end{block}
+    
+    \pause
+    怎么办？
+\end{frame}
+
+\begin{frame}[fragile]{状态}
+    在写完前 $i$ 层循环后，我们处在这样的状态：我们已经枚举了 $i$ 个数，还需要枚举剩下的数。
+
+    我们接下来枚举第 $i+1$ 个数是什么，然后进入到下面的子问题：我们已经枚举了 $i+1$ 个数，还需要枚举剩下的数。
+\end{frame}
+
+\begin{frame}[fragile]{递归}
+    抽象出一个函数 \texttt{dfs(t)} 表示：假设之前已经枚举了 $t$ 个数，这个函数需要枚举完剩下的数。
+\pause
+
+\begin{lstlisting}
+void dfs(int t) {
+    if(t==k) { //枚举完了所有的数
+        //(a[1],...,a[k])
+        return;
+    }
+    for(int i=a[t]+1;i<=n;i++) { //枚举第 t+1 个数
+        a[t+1]=i;
+        dfs(t+1);   //递归枚举剩下的数
+    }
+}
+\end{lstlisting} 
+
+在外面调用 \texttt(dfs(0))
+\end{frame}
+
+\begin{frame}{解释}
+TODO：加张图
+\end{frame}
+
+\begin{frame}{另一个例子}
+    \begin{block}{问题}
+        从 $1$ 到 $n$ 选 $\mathbf{k}$ 个不同的数（不同顺序算\textbf{不同}种）
+    \end{block}
+    \pause
+
+    可以先考虑 $k=5$ 时怎么用多重循环写。
+\end{frame}
+
+\begin{frame}[fragile]{写法一}
+\begin{lstlisting}
+void dfs(int t) {
+    if(t==k) {
+        if(a[1],...,a[k] 互不相同) {
+            //(a[1],...,a[k])
+        }
+        return;
+    }
+    for(int i=1;i<=n;i++) {
+        a[t+1]=i;
+        dfs(t+1);
+    }
+}
+\end{lstlisting} 
+
+$O(n^k\cdot n)\sim O(n^k\cdot n^2)$，取决于如何判断 \texttt{a[1],...,a[k]} 互不相同
+\end{frame}
+
+\begin{frame}[fragile]{写法二}
+\begin{lstlisting}
+void dfs(int t)
+{
+    if(t==k)
+    {
+        //(a[1],...,a[k])
+        return;
+    }
+    for(int i=1;i<=n;i++)
+        if(i 和 a[1],...,a[t] 都不同)
+        {
+            a[t+1]=i;
+            dfs(t+1);
+        }
+}
+\end{lstlisting}
+
+复杂度？
+\end{frame}
+\begin{frame}{写法二：复杂度}
+    \begin{itemize}
+        \item $T(t,n)=(n-t)T(t+1,n)+\sum_{i=1}^n\text{time(判断 i 和 a[1],..,a[t] 都不同)}$
+        \item 后面的求和可以这样算：对于和 $a[1],\ldots,a[t]$ 都不同的 $i$，每个 $i$ 需要花费 $t$ 的代价；对于 $i\in\{a[1],\ldots,a[t]\}$，一共需要花费 $1+2+\cdots+t=t(t+1)/2$ 的代价。所以总共是 $t(n+(1-t)/2)=\Theta(nt)$。
+        \item 倒着推过来：$T(k,n)=1$, $T(k-1,n)=(n-k+1)+\Theta(nk)=\Theta(nk)$, $T(k-2,n)=(n-k+2)\Theta(nk)+\Theta(n(k-2))=\Theta((n-k+2)nk)$, ..., $T(0,n)=\Theta(n(n-1)\cdots (n-k+2)nk)$
+        \item $k\ll n$ 时是 $\Theta(n^{k}k)$, $k=n$ 时是 $\Theta(n!\cdot n^2)$
+        \item     这是通过\textbf{解递推式}来计算复杂度的方法
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{写法二：复杂度}
+    太复杂了！有没有其他办法？
+
+    \begin{itemize}
+        \item 对于每个 $t$，计算 \texttt{dfs(t,n)} \textbf{本身}付出的总代价（也就是不考虑后续递归的代价）
+        \item     到达了 \texttt{dfs(t,n)} 的 $a[1],\ldots, a[t-1]$ 有 $n(n-1)\cdots (n-t+1)$ 种。对于 $t<k$，每种都要付出 $t(n+(1-t))/2$ 的代价；对于 $t=k$，要付出 $1$ 的代价。
+        \item 对 $t=0,\ldots,k$ 求和即可得到相同的结果。事实上，$t=k-1$ 这一层的贡献远大于其他 $t$。
+        \item  这是通过数\textbf{每条语句的执行次数}来计算复杂度的方法
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{写法三}
+    我们可以更聪明地判断 $i$ 和 $a[1],...,a[t]$ 都不同。
+\begin{lstlisting}
+void dfs(int t)
+{
+    if(t==k) {
+        //(a[1],...,a[k])
+        return;
+    }
+    for(int i=1;i<=n;i++)
+        if(!used[i]) {
+            a[t+1]=i;
+            used[i]=1;
+            dfs(t+1);
+            used[i]=0; //重要
+            a[t+1]=0;
+        }
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}{写法三：解释}
+    事实上，我们对 \texttt{dfs(t)} 施加了额外的要求：\texttt{dfs(t)} 结束时，所有变量的状态都被恢复到和开始前相同。换句话说，在函数的\textbf{开始}和\textbf{结束}时刻，我们都假设只有 \texttt{a[1],...,a[t]} 是存在的，后面的 \texttt{a} 都是\textbf{不存在}的（于是对应的 \texttt{used[x]=0}）。
+
+    在 \texttt{dfs(t)} 的循环中，我们处于“正在枚举 $a[t+1]$”的状态。更具体地说，我们在不断地进行以下步骤：
+    \begin{itemize}
+        \item 判定能否令 \texttt{a[t+1]=i}
+        \item 令 \texttt{a[t+1]=i}，并处理 \texttt{a[t+1]=i} 造成的影响（这里是 \texttt{used[i]=1}）
+        \item 递归进 \texttt{dfs(t+1)} 枚举 \texttt{a[t+2],...,a[k]}
+        \item （由于我们的要求，此时的所有变量的状态和 \texttt{dfs(t+1)} 之前是一样的）
+        \item 清空 \texttt{a[t+1]=i} 造成的影响（这里是 \texttt{used[i]=0}）
+    \end{itemize}
+    由于每次循环令 \texttt{a[t+1]=i} 后都做了撤销，所有变量的状态和开始前是一样的
+\end{frame}
+
+\begin{frame}{图示}
+TODO：加个图
+\end{frame}
+    
+    
+\begin{frame}{写法三：复杂度}
+    我们把之前判断 $i$ 和 $a[1],\ldots,a[t]$ 都不同的复杂度从 $\Theta(t)$ 降到了 $\Theta(1)$。所以总复杂度少了一个 $k$，变成 $\Theta(n(n-1)\cdots(n-k+2)n)$。在 $k\ll n$ 时是 $O(n^k)$，$k=n$ 时是 $\Theta(n!\cdot n)$。
+
+    启示：提前判断（剪枝）
+
+    bonus: 在 $k=n$ 时，有没有办法做到 $\Theta(n!)$？
+
+    hint: 如果我们可以做到每层复杂度 $O(n-t)$ 而不是 $\Theta(n)$ ...
+\end{frame}
+\begin{frame}[fragile]{一般的 DFS 框架}
+\begin{lstlisting}
+void dfs(int t)
+{
+    if(枚举完了) {
+        判断/处理/...
+        return;
+    }
+    for(枚举下一步的选项)
+        if(可以选这个) {
+            选这个
+            修改相关的东西
+            dfs(t+1);
+            撤销修改和选择
+        }
+}
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}{一般的撤销怎么做}
+    我们以后学数据结构的时候也会遇到这种问题。
+
+    记录：改了什么东西，改之前它是什么
+
+    撤销和修改的代价相同
+\end{frame}
+
+\begin{frame}{空间复杂度}
+    每层的局部变量（包括函数参数 t）都是独立的。
+    
+    递归过程中最多占用 $\text{层数}\times \text{每层空间}$ 的空间（数组视为多个变量）
+\end{frame}
+
+\begin{frame}{例子：数独}
+    \begin{block}{问题}
+        给一个 $n^2\times n^2$ 数独，找一种填法
+
+        数独：在每个还没填的格子中填上一个 $1$ 到 $n^2$ 的整数，要求每行、每列、两条对角线、每个 $n\times n$ 宫格中不能出现重复的数
+    \end{block}
+    \pause
+    一种可能的抽象：\texttt{dfs(i,j)} 表示之前已经填完了前 $i-1$ 行以及第 $i$ 行的前 $j$ 列，需要填完剩下的空。 
+\end{frame}
+\begin{frame}[fragile]
+\begin{lstlisting}
+void dfs(int i, int j)
+{
+    if(i==n*n && j==n*n)
+    {
+        //输出
+        return;
+    }
+    int curi, curj;
+    计算目前需要枚举的位置 (curi,curj);
+    for(int x=1;x<=n*n;x++)
+        if(a[curi][curj] 可以填 x)
+        {
+            a[curi][curj]=x;
+            处理 a[curi][curj]=x 的影响;
+            dfs(curi,curj);
+            撤销 a[curi][curj]=x 的影响;
+        }
+}
+\end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]{if 里面怎么写}
+\begin{lstlisting}
+第 curi 行目前没出现过 x && 第 curj 列目前没出现过 x && n*n宫格内目前没出现过 x
+&& ((curi,curj) 不在\对角线上 || \对角线上目前没出现过 x)
+&& ((curi,curj) 不在/对角线上 || /对角线上目前没出现过 x)
+\end{lstlisting}
+
+每个行、列、n*n宫格、对角线开一个自己的 \texttt{used}。
+\end{frame}
+
+\begin{frame}{坐标转换}
+    怎么知道 \texttt{(curi,curj)} 属于哪个n*n宫格/对角线？
+
+    方法一：预处理
+
+    方法二：一条 / 对角线上的 $i+j$ 都相同，一条 \\ 对角线上的 $i-j$ 都相同；一个n*n宫格内的 $\lfloor (i-1)/n\rfloor,\lfloor (j-1)/n\rfloor$ 都相同
+\end{frame}
+
+\begin{frame}{复杂度}
+    我不知道。但是，最坏情况下一定是 $2^{\Theta(n^4)}$。
+
+    好消息是，日常生活中碰到的 9*9 数独都能很快跑出来。
+
+    事实上，搜索的复杂度通常难以计算，所以现在正式比赛也不会有以搜索为正解的题。
+
+    但是由于搜索的玄学速度，作为暴力偶尔有奇效。
+\end{frame}
+
+\begin{frame}{例子：迷宫}
+    \begin{block}{问题}
+        给一个 $n\times n$ 网格，每个格子是空地或者障碍。问能不能从 $(1,1)$ 走到 $(n,n)$（可以上下左右走）
+    \end{block}
+
+    你的做法能处理多大的 $n$？
+\end{frame}
+
+\begin{frame}[fragile]{写法一（错误）}
+\begin{lstlisting}
+// 假设当前走到了 (i,j) 
+void dfs(int i, int j){
+    if(i==n && j==n) {
+        //可以
+        return 到 main 函数;
+    }
+    for(枚举一个方向) {
+        计算走这个方向后的坐标 (nxti, nxtj)
+        if(能走) {
+            dfs(nxti, nxtj);
+        }
+    }
+}
+\end{lstlisting}
+
+发现程序崩溃了。
+\end{frame}
+\begin{frame}{细节}
+    怎么实现 return 到 main 函数？
+
+    开一个全局变量/额外传一个可变参数 \texttt{flag} 记录之前是否已经达到终点。在每次递归调用 dfs 后，如果 \texttt{flag=1}，则直接 return。
+
+    怎么枚举一个方向并计算走这个方向后的坐标？
+
+    方向实际对应一个坐标移动量。例如，向右移动对应 \texttt{(nxti,nxtj)=(i,j)+(1,0)}。所以，开一个常量数组记录每个方向下两个坐标的偏移量即可。
+\end{frame}
+\begin{frame}[fragile]{写法二}
+发现问题在于我们可能走了一个圈。所以加上不走回头路的要求。
+
+\begin{lstlisting}
+// 假设当前走到了 (i,j) 
+void dfs(int i, int j) {
+    if(i==n && j==n) {
+        //可以
+        return 到 main 函数;
+    }
+    for(枚举一个方向) {
+        计算走这个方向后的坐标 (nxti, nxtj)
+        if(能走 && !vis[nxti][nxtj]) {
+            vis[nxti][nxtj]=1;
+            dfs(nxti, nxtj);
+            vis[nxti][nxtj]=0;
+        }
+    }
+}
+\end{lstlisting}    
+\end{frame}
+
+\begin{frame}[fragile]{写法三}
+\begin{lstlisting}
+// 假设当前走到了 (i,j) 
+void dfs(int i, int j) {
+    if(i==n && j==n) {
+        //可以
+        return 到 main 函数;
+    }
+    for(枚举一个方向) {
+        计算走这个方向后的坐标 (nxti, nxtj)
+        if(能走 && !vis[nxti][nxtj]) {
+            vis[nxti][nxtj]=1;
+            dfs(nxti, nxtj);
+        }
+    }
+}
+\end{lstlisting}    
+\end{frame}
+
+\begin{frame}{写法三：解释和复杂度}
+\texttt{dfs(i,j)} 现在的意思：假设当前走到了 $(i,j)$，\texttt{dfs(i,j)} 会把能够在不经过进入函数时已走过的位置（即 \texttt{vis[x][y]}=1）的前提下走到的位置都走完（并标记 \texttt{vis}）。此外，如果中间遇到了 $(n,n)$ 就直接退出。
+
+如果 \texttt{vis[nxti][nxtj]=1}，那么
+
+\begin{itemize}
+    \item 要么 \texttt{(nxti,nxtj)} 在进入 \texttt{dfs(i,j)} 前已经走过了
+    \item 要么 \texttt{(nxti,nxtj)} 在进入 \texttt{dfs(i,j)} 后走过了
+    \begin{itemize}
+        \item 这说明已经存在一条 $(1,1)$ 到 $(i,j)$ 再到 \texttt{nxti,nxtj} 的路径
+        \item 从 \texttt{nxti,nxtj} 出发，不经过这条路径上的位置的前提下能到达的所有点都走完了
+        \item 对于经过 $(i,j)\to \mathtt{(nxti,nxtj)}$ 这条路径上的位置到达的点，在路径上最后经过的那个点的 \texttt{dfs} 中处理掉了
+        \item 所以，现在再从 \texttt{(nxti,nxtj)} 出发不会走到任何新的点
+    \end{itemize}
+\end{itemize}
+
+由于每个点只会在 vis 从 0 变到 1 的时候进行了一次 \texttt{dfs}，总共的时间是 $4n^2$
+
+TODO：加张图
+
+\end{frame}
+
+\begin{frame}{例子：字符串变换}
+    \begin{block}{问题}
+        给定字符串 $S$ 和 $T$，以及若干条变换规则 $A\mapsto B$，表示当 $S=A$ 时可以把 $S$ 变成 $B$。问能否通过一系列变换把 $S$ 变成 $T$。
+    \end{block}
+
+    \pause
+
+    和上一个问题很相似
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{lstlisting}
+// 假设当前 S=s 
+void dfs(string s)
+{
+    if(s==T)
+    {
+        //可以
+        return 到 main 函数;
+    }
+    for(枚举 s -> B)
+    {
+        if(!vis[B])
+        {
+            vis[B]=1;
+            dfs(B);
+        }
+    }
+}
+\end{lstlisting}    
+\end{frame}
+
+\section{图与树的基本概念}
+
+\begin{frame}[fragile]{回顾：一般的 DFS 框架}
+    \begin{lstlisting}
+    void dfs(int t)
+    {
+        if(枚举完了)
+        {
+            判断/处理/...
+            return;
+        }
+        for(枚举下一步的选项)
+            if(可以选这个)
+            {
+                选这个
+                修改相关的东西
+                dfs(t+1);
+                撤销修改和选择
+            }
+    }
+    \end{lstlisting}
+\end{frame}
+
+\begin{frame}{有向图}
+    在一层 \texttt{dfs} 开始前，我们处于某种\textbf{状态}。在这一层 \texttt{dfs} 中，我们会枚举当前状态的\textbf{后继状态}。
+
+    我们可以抽象出名为\textbf{有向图}的模型：
+
+    \begin{itemize}
+        \item 有很多点，每个点代表一个状态
+        \item 点之间存在有向的箭头，称为（有向）\textbf{边}，表示状态间的后继关系
+    \end{itemize}
+
+    例如，字符串变换问题就是非常标准的有向图模型。我们需要判断：有向图上是否存在一条从 $s$ 走到 $t$ 的路径？
+\end{frame}
+
+\begin{frame}{无向图}
+    在迷宫问题中，我们可以把每个空地视为一个点，一个空地可以到达和它相邻的空地。
+
+    这时，我们注意到，点的到达是相互的：$u$ 和 $v$ 互为后继状态。
+
+    这种模型称为\textbf{无向图}：
+    \begin{itemize}
+        \item 有很多点，每个点代表一个状态
+        \item 点之间存在双向（或者无向）的箭头，称为（无向）\textbf{边}，表示状态间存在双向关系
+    \end{itemize}
+
+    容易发现，无向图可以被有向图表示（使用两条边代表两个方向），反之则不然。
+
+    有向图和无向图统称为\textbf{图}。
+\end{frame}
+
+\begin{frame}{树}
+    在前三个例子中，我们可以把当前的局面（填了一些数）视为一个状态，其后继状态为填上下一个数之后得到的局面。
+
+    这时，我们注意到：由于我们是按照某种顺序填数的，所以从根出发恰有一条路径能到达每个状态。
+
+    这种模型称为\textbf{有根树}：
+    \begin{itemize}
+        \item 是一个有向图
+        \item 起点，也就是初始状态，称为\textbf{根}
+        \item 从根出发到每个点的路径恰有一条
+    \end{itemize}
+
+    如果把有向图换成无向图，那么得到的模型称为\textbf{无根树}。事实上，树还有很多等价的描述，我们以后会学到。
+
+    有根树和无根树统称为\textbf{树}。
+\end{frame}
+
+\begin{frame}[fragile]{DFS 查找图上路径}
+    \begin{lstlisting}
+    void dfs(int u) {
+        if(u==终点) {
+            判断/处理/...
+            return;
+        }
+        for(枚举 u 的后继节点 v)
+            if(!vis[v]) {
+                vis[v]=1;
+                dfs(v);
+                //无需撤销，因为走过的无需再走
+            }
+    }
+    \end{lstlisting}
+
+    等到后续学习图论时，我们会介绍更多的 DFS 在图上的应用。
+\end{frame}
+
+\begin{frame}{搜索的不同视角}
+    在前三个例子中，搜索相当于在做\textbf{分步枚举}。
+    
+    在后两个例子中，搜索相当于在\textbf{寻找图上路径}。
+    
+    对于一般的问题，可以从这两种视角出发来考虑怎么写搜索。
+
+    这也是抽象思想的一个体现：使用抽象的模型来描述具体的问题，然后在抽象的模型（通常更简单）上思考。
+\end{frame}
+
+
+% =========================================================
+
+% =========================================================
+\section{总结}
+
+\begin{frame}{本节课的核心}
+\begin{itemize}
+    \item DFS：灵活的枚举
+    \item 图和树：常见的模型
+\end{itemize}
+\end{frame}
+
+
+\end{document}

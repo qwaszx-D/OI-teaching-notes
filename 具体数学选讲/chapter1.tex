@@ -1,0 +1,72 @@
+\begin{frame}{第一章}
+\begin{itemize}
+    \item 递归式的概念
+    \item 数学归纳法
+    \item 如何写出递归式（简单的例子）
+    \item 一种解递推式的方法
+\end{itemize}
+\end{frame}
+\begin{frame}{第一章习题}
+    需要写下来的：1 3 5 8 9 12 14 16
+\end{frame}
+\begin{frame}{练习：写递归式}
+    其实写 dp 的时候会经常练。
+    \begin{enumerate}[1]
+        \item 骨牌覆盖：用 $1\times 2$ 和 $2\times 1$ 的骨牌覆盖一个 $2\times n$ 的网格，求方案数
+        \item 骨牌覆盖2：用 $1\times 2$ 和 $2\times 1$ 的骨牌覆盖一个 $3\times n$ 的网格，求方案数
+        \item 长为 $n$ 的 01 串，要求不能出现连续的三个 $1$，求方案数
+        \item 长为 $n$ 的 01 串，要求不能出现连续的三个 $1$ 或者连续的两个 $0$，求方案数
+        \item 用 $m$ 种颜色给 $1\times n$ 的网格涂色，要求相邻格子颜色不相同
+        \item 长为 $2n$ 的合法括号序列的数量
+        \item 从 $(0,0)$ 走到 $(n,n)$，每步可以向上或向右走，不能跨过对角线的方案数
+        \item $n$ 选 $k$ 排列数
+        \item $n$ 选 $k$ 组合数
+        \item 把 $n$ 写成若干单调不降正整数之和的方案数（hint: 你也许需要添加一维）
+        \item $n$ 个人围成一圈，选若干个人，要求不能相邻，求方案数
+        \item $n$ 个数的排列，要求 $a_i\ne i$，求方案数
+    \end{enumerate}
+    你还能提出其他的问题吗？你能推广上面的某些问题吗？（无需会做）
+\end{frame}
+\begin{frame}{答案}
+    \begin{enumerate}[1]
+        \item TODO
+    \end{enumerate}
+\end{frame}
+\begin{frame}{某些推广}
+    \begin{itemize}
+        \item 骨牌覆盖：用 $1\times 2$ 和 $2\times 1$ 的骨牌覆盖一个 $n\times m$ 的网格，求方案数
+        \item 长为 $n$、字符集大小为 $m$ 的字符串，要求某些子串不能出现，求方案数
+        \item 从 $(0,0)$ 走到 $(n,m)$，每步可选一个集合内的一种，另有对不能经过的位置的限制，求方案数
+        \item 把 $n$ 写成若干单调不降正整数之和的方案数，额外要求：严格递增/数都不超过 $k$/数都至少是 $k$/必须是奇数/...
+        \item $n$ 个数的排列，要求恰好 $k$ 个位置 $a_i\ne i$，求方案数
+    \end{itemize}
+\end{frame}
+\begin{frame}{解递归式}
+    我们有两种目的：得到一个\textbf{封闭形式}，或者\textbf{快速计算}。
+
+    对于只有一个递归项的递推式 $f_n=a_n f_{p(n)}+g(n)$，可以考虑展开变成求和：$f(n)=g(n)+a_n g(p(n))+a_na_{p(n)}g(p(p(n)))+\cdots$
+
+    对于形如 $f_n=\sum_{i=1}^k a_i f_{n-i}+r^nP(n)$（其中 $P(n)$ 是多项式）的递推，可以参考\textbf{常系数线性递推}理论
+
+    对于多个相互依赖的线性递推，可以考虑生成函数。不过，我们还可以写成\textbf{矩阵}形式直接算。
+
+    对于二维的递推，可以尝试的做法是对其中一维建立生成函数，然后转为生成函数的一维递推。但这通常也很困难。
+
+    对于分式类型的递推（如 $f_n=\frac{1}{f_{n-1}+1}$），可以尝试将 $f_n$ 写为 $p_n/q_n$，然后导出对应的递推
+
+    其他的递推往往很难解。
+\end{frame}
+\begin{frame}{展开递归式：举例}
+    $$
+    \begin{aligned}
+        J(n)&=3J(\lfloor n/2\rfloor)+\gamma n+a_{n\bmod 2}
+    \end{aligned}
+    $$
+
+\end{frame}
+
+\begin{frame}{“成套方法”}
+    事实上，下面的思想往往更有用：在处理非齐次递推（如 $f_{n,m}=f_{n-1,m}+f_{n,m-1}+g(n,m)$）时，可以转而考虑每个非齐次项 $g(i,j)$ 和初值项 $f_{0,\cdot},f_{\cdot,0}$ 对最终的 $f_{n,m}$ 的\textbf{贡献系数}。
+
+    “算贡献”的思想对解决其他问题常常也有帮助。
+\end{frame}

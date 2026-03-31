@@ -1,0 +1,113 @@
+\documentclass[11pt,aspectratio=169]{beamer}
+
+% --------------------
+% Theme
+% --------------------
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=0.5cm, text margin right=0.5cm}
+
+% --------------------
+% Packages
+% --------------------
+\usepackage{ctex}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --------------------
+% Code Style
+% --------------------
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single
+}
+
+\usepackage{tikz}
+\usetikzlibrary{trees, positioning}
+
+\setlength{\parskip}{0.7em}  % 调整段落间距
+
+% --------------------
+% Title Info
+% --------------------
+\title{具体数学选讲}
+\author{qwaszx}
+\date{\today}
+
+% ====================
+% Document
+% ====================
+\begin{document}
+
+% --------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% --------------------
+\begin{frame}
+    从本书能学到的东西：
+
+    \begin{itemize}
+        \item 一些方法和技巧
+        \item 大师是如何思考问题的
+        \item “数学成熟度”
+    \end{itemize}
+\end{frame}
+\begin{frame}{目录}
+    本书直到 5.4 为止都是对 OI 非常有用的内容。
+
+    再往后的内容与 OI 关联不大，但读了也能有很大收获。
+\end{frame}
+
+\begin{frame}{另一本书：《离散数学及其应用》}
+    强烈建议把这本书的前两章看一看，讲了很多重要且基础的数学语言。
+
+    后面也都是和 OI 非常相关的内容，相对比较基础，有空的话可以看看
+\end{frame}
+
+\begin{frame}{作业}
+    每周上课前需要大家自行阅读《具体数学》的对应章节，并完成习题。上课时我们只会快速地过一遍教材并强调重点。
+
+    做习题的时候尽量不要翻前面的正文，以加深记忆。
+
+    其实建议大家习题全做的，只不过为了减轻大家的工作量只选了一部分有代表性的让大家写下来。
+\end{frame}
+\begin{frame}{作业要求}
+    我们的期望任务量是每周 8-10 个小时（阅读+做题），大家在填写每周的任务反馈时可以参考这个值
+
+    作业中遇到努力思考但仍然不会的题目时，有以下几种解决办法：
+    \begin{itemize}
+        \item 翻到附录 A 查看答案
+        \item 询问同学
+        \item 询问我：你需要表达清楚卡住的点（比如已经尝试过什么、到哪里做不下去了、或者干脆一点头绪没有等等），我会努力提供一个合适的提示（但是不一定能及时回复）
+        \item 询问 AI：你可以让 AI 模仿上一条或者答案或者别的什么，但是正确性需要自行甄别
+    \end{itemize}
+    总之，希望大家像对待 OI 题一样对待数学习题。
+
+    提交作业前，建议大家先对一下附录 A 的答案并让 AI 批改一遍。参考提示词：
+    \begin{itemize}
+        \item 帮我批改一下这份作业，题目是具体数学第x章后面的对应习题。（后附作业内容）
+    \end{itemize}
+\end{frame}
+
+\input{chapter1.tex}
+
+\input{chapter2.tex}
+
+\input{chapter3.tex}
+
+\input{chapter5.tex}
+
+
+
+\end{document}

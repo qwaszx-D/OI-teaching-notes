@@ -1,0 +1,418 @@
+\documentclass[11pt,aspectratio=169]{beamer}
+
+% --------------------
+% Theme
+% --------------------
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=0.5cm, text margin right=0.5cm}
+
+% --------------------
+% Packages
+% --------------------
+\usepackage{ctex}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --------------------
+% Code Style
+% --------------------
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single
+}
+
+\usepackage{tikz}
+\usetikzlibrary{trees, positioning}
+
+\setlength{\parskip}{0.7em}  % 调整段落间距
+
+% --------------------
+% Title Info
+% --------------------
+\title{部分基础算法}
+\author{qwaszx}
+\date{\today}
+
+% ====================
+% Document
+% ====================
+\begin{document}
+
+% --------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% --------------------
+\begin{frame}{本节课目标}
+\begin{itemize}
+    \item TODO
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{高精度}
+
+如果你因为某种原因需要存储超过 ull 的整数的话，需要使用高精度
+
+一般来说，模拟竖式运算即可。
+
+注意选择尽量大的进制
+
+\end{frame}
+\begin{frame}{例：手写 uint128}
+    用四个 uint 或者两个 ull 即可。
+
+    如果使用 ull，需要知道如何判断溢出（加完变得更小），以及做乘法的时候要把高 32 位和低 32 位拆开来算。
+
+    不过现在可以直接用 int128 了。
+\end{frame}
+
+\begin{frame}{科普：更快的高精度运算}
+    高精度乘法可以分治做到 $O(n^{\log_2 3})=O(n^{1.585})$，或者通过 FFT 以及更复杂的技术做到 $O(n\log n)$，参见 https://www.cnblogs.com/Elegia/p/18020040/integer-multiplication
+
+    高精度除法可以通过类似牛顿迭代的方法转化为高精度乘法，复杂度相同。参见 https://www.luogu.com.cn/problem/P5432
+
+    Montgomery 模乘可以避免使用牛顿迭代来完成高精度模乘
+
+    可以通过分治 FFT 的方式实现 $O(n\log^2 n)$ 的进制转换
+\end{frame}
+
+\begin{frame}{快速幂}
+    可以理解为递归，也可以理解为二进制分解
+
+    也可以使用其他进制。固定底数为 $x$ 时，预处理所有 $x^{jB^i}$，可以做到 $O(B\frac{\log n}{\log B})$ 预处理、$O(\frac{\log n}{\log B})$ 查询 $x^n$。在不少题目中可以优化复杂度。
+
+    注意 $x$ 不仅仅局限于数，还可以是矩阵、多项式、置换等各种能做乘法的东西。以后我们学群论的时候会稍微提到。
+\end{frame}
+\begin{frame}{类似的问题}
+    使用和快速幂类似的方法，也可以解决像是 $\sum_{i=0}^n i^kx^i$（$k$ 很小）这样的问题。
+\end{frame}
+
+\begin{frame}{贪心}
+    事实上，贪心只能称为一种策略或思想，而不是算法。贪心题的难度往往两极分化：大部分是“显然可以贪心”的，还有小部分是“这为什么可以贪心”的。
+
+    虽然很多时候贪心看起来显然正确，但我们还是需要关注一下其证明。证明往往可以让我们对算法有更深刻的理解。此外，可以随意地写出看起来显然的事情的证明也是需要练习的事情。
+
+    我们会给出一些常见的贪心模型。
+\end{frame}
+\begin{frame}{最长上升/不降子序列}
+    对每个 $i$ 维护：到目前为止，长为 $i$ 的最长上升/不降子序列的最后一个元素最小可以是多少
+\end{frame}
+\begin{frame}{线段覆盖}
+    有很多类似但有区别的问题
+    \begin{itemize}
+        \item 在一组区间中至少选几个区间能覆盖所有另外一组区间
+        \item 至多选几个不交区间
+        \item 给一些区间，要求每个区间内至少选了若干个整点，求最少选多少点
+        \item 给若干区间和点，求最大匹配/最小点覆盖
+        \item 给若干个区间，求最少能分成多少组，使得每组内区间不交
+    \end{itemize}
+\end{frame}
+\begin{frame}{排序类问题}
+    给 $n$ 个物品，需要将其按一定顺序排好，然后每个物品贡献一个只与排在其前面的物品集合相关的代价，需要找到总代价最小的顺序。
+
+    一种常见的思路是\textbf{邻项交换法}，考虑相邻的两个东西应该如何排。这样通常可以得到一个 $a\le b$ 的充分条件。但是需要格外注意这里的 $=$：我们只考虑了相邻两项的比较，而充分条件中的 $=$ 未必在不相邻时生效。此时可能需要考虑 $=$ 的元素内部应该如何排。最后需要找到一个 $<$ 而不是 $\le$ 的排序准则。
+    
+    如果最后找到的准则是一个\textbf{严格弱序}，那么就可以排序了。
+\end{frame}
+\begin{frame}{证明}
+    严格弱序需要满足：反自反、反对称、传递（也就是 $<$ 需要满足的）、不可比的传递（如果 $a\not < b$ 和 $b\not <a$，那么应该有 $a\sim b$，也就是不可比是一个等价关系）
+
+    如果一个排列不符合严格弱序的排序，那么一定存在一对 $i<j$，$a_i>a_{j}$，此时交换两者必然不劣。
+
+    不可比的传递性保证了若干个不可比的物品之间怎么排都可以。否则，存在邻项之间均符合严格弱序，但整体不符合的排列。
+\end{frame}
+\begin{frame}{例子}
+    排队接水问题：$t_1<t_2$
+
+    有额外人数权重的排队接水问题：$t_1/n_1<t_2/n_2$
+
+    字符串连接问题：$s_1+s_2<s_2+s_1$
+\end{frame}
+\begin{frame}{复杂的例子}
+    国王游戏：代价为 $\displaystyle\max_i\left\lfloor\frac{\prod_{j<i}a_j}{b_i}\right\rfloor$
+
+    邻项比较得到 $\max\{\lfloor a_0/b_1\rfloor,\lfloor a_0a_1/b_2\rfloor\}\le\max\{\lfloor a_0/b_2\rfloor,\lfloor a_0a_2/b_1\rfloor\}$。
+
+    由于我们在寻找充分条件，可以先把取整去掉。此时容易得出 $\max\{b_2,a_1b_1\}\le\max\{b_1,a_2b_2\}$ 的等价条件。
+
+    注意到 $b_2\le a_2b_2$、$b_1\le a_1b_1$，故此条件等价于 $a_1b_1\le a_2b_2$。
+
+    现在，考虑 $a_1b_1=a_2b_2$ 的情况。此时，可以验证，即使不相邻，这个准则也是一个充分条件。
+\end{frame}
+\begin{frame}{更复杂的例子}
+    皇后游戏：$c_i=\max_{c_{i-1},\sum_{j\le i}a_j}+b_i$，总代价为 $\max c_i$
+
+    邻项比较得到 $\max(\max\{c_0,a_0+a_1\}+b_1,a_0+a_1+a_2)+b_2\le \max(\max\{c_0,a_0+a_2\}+b_2,a_0+a_1+a_2)+b_1$
+
+    加法全都扔进 $\max$ 得到 $\max(c_0+b_1+b_2,a_0+a_1+b_1+b_2,a_0+a_1+a_2+b_2)\le \max(c_0+b_2+b_1,a_0+a_2+b_2+b_1,a_0+a_2+a_1+b_1)$
+
+    首项相同可以先扔掉，然后两边减掉 $a_0+b_1+b_2+a_1+a_2$ 得到 $\max(-a_2,-b_1)\le \max(-a_1,-b_2)$，即 $\min(a_2,b_1)\ge \min(a_1,b_2)$。
+
+    现在考虑 $\min(a_1,b_2)=\min(a_2,b_1)$ 的情况。不幸的是，该条件不具有传递性。考虑不相邻的情况后，对两侧的 $\min$ 在哪里取到分类讨论后可以发现此时应按 $a$ 升序排序。
+\end{frame}
+\begin{frame}{上树}
+    在一些题目中，还额外具有树形偏序限制：一个物品必须排在其父亲之后。
+
+    此时的做法如下：维护树的某种连通块划分，同一个连通块内部的排列顺序已经固定。每次取出在先前的排序规则下最优的那一个，将它与它上面第一个连通块合并，表示这个连通块要紧接着上面的连通块来排列。
+\end{frame}
+\begin{frame}
+    TODO: 找例子  
+\end{frame}
+\begin{frame}{二分}
+    好像没什么好讲的！
+\end{frame}
+\begin{frame}{倍增}
+    在功能上显然倍增不弱于整数二分。
+    
+    在信息可加时，只需要预处理 $\log n$ 种信息即可实现二分的功能。
+\end{frame}
+
+
+\begin{frame}{陷阱}
+\begin{itemize}
+    \item 迭代器失效：修改后，迭代器可能变得不可用
+    \item 占用空间正比于历史最大 \texttt{size} 而不是当前 \texttt{size}
+    \item \texttt{clear} 不会释放内存。可以用 \texttt{vector<T>().swap(a)} 来释放 
+    \item 大量 \texttt{push\_back} 会带来很大的常数。可以使用 \texttt{resize} 一次性分配需要的长度，这样和数组基本一样快
+\end{itemize}
+\end{frame}
+
+\begin{frame}{（一种）实现}
+   如果 \texttt{size} 超过了当前容量，那么把当前容量加倍，重新申请空间，把所有东西都搬过去。
+   
+   如果额外要求空间线性于 \texttt{size} 而不是历史最大 \texttt{size} 呢？
+
+   \texttt{size} 小于当前容量的 $1/4$ 时，把容量减半并重新分配空间（为什么是 $1/4$ 而不是 $1/2$？
+\end{frame}
+
+\begin{frame}{复杂度}
+    每次重新分配后，容量约等于两倍 \texttt{size}。
+
+    触发下一次重新分配需要 $\Omega(\mathtt{size})$ 次修改，重新分配的代价是 $O(\mathtt{size})$。所以，平均每次修改的代价是 $O(1)$。
+\end{frame}
+
+\begin{frame}{链表}
+    支持什么？
+
+    \begin{itemize}
+        \item $O(1)$ 在指定元素处插入删除单个元素/另一个链表（例如可以实现 $O(1)$ 拼接）
+        \item $O(\text{位置})$ 随机访问
+        \item $O(\mathtt{size})$ 的空间
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{例题}
+    洛谷P10466 邻值查找 / 洛谷P1168 中位数
+
+    插入往往需要平衡树之类的数据结构，但是如果倒着来就只需要先排序然后一直删除。
+    
+    如果排序可以线性，那么就能做到线性。
+\end{frame}
+
+\begin{frame}{栈和队列}
+    操作大家都知道。
+
+    显然栈 <= \texttt{vector}。
+
+    如果队列大小已知不超过某个上界，可以用数组模拟循环队列
+
+    $O(\mathtt{size})$ 空间需要用链表或者双端队列实现
+\end{frame}
+
+\begin{frame}{双端队列}
+    功能上强于 \texttt{vector} 和队列，但是实现更复杂，常数也更大。
+
+    \begin{itemize}
+        \item 均摊 $O(1)$ 头尾插入删除
+        \item $O(1)$ 随机访问
+    \end{itemize}
+
+    需要开很多双端队列时，要谨慎使用 STL 的 \texttt{deque}！一个空 \texttt{deque} 可能占用几百到几千字节的空间。 
+\end{frame}
+
+\begin{frame}{更好的实现：对顶栈}
+    设想有两个栈，其底部粘在一起。于是其整体就成为一个两端开口的双端队列。
+
+    唯一的问题出在某个栈空了还要继续删的情况。此时，我们暴力把整个序列倒出来重构即可。换句话说，我们重新把序列均分到两个栈里。
+
+    使用 \texttt{vector} 来实现栈就能支持随机访问了。如果需要很紧的空间，可以用之前提到的 $O(\mathtt{size})$ 空间的 \texttt{vector}。
+\end{frame}
+\begin{frame}{复杂度}
+    每次重构后，两个 \texttt{vector} 都有大概 $\mathtt{size}/2$ 个元素。
+
+    到下次重构之前，至少有 $\mathtt{size}/2+|\mathtt{size}'-\mathtt{size}/2|=\Omega(\mathtt{size}')$ 次操作
+
+    重构花费 $O(\mathtt{size}')$ 的代价，所以插入删除是均摊 $O(1)$ 的
+\end{frame}
+\begin{frame}{扫描线}
+    在两个 \texttt{vector} 中各自维护自己的前缀信息，这样可以 $O(1)$ 查询目前队列中跨过分断点的任意子区间的信息和。
+
+    可以以 $\sum_i |l_i-l_{i-1}|+|r_i-r_{i-1}|$ 的代价回答多个区间询问。在很多问题中，这个总代价往往可以是线性的。
+
+    例1：支持双端队列操作、每次询问做背包后体积 $V_i$ 的结果（$O(nV)$）
+
+    例2：“不删除双指针”，如询问最短的 $\gcd>1$ 的区间
+\end{frame}
+\begin{frame}{二叉堆}
+    支持什么？
+
+    \begin{itemize}
+        \item $O(1)$ 查询最小值
+        \item $O(\log n)$ 插入
+        \item $O(\log n)$ 删除
+        \item $O(\log n)$ Decrease-Key
+        \item $O(n)$ 合并
+    \end{itemize}
+\end{frame}
+\begin{frame}{理论上最好的堆}
+    Brodal Queue 支持
+    \begin{itemize}
+        \item $O(1)$ 查询最小值
+        \item $O(1)$ 插入
+        \item $O(\log n)$ 删除
+        \item $O(1)$ Decrease-Key
+        \item $O(1)$ 合并
+    \end{itemize}
+
+    但是实现复杂、常数很大。
+
+    算法/数据结构总是在复杂度、实际表现、实现难度、常数、功能之间做取舍。
+
+    其他一些常见的堆：左偏树、斜堆、随机堆、配对堆、二项堆、斐波那契堆
+\end{frame}
+\begin{frame}{扩展类问题}
+    从若干个初始状态开始，每个状态可以扩展出若干个后继状态，保证扩展出来的状态的权值小于原状态的权值。每次取权值最小的状态扩展，重复若干次。
+
+    通过一定的设计，很多求前 $k$ 大/小的问题可以变成这类问题。使用堆来维护所有目前的状态，每次取出最小的一个来扩展，注意去重。扩展形成一张图，复杂度为 $O(M\log M)$ 或 $O(k\log k+M)$（取决于堆），其中 $M$ 为前 $k$ 小的点邻接的\textbf{边数}。
+
+    如果每个点的扩展方式都是相同的，并且只有常数种扩展方式，并且扩展出来的状态的权值关于原状态的权值是单调的，那么可以使用队列替换堆来做到 $O(M)$。
+\end{frame}
+\begin{frame}{序列合并}
+    方法一：$(i,j)$ 扩展出 $(i,j+1)$，初始状态为所有 $(i,1)$
+
+    方法二：$(i,j)$ 扩展出 $(i+1,j)$ 和 $(i,j+1)$，但是要去重
+
+    方法三：https://www.cnblogs.com/zkyJuruo/p/18428124
+\end{frame}
+\begin{frame}{蚯蚓}
+    首先处理掉“除了新的以外都加 $q$”，这可以变成全局加 $q$ 然后新的减掉 $q$。
+
+    这样就是 $x$ 扩展出 $\lfloor p(x+tq)\rfloor-(t+1)q$ 和 $(x+tq)-\lfloor p(x+tq)\rfloor-(t+1)q$
+
+    符合我们用队列替换堆时的要求
+\end{frame}
+\begin{frame}{常数种非负边权的最短路}
+    BFS 扩展时，从 $x$ 扩展出 $O(1)$ 种固定的新状态
+
+    可以使用队列替换堆
+\end{frame}
+\begin{frame}{前 $k$ 小子集和}
+    考虑一个 DFS 过程，枚举下一个选择的数在哪
+
+    然而这样会扩展出 $\Theta(n)$ 个状态
+
+    多叉树转二叉树：左儿子右兄弟（注意兄弟的顺序）
+\end{frame}
+\begin{frame}{限制大小的前 $k$ 小子集和}
+    要求集合大小在 $[L,R]$ 内。
+
+    考虑怎么枚举 $\mathtt{size}=m$ 的集合。假设选了 $a_{i_1},\ldots,a_{i_m}$，转为枚举 $d_j=i_j-i_{j-1}$，只需要 $\sum_j d_j\le n-1$。
+    
+    初始所有 $d_j=1$，每次枚举下一个需要增加的 $d_j$ 即可。
+
+    同样用儿子兄弟表示法转为二叉树
+\end{frame}
+\begin{frame}{更多想法}
+    有可能与 $k$ 短路有关联，但我不会。
+
+    有兴趣的同学可以自行研究或者一起讨论一下
+\end{frame}
+\begin{frame}{合并果子}
+    由于合并的结果总是越来越大的，可以使用队列替换堆。
+\end{frame}
+\begin{frame}{Huffman 编码}
+    结论：
+
+    \begin{itemize}
+        \item Huffman 编码可以最小化 $\sum_i \mathrm{dep}_i\cdot w_i$
+        \item $w_i$ 的深度大约为 $\log\frac{W}{w_i}$，其中 $W=\sum w_i$
+    \end{itemize}
+
+    在\textbf{不均匀分治}（如树剖、点分治、分治FFT等）中，可以使用 Huffman 树来降低复杂度或常数，以后会提到
+\end{frame}
+\begin{frame}{单调队列/单调栈}
+    支持什么？
+
+    令 $b_i=\max\{a_i,a_{i+1},\ldots,a_r\}$。在 $r$ 从 $1$ 扫到 $n$ 的过程中，均摊 $O(1)$ 地维护所有 $b_i$。（栈中每个元素表示一段区间的 $b_i$）
+\end{frame}
+\begin{frame}{使用例一：（端点单调）区间最值}
+    多次查询 $\max\{a_{l_i},\ldots,a_{r_i}\}$，其中 $l_i,r_i$ 都单调不降。可以强制在线（指 $a$ 可能依赖先前的询问结果）
+
+    虽然双端队列也可以做，但是这种问题单调队列更方便。
+
+    如果 $l_i$ 不单调呢？（允许复杂度变大一些）
+    
+    单调栈上二分
+\end{frame}
+\begin{frame}{使用例二：求前驱后继}
+    对每个元素，查询它左/右边第一个比它大/小的数的位置
+\end{frame}
+\begin{frame}{使用例三：稍复杂一些的信息维护}
+    对每个 $r$，求 $\sum_{l=1}^r (r-l+1)\cdot \max\{a_l,\ldots,a_r\}$。强制在线。
+
+    要记得单调栈中每个元素都代表了一段区间的 $\max\{a_l,\ldots,a_r\}$。
+\end{frame}
+\begin{frame}{离线的另解}
+    如果允许离线，那么可以考虑换种方式计算答案：对每个 $a_i$，看看它是哪些区间 $[l,r]$ 的 $\max$。这可以由先前提到的前驱后继来做。
+\end{frame}
+\begin{frame}{例三的最值版本}
+    求 $\max_{l,r}(r-l+1)\cdot\max\{a_l,\ldots,a_r\}$。
+
+    使用离线算贡献的方法是最容易的
+
+    在线对每个 $r$ 算的话需要维护凸包。
+\end{frame}
+\begin{frame}{悬线法}
+    有些题给了个二维黑白网格，要求全黑的矩形/正方形的最大面积/面积和之类的东西
+
+    对每个格子计算每个方向全黑能延伸到哪，然后就变成类似例三的问题
+\end{frame}
+\begin{frame}{难题}
+    给定 $X$，求有多少个区间 $[l,r]$ 满足 $\max+\min=X$
+
+    令 $b_i=X-a_i$，泛化成有多少个区间 $[l,r]$ 满足 $\max\{a_i\}=\max\{b_i\}$
+
+    $a,b$ 交替形成一个新序列，在这个新序列上扫的时候维护一个单调栈。单调栈中允许权值相同。
+
+    单调栈中形成若干个等值段，每个等值段都是若干个 $a$ 和若干个 $b$ 交替出现。一个等值段的贡献为开头到最后一次 $ab$ 切换的位置。
+\end{frame}
+
+
+
+% =========================================================
+
+% =========================================================
+\section{总结}
+
+\begin{frame}{本节课的核心}
+\begin{itemize}
+    \item 熟知讲过的几种线性数据结构的功能，能够把问题对应到数据结构上
+    \item 扩展类问题的思路
+    \item 加深对单调栈和单调队列的认识
+\end{itemize}
+\end{frame}
+
+
+\end{document}
