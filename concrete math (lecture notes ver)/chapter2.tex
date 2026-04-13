@@ -1,0 +1,683 @@
+\chapter{和式}
+\begin{overview}
+\begin{itemize}
+    \item 求和符号以及艾弗森括号的使用
+    \item 化简和式的基本方法
+    \item 化简和式的常见技巧
+    \item 下降幂和相关结果
+    \end{itemize}
+\end{overview}
+\section{课前任务}
+    阅读具体数学《第二章》。在本章中最重要的内容有以下几点：求和符号以及艾弗森括号的使用、扰动法、三角求和的对称技巧、化简和式的一些常见方法、下降幂和有限微积分。
+
+    挑选的部分习题\graffiti{这是两周的量}：2 3 4 6 13 14 19 20 21 22 25 32；7 9 10 11 17 23 24 27 29 31；35* 36*
+\section{基本方法}
+处理和式是基本中的基本。我们在书中、平时做题中、本系列课程中会遇到非常多的和式。下面是化简和式的一些基本方法：
+    \begin{itemize}
+        \item 尽量使用简单的求和条件
+        \item 把无关项用分配律提出到求和号外
+        \item （通过拆成多个求和）让求和项只含有乘积
+        \item 通过换元让下标保持简单
+        \item 交换求和号常常是有用的
+    \end{itemize}
+
+
+\section{扰动法}
+    \begin{example}[数列求和]
+        $$
+        \sum_{i=1}^n i^ka^i.
+        $$
+
+        需要 $O(k^2)$。\graffiti{这是个很好的练习。}
+    \end{example}
+    \begin{solution}
+    设 $S_n=\sum_{i=1}^n i^k a^i$，那么首先
+    $$
+    S_n=\sum_{i=1}^n (i+1)^k a^{i+1} - (n+1)^ka^{n+1}+1^ka^{1}.
+    $$
+
+    扰动法的关键一步在于把 $(i+1)^ka^{i+1}$ 表示成关于 $i$ 而不是 $i+1$ 的表达式。在遇到和的幂时，我们的第一反应就是二项式定理：
+    $$
+    (i+1)^ka^{i+1}=a\sum_j\binom{k}{j}i^ja^i.
+    $$ 
+
+    把这个带到扰动法中就得到
+    $$
+    S_n=\sum_{i=1}^n a\sum_j\binom{k}{j}i^ja^i=a\sum_j\binom{k}{j}\sum_{i=1}^n i^ja^i. 
+    $$
+    （要牢记我们的基本准则“提出无关项”和“交换求和号”）。
+
+    现在，我们发现内部的求和和 $S_n$ 很像，只是 $k$ 换成了 $j$。这种时候我们往往可以尝试设出辅助递归项 $S_{n,j}$，而 $S_{n,j}$ 关于 $j$ 的递归具有同样的模式。
+
+    特别地，在 $a=1$ 时无法得到 $S_{n,k}$ 的方程，而是 $S_{n,k-1}$ 的方程。然而，这并不影响我们能够递推求解 $S_{n,j}$ 的事实。这样我们就得到了 $O(k^2)$ 的做法。
+    \end{solution}
+    \begin{solution}[另解]
+        我们也可以先写成递推式
+        $$
+        S_n=S_{n-1}+n^ka^n,
+        $$
+        然后挥动线性递推重锤。这样甚至可以得到一个 $O(k)$ 的做法。具体来说\graffiti{并非具体}：
+        \begin{itemize}
+            \item 线性递推告诉我们结果具有 $a^nP(n)+C$ 的形式，其中 $P(n)$ 是一个 $k$ 次多项式，$C$ 是常数
+            \item 先递推计算出 $S_0,\ldots,S_k$，然后 $P(i)=a^{-i}(S_i-C)$
+            \item 使用 Lagrange 插值和直接递推两种方式分别计算 $P(k+1)$，从而解出 $C$
+            \item 使用 Lagrange 插值得到 $P(n)$ 和 $S_n$
+        \end{itemize}
+    \end{solution}
+
+    \begin{example}[含有求和的递归]
+    寻找 $s_n=\sum_{i=1}^n f_i$ 的递归式，其中 $f_n$ 是 Fibonacci 数列
+\end{example}
+\begin{solution}
+    邻项相减/扰动法/生成函数
+\end{solution}
+
+
+\section{多重和式}
+
+\subsection{三角求和的对称技巧}
+    在三角求和的例子中，我们利用对称性把 $i\le j$ 的求和变成无限制的求和以及 $i=j$ 的求和。这是常用的技巧。
+
+    \begin{example}
+        给定平面上 $n$ 个点，求所有点对的曼哈顿距离之和。也就是计算 
+        $$
+        \sum_{1\le i<j\le n}|x_i-x_j|+|y_i-y_j|.
+        $$
+    \end{example}
+
+    \begin{example}
+        异或粽子
+    \end{example}
+    
+    在某种意义上，这个技巧可以推广为 Burnside 引理。\graffiti{推得太广了。}
+
+\subsection{很多重求和}
+
+我们来看一下下面这个 $m$ 重求和。
+
+\begin{example}
+    $$
+    \sum_{1\le i_1\le i_2\le\cdots\le i_m\le n} 1
+    $$
+
+    是多少？
+
+    我们有很多种方式来推导它：找规律后归纳、组合意义、有限微积分、写递归式，等等
+\end{example}
+
+\subsubsection*{方法一：找规律}
+    打表发现答案是 $\binom{n+m-1}{m}$。如何证明呢？可以按 $n+m$ 归纳：
+    $$
+    \begin{aligned}
+    &\sum_{1\le i_1\le \cdots\le i_m\le n}1\\
+    &=\sum_{1\le i_1\le \cdots\le i_m<n}1+\sum_{1\le i_1\le \cdots\le i_{m-1}\le i_m=n}1\\
+    &=\binom{(n-1)+m-1}{m}+\binom{n+(m-1)-1}{m-1}\\
+    &=\binom{n+m-1}{m}.
+    \end{aligned}
+    $$
+    $n=1$ 或 $m=1$ 的情况是显然的。
+\subsubsection*{方法二：组合意义}
+    我们可以编出很多种组合意义：
+    \begin{itemize}
+        \item 对每个 $t=1,2,\ldots,n$，考虑有多少个求和指标等于 $t$。这样相当于把 $m$ 个球放到 $n$ 个可空的桶里
+        \item 或者，考虑 $[1,i_1],(i_1,i_2],(i_2,i_3],\ldots,(i_{m-1},i_m],(i_m,n]$ 这 $m+1$ 个桶，其中第一个桶非空，其他可空。
+        \item 再或者，每个 $1\le i_1\le i_2\le\cdots\le i_m\le n$ 一一对应一条路径 $(1,1)\to (1,i_1)\to (2,i_1)\to (2,i_2)\to (3,i_2)\to (3,i_3)\to\cdots\to (m,i_m)\to (m+1,i_{m})\to (m+1,n)$ 的路径，其中 $(t,i_t)\to (t+1,i_t)$ 是一个向右的步，$(t,x)\to (t,x+1)$ 是一个向上的步。那么相当于从 $(1,1)$ 出发向右向上走到 $(m+1,n)$
+    \end{itemize}
+\subsubsection*{方法三：有限微积分}
+    这不过是 $\sum i^{\overline{k}}=\frac{i^{\overline{k+1}}}{k+1}$ 的反复应用：    
+$$
+    \begin{aligned}
+    \sum_{1\le i_1\le \cdots\le i_m\le n}1
+    &=\sum_{i_m=1}^n\sum_{i_{m-1}=1}^{i_m}\cdots\sum_{i_1=1}^{i_2}1=\sum_{i_m=1}^n\sum_{i_{m-1}=1}^{i_m}\cdots\sum_{i_2=1}^{i_3}i_2\\
+    &=\sum_{i_m=1}^n\sum_{i_{m-1}=1}^{i_m}\cdots\sum_{i_3=1}^{i_4}\frac{i_3^{\overline{2}}}{2}\\
+    &=\sum_{i_m=1}^n\sum_{i_{m-1}=1}^{i_m}\cdots\sum_{i_4=1}^{i_5}\frac{i_4^{\overline{3}}}{2\cdot 3}\\
+    &\vdots\\
+    &=\sum_{i_m=1}^n\frac{i_m^{\overline{m-1}}}{(m-1)!}=\frac{n^{\overline{m}}}{m!}=\binom{n+m-1}{m}.
+    \end{aligned}
+    $$
+\subsubsection*{方法四：写递归式}
+    $$
+    \begin{aligned}
+    f_{m,n}&=\sum_{1\le i_1\le \cdots\le i_m\le n}1\\
+    &=\sum_{i_m=1}^n\sum_{1\le i_1\le\cdots \le i_{m-1}\le i_m}\\
+    &=\sum_{i_m=1}^n f_{m-1,n}.
+    \end{aligned}
+    $$
+    差分就得到 $f_{m,n}-f_{m,n-1}=f_{m-1,n}$。或者，在一开始就考虑
+    $$
+    \begin{aligned}
+    f_{m,n}&=\sum_{1\le i_1\le \cdots\le i_m\le n}1\\
+    &=\sum_{i_m=1}^n\sum_{1\le i_1\le\cdots \le i_{m-1}\le i_m<n}1+\sum_{i_m=1}^n\sum_{1\le i_1\le\cdots \le i_{m-1}\le i_m=n}\\
+    &=f_{m,n-1}+f_{m-1,n}.
+    \end{aligned}
+    $$
+    那么如何解这个递推式呢？这是我们先前考虑过的\hyperref[example: 2d-recurrence]{例子}。\graffiti{然而之前这个例子是通过组合意义做的。}代入就得到
+    $$
+    f_{m,n}=\sum_{i=1}^m\binom{n+m-i-1}{m-i}f_{i,0}+\sum_{j=1}^n \binom{n+m-j-1}{n-j}f_{0,j}.
+    $$
+    这个初值应该是多少呢？$f_{i,0}$ 显然应该是 $0$，而 $f_{0,j}$ 的合理选择应该是 $1$，因为 $j=f_{1,j}=f_{0,j}+f_{1,j-1}=f_{0,j}+(j-1)$。这样我们就得到
+    $$
+    \begin{aligned}
+    f_{m,n}&=\sum_{j=1}^n \binom{n+m-j-1}{n-j}\\
+        &=\sum_{j=0}^{n-1}\binom{m+j-1}{j}\\
+        &=\binom{n+m-1}{m}.
+    \end{aligned}
+    $$
+    \graffiti{可是我们还没有学习组合数的处理}
+
+\subsubsection*{方法五：生成函数}
+    TODO：我们在第五章再来处理这个问题
+
+\section{差分再求和}
+
+我们接下来要介绍的重要技巧是\textbf{差分再求和}，也就是把 $f(i)$ 写成 $f(0)+\sum_{k=1}^i (f(k)-f(k-1))$\graffiti{注意这里 $i$ 需要是自然数}。然后通过交换求和号，我们往往能够对新的和式进行简化。
+
+\begin{example}
+    $$
+    i=\sum_{k=1}^i 1=\sum_{k\ge 1}[i\ge k].
+    $$
+\end{example}
+\begin{remark}
+    如果套上一层期望，我们就得到 $\mathbb{E}[X]=\sum_{k\ge 1}\Pr[X\ge k]$。
+\end{remark}
+
+\begin{example}[分部求和法]
+    $$
+    \begin{aligned}
+    \sum_{i=1}^na_ib_i&=\sum_{i=1}^na_i\left(b_0+\sum_{j=1}^i(b_j-b_{j-1})\right)\\
+    &=b_0\sum_{i=1}^na_i+\sum_{j=1}^n(b_j-b_{j-1})\sum_{i=j}^n a_i\\
+    &=b_0\sum_{i=1}^na_i+\sum_{j=1}^n(b_j-b_{j-1})\left(\sum_{i=1}^na_i-\sum_{i=1}^{j-1}a_i\right)\\
+    &=b_n\sum_{i=1}^na_i-\sum_{j=1}^n(b_j-b_{j-1})\sum_{i=1}^{j-1}a_i.
+    \end{aligned}
+    $$
+    注意以上的第二行和第四行都是可用的结论。也就是说，对 $a_ib_i$ 求和可以转为对 $(\sum a_i)(\Delta b_i)$ 求和。
+\end{example}
+    \begin{exercise}[数列求和再放送]
+        $$
+        \sum_{i=1}^n i^ka^i.
+        $$
+
+        使用分部求和法得到递推式，据此同样可以得到 $O(k^2)$ 的做法。\graffiti{这也是个很好的练习。}
+    \end{exercise}
+
+接下来的一个重要应用是对 $f(\min(a_1,\ldots,a_n))$ 或 $f(\max(a_1,\ldots,a_n))$ 的求和。
+\begin{example}
+    $$
+    \begin{aligned}
+    \sum_a f(\min(a_1,\cdots,a_n))&=\sum_a \left(f(0)+\sum_{i=1}^{\min(a_1,\cdots,a_n)}(f(i)-f(i-1))\right)\\
+    &=\left(\sum_a f(0)\right)+\sum_a\sum_{i\ge 1}[\min(a_1,\cdots,a_n)\ge i](f(i)-f(i-1))\\
+    &=\left(\sum_a f(0)\right)+\sum_{i\ge 1}(f(i)-f(i-1))\sum_a[\forall k,\ a_k\ge i].
+    \end{aligned}
+    $$
+    同理可以得到
+    $$
+    \sum_a f(\max(a_1,\cdots,a_n))=\left(\sum_a f(0)\right)+\sum_{i\ge 1}(f(i)-f(i-1))\sum_a [\exists k,\ a_k\ge i].
+    $$
+    这样可以把最值求和转成判定问题来计数。
+\end{example}
+\begin{remark}
+    最常见的应用是 $f(x)=x$。请你在上面的结果中代入它并熟悉一下得到的结果。
+\end{remark}
+\begin{exercise}
+    给一棵树，点有点权，求所有路径 $\min$ 的 $k$ 次方的和。
+\end{exercise}
+\begin{solution}
+    $$
+    \begin{aligned}
+        &\sum_{\text{路径}P}\min(P)^k=\sum_{\text{路径}P}\sum_{i=1}^{\min(P)}i^k-(i-1)^k\\
+        &=\sum_{i\ge 1}(i^k-(i-1)^k)\sum_{\text{路径}P}[\min(P)\ge i]\\
+        &=\sum_{i\ge 1}(i^k-(i-1)^k)\sum_{\text{路径}P}[P\text{ 是只保留权值 }\ge i \text{ 的点形成的森林中的一条路径}]\\
+        &=\sum_{i\ge 1}(i^k-(i-1)^k)\sum_{B}[B\text{ 是只保留权值 }\ge i\text{ 的点形成的森林中的一个连通块}]\binom{|B|+1}{2}
+    \end{aligned}
+    $$
+    假设点权从大到小为 $w_m,\ldots,w_1$。在 $i\in [w_i,w_{i+1})$ 时第二个求和的结果都相同，而 $i$ 从 $w_i$ 减小到 $w_i-1$ 时连通块会发生合并。并查集维护连通块大小即可。
+\end{solution}
+\begin{solution}[另解]
+    也可以直接枚举 $\min$ 的取值：
+    $$
+    \begin{aligned}
+        &\sum_{\text{路径}P}\min(P)^k=\sum_w w^k\sum_{\text{路径}P}[\min(P)=w]\\
+        &=\sum_{w}w^k\sum_{\text{路径}P}([\min(P)\ge w]-[\min(P)>w]\\
+    \end{aligned}
+    $$
+    剩下的过程是一样的。通过分部求和法也不难发现这两个式子相等。
+\end{solution}
+\begin{exercise}
+    给一个 $0$ 到 $n-1$ 的排列\graffiti{这里的排列一开始是数列，但是同学们注意到排列的做法并不能直接用到数列上。}，求所有区间的 $\mathrm{mex}$ 的 $k$ 次方的和。$\mathrm{mex}(S)$ 为 $S$ 中最小的没有出现过的自然数。\graffiti{但数列还是能做的。上树还能做吗？}[10em]
+\end{exercise}
+  
+\section{指示器变量}
+    如果 $X$ 形如“满足xxx条件的元素的个数”，那么把 $X$ 写成 $\sum_x [x\text{ 满足条件}]$ 常常是有效的。
+    \begin{remark}
+    这在\textbf{期望}中特别常见（称为“指示器随机变量”）。套上期望就得到 
+    $$
+    \mathbb{E}[X]=\sum_x \Pr[x\text{ 满足条件}].
+    $$
+    \end{remark}
+    \begin{example}
+        $1,\ldots,n$ 的所有排列的逆序对数之和是多少？
+    \end{example}
+    \begin{solution}
+        $$
+        \begin{aligned}
+        \sum_{\pi}\mathrm{inv}(\pi)&=\sum_{\pi}\sum_{i<j}[\pi_i>\pi_j]\\
+        &=\sum_{i<j}\sum_{\pi}[\pi_i>\pi_j]\\
+        &=\sum_{i<j}\frac{n!}{2}\\
+        &=\frac{n!}{2}\binom{n}{2},
+        \end{aligned}
+        $$
+        其中第二行到第三行使用了排列的对称性，即 $\pi_i>\pi_j$ 和 $\pi_i<\pi_j$ 的排列个数是一样多的。\graffiti{排列是最对称的东西。}
+    \end{solution}
+    \begin{exercise}
+    $1,\ldots,n$ 的所有排列 $\pi$ 的\textbf{严格前缀} $\mathbf{\max}$ \textbf{数量} 之和是多少？一个位置 $i$ 是严格前缀 $\max$ 当且仅当 $\forall j<i.\pi_i>\pi_j$。
+    \end{exercise}
+\section{幂的处理}
+\subsection{展开乘积}
+    把 $\left(\sum_i f(i)\right)^m$ 写成 $\sum_{i_1,i_2,\cdots,i_m}f(i_1)f(i_2)\cdots f(i_m)$ 常常是有用的。例如，我们可以用它证明下面的结论：
+    \begin{example}
+        设 $X_1,\cdots,X_n$ 是独立随机变量，则
+        $$
+        \begin{aligned}
+        \mathbb E\left[\left(\sum_i X_i\right)^2\right]&=\mathbb E\left[\sum_{i,j}X_iX_j\right]\\
+        &=\sum_{i,j}\mathbb E[X_iX_j]\\
+        &=\sum_{i\ne j}\mathbb E[X_i]\mathbb E[X_j]+\sum_{i=j} \mathbb E[X_iX_j]\\
+        &=\sum_i \mathbb E[X_i^2].
+        \end{aligned}
+        $$
+        对 $Y_i=X_i-\mathbb E[X_i]$ 使用这个结果，我们就得到了 $\mathrm{Var}[\sum_i X_i]=\sum_i \mathrm{Var}[X_i]$。\graffiti{考虑更高阶矩，然后考虑所有阶矩，然后想出矩生成函数，然后得到 Chernoff bound。}
+    \end{example}
+    另外，如果 $f(i)$ 的值只有 $0,1$，那么我们还有结论
+    $$
+    \left(\sum_i f(i)\right)^{\underline{m}}=\sum_{i_1\ne i_2\ne \cdots\ne i_m}f(i_1)f(i_2)\cdots f(i_m).
+    $$
+\subsection{普通幂和下降幂的互相转换}
+    $\sum_i i^k$ 并不好算，而 $\sum_i i^{\underline{k}}$ 容易计算。如果我们在开始处理问题之前进行一下这样的转换，那么问题常常会变得简单许多。
+
+    我们可以在 $O(k^2)$（甚至 $O(k\log^2 k)$）内在普通幂多项式 $\sum_i a_ix^i$ 和下降幂多项式 $\sum_i b_ix^{\underline{i}}$ 之间相互转换。有下面几种做法：
+
+    \subsubsection*{做法一：拉格朗日插值}
+    我们可以通过拉格朗日插值在普通幂多项式系数 $a_0,\ldots,a_n$ 和点值 $f(x_0),\ldots,f(x_n)$ 之间相互转换。如果我们将点值取为 $0,1,\ldots,n$，那么也可以方便地在下降幂多项式系数 $b_0,\ldots,b_n$ 和点值 $f(0),f(1),\ldots,f(n)$ 之间相互转换。具体来说，如果我们知道 $b_0,\ldots,b_n$，那么可以通过维护 $\sum_{i\ge k}b_i(x-k)^{\underline{i-k}}$ 来 $O(n)$ 计算所有点值。反过来，假设已知了所有 $f(0),\ldots,f(n)$。注意到
+    $$
+    f(t)=\sum_{i}b_it^{\underline{i}}=t!b_t+\sum_{i>t}b_i t^{\underline{i}},
+    $$
+    所以可以从高到低递推所有 $b_t$。这样，我们就通过点值表示的桥梁实现了普通幂与下降幂之间的互转。
+
+    \subsubsection*{做法二：直接递推}
+    可以在 $O(k)$ 内根据 $x^{\underline{k-1}}$ 的普通幂表示来计算 $x^{\underline{k}}$ 的普通幂表示，从而 $O(k^2)$ 计算所有 $x^{\underline{1}},\cdots,x^{\underline{k}}$ 的普通幂表示。反过来，注意到 $i<t$ 的 $a_ix^i$ 和 $b_ix^{\underline{i}}$ 对 $t$ 次及以上的项都没有影响，所以可以类似多项式除法从高到低计算所有 $\sum_{i}a_ix^i$ 转到 $\sum_i b_ix^{\underline{i}}$ 后的各项系数。具体来说，在 $\sum_i a_ix^i=\sum_{i}b_ix^{\underline{i}}$ 两侧提取 $x^t$ 的系数得到
+    $$
+    a_t=[x^t]\sum_i b_ix^{\underline{i}}=b_t+[x^t]\sum_{i>t}b_ix^{\underline{i}}.
+    $$
+    因此只要维护 $\sum_{i>t}b_ix^{\underline{i}}$ 就可以从高到低计算出所有 $b_t$。
+
+    \subsubsection*{做法三：斯特林数}
+    我们有结论
+    $$
+    x^k=\sum_i \begin{Bmatrix}k\\i\end{Bmatrix}x^{\underline{i}},\quad x^{\underline{k}}=\sum_i\begin{bmatrix}k\\i\end{bmatrix}x^i(-1)^{k-i}.
+    $$
+    然而，即使我们不知道斯特林数的定义，我们也可以通过类似扰动法的方式来计算出斯特林数满足的递推式，从而计算出斯特林数。具体来说，我们有 $\displaystyle  x^k=\sum_i \begin{Bmatrix}k\\i\end{Bmatrix}x^{\underline{i}}$，而另一方面有
+    $$
+    \begin{aligned}
+    x^k&=x\cdot x^{k-1}=\sum_i\begin{Bmatrix}k-1\\i\end{Bmatrix}x\cdot x^{\underline{i}}=\sum_i\begin{Bmatrix}k-1\\i\end{Bmatrix}\cdot x^{\underline{i}}(x-i+i)\\
+    &=\sum_i\begin{Bmatrix}k-1\\i\end{Bmatrix}\cdot (ix^{\underline{i}}+x^{\underline{i+1}})\\
+    &=\sum_i\left(\begin{Bmatrix}k-1\\i-1\end{Bmatrix}+i\begin{Bmatrix}k-1\\i\end{Bmatrix}\right)x^{\underline{i}}.
+    \end{aligned}
+    $$
+    比较系数就得到 $\displaystyle\begin{Bmatrix}k\\i\end{Bmatrix}=\begin{Bmatrix}k-1\\i-1\end{Bmatrix}+i\begin{Bmatrix}k-1\\i\end{Bmatrix}$。$k\brack i$ 也同理，递推式为 ${k\brack i}={k-1\brack i-1}+(k-1){k-1\brack i}$。
+
+    \begin{exercise}[数列求和再再放送]
+    先计算
+    $$
+    \sum_{i=0}^ni^{\overline{k}}a^i,
+    $$
+    然后得到又一个
+        $$
+        \sum_{i=1}^n i^ka^i.
+        $$
+    的 $O(k^2)$ 做法。\graffiti{这还是个很好的练习。}
+    \end{exercise}
+    \begin{remark}
+        因为大家都会 $O(k\log k)$ 求一行斯特林数，这是题解区最常见的做法。
+    \end{remark}
+    \begin{remark}
+    在上面的子问题中，假设 $0<a<1$，令 $n=\infty$，然后重新审视你的结果。
+    \end{remark}
+
+\section{拆括号容斥}
+    某些问题要求我们计数
+    $$
+    \sum (1-[P_1])(1-[P_2])\cdots (1-[P_k]),
+    $$
+    那么就可以拆括号变成
+    $$
+    \sum_{S\subseteq [k]} (-1)^{|S|}\sum \prod_{i\in S}[P_i],
+    $$
+    其中 $\sum\prod_i [P_i]$ 往往是容易算的。相比用集合表述的容斥公式，这种表述会更容易理解和记忆。\graffiti{全都记不住。}
+    \begin{exercise}
+        通过将 $|A|$ 写成 $\sum_x [x\in A]$，证明集合表述的容斥公式
+        $$
+        \left|\bigcap_{i=1}^k \bar{A}_i\right|=\sum_{S\subseteq [k]}(-1)^{|S|}\left|\bigcap_{i\in S}A_i\right|.
+        $$
+    \end{exercise}
+
+    很多时候 $\sum\prod_{i\in S}[P_i]$ 只和 $|S|$ 有关。记这个和为 $N(|S|)$，此时有
+    $$
+    \begin{aligned}
+    &\sum_{S\subseteq [k]} (-1)^{|S|}\sum \prod_{i\in S}[P_i]\\
+    &=\sum_{S\subseteq [k]}(-1)^{|S|}N(|S|)\\
+    &=\sum_i\binom{k}{i}(-1)^i N(i).
+    \end{aligned}
+    $$
+    更一般地，$\sum\prod_{i\in S}[P_i]$ 可能只和 $S$ 的某些更简单特征有关，比如 $V(S)=\sum_{i\in S}a_i$。记这个和为 $N(V(S))$，可以枚举 $v=V(S)$ 得到
+    $$
+    \begin{aligned}
+        &\sum_{S\subseteq [k]} (-1)^{|S|}\sum \prod_{i\in S}[P_i]\\
+        &=\sum_{S\subseteq [k]}(-1)^{|S|}N(V(S))\\
+        &=\sum_v N(v)\sum_{S\subseteq [k]}[V(S)=v](-1)^{|S|}.
+    \end{aligned}
+    $$    
+    可以用其他方法（如背包）统计后面这个求和。
+
+    我们可以用这个技巧来证明常用情形下的\textbf{二项式反演}。
+    记 $g_i=\sum_{|S|=i}\sum\prod_{i\in S}[P_i]$ 为“钦定了 $i$ 个性质的方案数”，那么就有
+    $$
+    \begin{aligned}
+    f_k&=\text{恰好满足}\ k\text{ 个性质的方案数}=\sum_{|S|=k}\sum \prod_{i\in S}[P_i]\prod_{j\notin S}(1-[P_j])\\
+    &=\sum_{|S|=k}\sum\left(\prod_{i\in S}[P_i]\right)\sum_{T\subseteq \bar S}(-1)^{|T|}\prod_{j\in T}[P_j]\\
+    &=\sum_{|S|=k}\sum_{T'\supseteq S}(-1)^{|T'|-|S|}\sum\prod_{i\in T'}[P_i]\qquad(T'=S\uplus T)\\
+    &=\sum_{n}\left(\sum_{|T'|=n}\sum\prod_{i\in T'}[P_i]\right)\left(\sum_{S\subseteq T',|S|=k}(-1)^{|T'|-|S|}\right)\\
+    &=\sum_n g_n\binom{n}{k}(-1)^{n-k}
+    \end{aligned}
+    $$
+    \begin{exercise}
+        反过来证明
+        $$
+        g_k=\sum_n f_n\binom{n}{k}.
+        $$
+    \end{exercise}
+    \begin{exercise}[另一个方向]
+        设 $h_i=\sum_{|S|=i}\sum\prod_{i\notin S}[\overline{P_i}]$ 为“至多满足 $i$ 个性质的方案数”，找出 $h$ 和 $f$ 之间的关系。
+    \end{exercise}
+\section{综合练习}
+    现在我们来看一个综合练习，它巩固了我们学过的技巧。
+    \begin{example}
+        长为 $n$ 的序列，每个都是 $1$ 到 $m$ 中的数。一个序列的价值为不同数的数量的 $k$ 次方，求所有序列的价值和。
+        
+        你可以认为 $k$ 非常小或者干脆就是个常数。\graffiti{虽然我们实际上至少可以做到 $O(k(\log k+\log n))$}
+    \end{example}
+    我们先看看小的情况。对于 $k=1$，这就是下面的子问题：
+    \begin{example}
+        长为 $n$ 的序列，每个都是 $1$ 到 $m$ 中的数。一个序列的价值为其中不同数的数量，求所有序列的价值和。
+    \end{example}
+    \begin{solution}
+            $$
+            \begin{aligned}
+            \sum_{a}w(a)&=\sum_a\sum_{i=1}^m[i\text{ 在 }a\text{ 中出现}]\\
+            &=\sum_{i=1}^m\sum_a[i\text{ 在 }\ a\text{ 中出现}]\\
+            &=\sum_{i=1}^m\sum_a(1-[i\text{ 不在 }\ a\text{ 中出现}])\\
+            &=\sum_{i=1}^m(m^n-(m-1)^n)\\
+            &=m(m^n-(m-1)^n)
+            \end{aligned}
+            $$
+    \end{solution}
+    \begin{solution}[另解]
+        \graffiti{这是同学给出的做法。}
+        $$
+        \begin{aligned}
+        \sum_{a}w(a)&=\sum_a\sum_{i=1}^n[a_i\text{ 这个值在 }\ a\text{ 中首次出现}]\\
+        &=\sum_a\sum_{i=1}^n[a_i\text{ 这个值在 }\ \{a_1,\ldots,a_{i-1}\}\text{ 中没有出现}]\\
+        &=\sum_{i=1}^n\sum_{x=1}^m\sum_{a}[a_i=x][x\text{ 在 }\ \{a_1,\ldots,a_{i-1}\}\text{ 中没有出现}]\\
+        &=\sum_{i=1}^n\sum_{x=1}^m(m-1)^{i-1}m^{n-i}=\sum_{i=1}^n(m-1)^{i-1}m^{n-i+1}\\
+        &=m^{n}\frac{1-((m-1)/m)^n}{1-(m-1)/m}=m(m^n-(m-1)^n).
+        \end{aligned}
+        $$
+    \end{solution}
+    对于一般的情况，我们首先使用前面提到的幂重写技巧：
+    $$
+    \begin{aligned}
+    \sum_{a}w(a)^k&=\sum_a\sum_{1\le i_1,i_2,\ldots,i_k\le m}[i_1,\ldots,i_k\text{ 都在 }\ a\text{ 中出现}]\\
+    &=\sum_{1\le i_1,i_2,\ldots,i_k\le m}\sum_a[i_1,\ldots,i_k\text{ 都在 }\ a\text{ 中出现}].
+    \end{aligned}
+    $$
+
+    观察小的情况，可以发现
+    $$
+    \sum_a[i_1,\ldots,i_k\text{ 都在 }\ a\text{ 中出现}]
+    $$
+    只与 $i_1,\ldots,i_k$ 中不同值的个数相关。并且，假设恰有 $t$ 个不同值，那么由对称性有
+    $$
+    \sum_a[i_1,\ldots,i_k\text{ 都在 }\ a\text{ 中出现}]=\sum_a[1,\ldots,t\text{ 都在 }\ a\text{ 中出现}].
+    $$
+    枚举 $i_1,\ldots,i_k$ 中不同值的个数，我们就得到
+    $$
+    \begin{aligned}
+        &\sum_{1\le i_1,i_2,\ldots,i_k\le m}\sum_a[i_1,\ldots,i_k\text{ 都在 }\ a\text{ 中出现}]\\
+        &=\sum_t\sum_{1\le i_1,i_2,\ldots,i_k\le m}[i_1,\ldots,i_k\text{ 恰有 }\ t\text{ 个不同值}]\sum_a[i_1,\ldots,i_k\text{ 都在 }\ a\text{ 中出现}]\\
+        &=\sum_t\left(\sum_{1\le i_1,i_2,\ldots,i_k\le m}[i_1,\ldots,i_k\text{ 恰有}\ t\text{ 个不同值}]\right)\left(\sum_a[1,\ldots,t\text{ 都在}\ a\text{ 中出现}]\right)
+        \end{aligned}
+    $$
+
+    现在，两个括号可以分别考虑。前面这部分是
+    $$
+    \sum_{1\le x_1<x_2<\cdots<x_t\le m}\sum_{1\le i_1,i_2,\ldots,i_k\le m}[\{i_1,\ldots,i_k\}\text{ 这个集合等于 }\{x_1,\ldots,x_t\}].
+    $$
+    由对称性，
+    $$
+    \sum_{1\le i_1,i_2,\ldots,i_k\le m}[\{i_1,\ldots,i_k\}=\{x_1,\ldots,x_t\}]=\sum_{1\le i_1,i_2,\ldots,i_k\le m}[\{i_1,\ldots,i_k\}=\{1,\ldots,t\}].
+    $$
+    接下来
+    $$
+    \begin{aligned}
+    &\sum_{1\le x_1<x_2<\cdots<x_t\le m}\sum_{1\le i_1,i_2,\ldots,i_k\le m}[\{i_1,\ldots,i_k\}\text{ 这个集合等于 }\{1,\ldots,t\}]\\
+    &=\binom{m}{t}\sum_{1\le i_1,i_2,\ldots,i_k\le t}[1,\ldots,t\text{ 都在 }(i_1,\ldots,i_k)\text{ 中出现}].
+    \end{aligned}
+    $$
+    注意到这和后半部分是相同形式的问题，所以我们来考虑下面的子问题：
+    \begin{example}
+        长为 $n$ 的序列，每个都是 $1$ 到 $m$ 中的数。要求 $1,\cdots,k$ 必须在序列中出现，求方案数。
+    \end{example}
+    记 
+    $$
+    f(n,m,k)=\sum_{1\le i_1,\ldots,i_n\le m}[1,\ldots,k\text{ 都在 }(i_1,\ldots,i_n)\text{ 中出现}].
+    $$
+    为这个问题的答案。容斥得到
+    $$
+    \begin{aligned}
+    f(n,m,k)&=\sum_{1\le i_1,\ldots,i_n\le m}\prod_{j=1}^k(1-[j\text{ 在 }\{i_1,\ldots,i_n\}\text{ 中不出现}])\\
+    &=\sum_{1\le i_1,\ldots,i_n\le m}\sum_{S\subseteq \{1,\ldots,k\}}(-1)^{|S|}[\forall x\in S,\ x\text{ 在 }\{i_1,\ldots,i_n\}\text{ 中不出现}]\\
+    &=\sum_{S\subseteq \{1,\ldots,k\}}(-1)^{|S|}\sum_{1\le i_1,\ldots,i_n\le m}[\forall x\in S,\ x\text{ 在 }\{i_1,\ldots,i_n\}\text{ 中不出现}]\\
+    &=\sum_{S\subseteq \{1,\ldots,k\}}(-1)^{|S|}(m-|S|)^n\\
+    &=\sum_t\binom{k}{t}(-1)^{t}(m-t)^n
+    \end{aligned}
+    $$
+    现在
+    $$
+    \begin{aligned}
+        &\sum_t\left(\sum_{1\le i_1,i_2,\ldots,i_k\le m}[i_1,\ldots,i_k\text{ 恰有}\ t\text{ 个不同值}]\right)\left(\sum_a[1,\ldots,t\text{ 都在}\ a\text{ 中出现}]\right)\\
+        &=\sum_{t=0}^k f(k,t,t)f(n,m,t)
+    \end{aligned}
+    $$
+    而
+    $$
+    f(n,m,k)=\sum_t\binom{k}{t}(-1)^t(m-t)^n
+    $$
+    可以 $O(k)$ 计算。故本题可以 $O(k^2)$ 完成。实际上，通过卷积也可以 $O(k\log k)$ 完成。\graffiti{我们还要说这句话多少遍？}    
+    \begin{remark}
+        事实上，$f(n,k,k)$ 就是第二类斯特林数 $k! {n \brace k}$：把 $1,\ldots,k$ 视作有标号盒子，$i_1,\ldots,i_n$ 视作球即可。
+    \end{remark}
+
+    现在来看看另一个推导的可能性。如果在一开始就枚举序列的价值，就得到
+    $$
+    \begin{aligned}
+    \sum_w w^k\sum_a [w(a)=w]&=\sum_w w^k\sum_a [a\text{ 中恰有}\ w\text{ 个不同值}]\\
+    &=\sum_w w^k\binom{m}{w}\sum_a[a\text{ 中出现的元素恰好是}\ \{1,\ldots,w\}]\\
+    &=\sum_w w^k\binom{m}{w}f(n,w,w)
+    \end{aligned}
+    $$
+    然而这个并不能直接用于计算，因为 $w$ 有意义的范围高达 $[0,\min(n,m)]$。\graffiti{化简这个式子来用于计算需要比较高超的技巧。}
+
+    最后我们留下两个练习来巩固一下这个例子中用到的技巧。
+    \begin{exercise}
+        长为 $n$ 的序列，每个都是 $1$ 到 $m$ 中的数。定义一个序列 $a$ 的权值 $w(a)$ 为 $a$ 中不同数的数量。在 $O(k^2)$ 时间内完成
+        \begin{itemize}
+            \item 求所有序列的 $(w(a))^{\underline{k}}$ 的和
+            \item 给定 $k$ 次多项式 $f$，求所有序列的 $f(w(a))$ 的和
+        \end{itemize}
+    \end{exercise}
+% \begin{frame}
+%     $$
+%     \begin{aligned}
+%       \sum_w w^k\binom{m}{w}f(n,w,w)&=\sum_w w^k\binom{m}{w}\sum_t \binom{w}{t}(-1)^t(w-t)^n\\
+%       &=\sum_t(-1)^t\binom{m}{t}\sum_w w^k\binom{m-t}{w-t}(w-t)^n\\
+%       &=\sum_t(-1)^t\binom{m}{t}\sum_w (w+t)^k\binom{m-t}{w}w^n\\
+%       &=\sum_t (-1)^t\binom{m}{t}\sum_w\binom{m-t}{w}w^n\sum_j\binom{k}{j}w^jt^{k-j}\\
+%       &=\sum_t (-1)^t\binom{m}{t}\sum_w\binom{m}{w}(w-t)^n\sum_j{k\brace j}j!\binom{w}{j}\\
+%       &=\sum_t (-1)^t\sum_j{k\brace j}j!\binom{m}{j}\sum_w\binom{m-j}{w-j}(w-t)^n  
+%     \end{aligned}
+%     $$
+% \end{frame}
+% \begin{frame}
+%     $$
+%     \begin{aligned}
+%     \sum_n\frac{z^n}{n!}\sum_w w^k\binom{m}{w}{n\brace w}w!&=\sum_w\binom{m}{w}w^kw!\sum_n\frac{z^n}{n!}{n\brace w}\\
+%     &=\sum_w\binom{m}{w}w^k(e^z-1)^w\\
+%     &=\sum_w\binom{m}{w}(e^z-1)^w\sum_j{k\brace j}j!\binom{w}{j}\\
+%     &=\sum_j{k\brace j}j!\binom{m}{j}\sum_w(e^z-1)^{w-j+j}\binom{m-j}{w-j}\\
+%     &=\sum_j{k\brace j}j!\binom{m}{j}(e^z-1)^je^{(m-j)z}\\
+%     \end{aligned}
+%     $$
+% \end{frame}
+\section{补充的 OI 题及解答}
+    补充的 OI 练习题：洛谷 P5686 P4948 P4091 U77198
+
+    \begin{example}[[CSP-S 2019 江西] 和积和]
+        \graffiti{没有人不会这个题，所以我们就不讲了。}
+        $$
+        \sum_{l=1}^n\sum_{r=1}^n\sum_{i=l}^ra_i\sum_{i=l}^r b_i.
+        $$
+
+        需要 $O(n^2)$.
+    \end{example}
+
+    \begin{example}[三角形]
+        求边长为整数、周长为 $n$ 的三角形的数量，旋转和翻转视为同一种方案（也就是边无序）。需要 $O(1)$。
+    \end{example}
+
+
+    \subsubsection*{直接的推法 1}
+    $$
+    \begin{aligned}
+        &\sum_{i,j,k}[1\le i\le j\le k\le n][i+j+k=n][i+j>k]\\
+        &=\sum_{i,j}[1\le i\le j\le n-i-j][i+j>n-i-j]\\
+        &=\sum_{1\le i\le j}[i\le n-2j][i>\frac{n}{2}-j]\\
+        &=\sum_{j\ge 1}\sum_{i\ge 1}[\frac{n}{2}-j<i\le \min(j,n-2j)]
+    \end{aligned}
+    $$
+
+    接下来分类讨论 $\min(j,n-2j)$ 是哪个。当 $j\le n-2j$ 也就是 $j\le n/3$ 时是 $j$，否则也就是 $j>n/3$ 时是 $n-2j$。
+    
+    $j\le n/3$ 的部分如下：
+    $$
+    \sum_{1\le j\le n/3}\sum_{i\ge 1}[\frac{n}{2}-j<i\le j].
+    $$
+    在 $i$ 的合法区间非空，也就是 $j<n/4$ 时，合法的 $i$ 有 $j-\lfloor n/2-j\rfloor=2j-\lfloor n/2\rfloor$ 个。所以这部分是
+    $$
+    \sum_{n/4<j\le n/3}(2j-\lfloor n/2\rfloor),
+    $$
+    等差数列求和。
+    
+    $j>n/3$ 的部分如下：
+    $$
+    \sum_{n/3<j}\sum_{i\ge 1}[\frac{n}{2}-j<i\le n-2j].
+    $$
+    在 $i$ 的合法区间非空，也就是 $j<n/2$ 时，合法的 $i$ 有 $n-2j-\lfloor n/2-j\rfloor=\lceil n/2\rceil-j$ 个。所以这部分是
+    $$
+    \sum_{n/3<j<n/2}(\lceil n/2\rceil-j),
+    $$
+    同样等差数列求和。
+
+\subsubsection*{直接的推法 2}
+    在最开始的条件转化中，除了先对 $j$ 再对 $i$ 求和外，也可能会变成先对 $i$ 求和再对 $j$ 求和。注意到这样子势必会引入 $j\le\frac{n-i}{2}$ 这样的条件，从而内层对 $j$ 的求和会带上 $\lfloor (n-i)/2\rfloor$ 这样的东西。回顾我们的第一条化简准则——保持求和的条件简单，这样的转化不应该首先被考虑。首先考虑的应该是计算不等式中不带系数的 $i$ 的合法区间。
+    
+    不过，即使出现了 $\lfloor i/2\rfloor$ 这样的求和也不要担心，我们可以将其写成 $\frac{i-(i\bmod 2)}{2}$ 的形式，而 $i\bmod 2=[i\text{ 是奇数}]$。所以在计算 $\sum_{i} T(i)(i\bmod 2)$ 时，可以做代换 $i=2k+1$ 变成 $\sum_{2k+1}T(2k+1)$。
+
+    我们将在第三章见到更多更一般的处理带有取整的求和的方法。
+\subsubsection*{容斥的推法}
+    使用容斥可以得到简单一些的推法。
+    $$
+    \begin{aligned}
+        &\sum_{i,j,k}[1\le i\le j\le k\le n][i+j+k=n][i+j>k]\\
+        &=\sum_{i,j,k}[i+j+k=n][1\le i\le j\le n-i-j\le n](1-[i+j\le n-i-j])\\
+        &=\sum_{1\le i\le j}[j\le n-i-j]-\sum_{1\le i\le j}[j\le n-i-j][i+j\le n-i-j]
+    \end{aligned}
+    $$
+    前半部分是
+    $$
+    \begin{aligned}
+        &\sum_{1\le i\le j}[j\le n-i-j]\\
+        &=\sum_{1\le j}\sum_{i=1}^j[i\le n-2j]\\
+        &=\sum_{1\le j\le n/3}\sum_{i=1}^j 1+\sum_{n/3<j}\sum_{i=1}^{n-2j}1\\
+        &=\sum_{1\le j\le \lfloor n/3\rfloor}j+\sum_{j=\lfloor n/3\rfloor+1}^{\lfloor n/2\rfloor}(n-2j),\\
+    \end{aligned}
+    $$    
+    等差数列求和。
+
+    后半部分是
+    $$
+    \begin{aligned}
+        &\sum_{1\le i\le j}[j\le n-i-j][i+j\le n-i-j]=\sum_{1\le i\le j}[i+j\le n-i-j]\\
+        &=\frac{1}{2}\left(\sum_{1\le i,j}[i+j\le n-i-j]+\sum_{1\le i=j}[i+j\le n-i-j]\right)\\
+        &=\frac{1}{2}\left(\sum_{1\le i,j}\sum_d[i+j=d][i+j\le n/2]+\sum_{1\le i=j}[i+j\le n/2]\right)\\
+        &=\frac{1}{2}\left(\sum_d\sum_{1\le i,j}[i+j=d][d\le n/2]+\sum_{1\le i}[i\le n/4]\right)\\
+        &=\frac{1}{2}\left(\sum_{d=2}^{\lfloor n/2\rfloor}(d-1)+\lfloor n/4\rfloor\right)\\
+    \end{aligned}
+    $$
+    同样是等差数列求和
+    
+    \subsubsection*{对称性的推法}
+    首先，注意到 $P(i,j,k)=[i+j+k=n][i,j,k\text{ 构成三角形}]$ 是完全对称的。如果你知道 Burnside 引理，或者尝试使用对称性并手算系数的话，可以发现
+    $$
+    \sum_{1\le i\le j\le k}P(i,j,k)=\frac{1}{6}\left(2\sum_{1\le i=j=k} P(i,j,k)+3\sum_{1\le i=j,k}P(i,j,k)+\sum_{1\le i,j,k}P(i,j,k)\right).
+    $$
+    接下来，注意到
+    $$
+    \begin{aligned}
+    P(i,j,k)&=[i+j+k=n][i,j,k\text{ 构成三角形}]\\
+    &=[i+j+k=n][i+j+k>2\max(i,j,k)]\\
+    &=[i+j+k=n][\max(i,j,k)<\frac{n}{2}]\\
+    &=[i+j+k=n][i,j,k<\frac{n}{2}]\\
+    &=[i+j+k=n](1-[i\ge n/2])(1-[j\ge n/2])(1-[k\ge n/2])\\
+    \end{aligned}
+    $$
+    注意在 $1\le i,j,k$ 的限制下，拆括号后如果一项中出现了两个或更多 $[i\ge n/2]$ 的乘积，那么这个项不会有贡献（因为此时 $i+j+k$ 必定超过 $n$）。类似地，$i=j,k$ 这个求和里面不会拆出来 $[i\ge n/2]$ 的项。所以我们有
+    $$
+    \sum_{1\le i=j=k}P(i,j,k)=\sum_{1\le i}[3i=n]=[3\mid n],
+    $$
+    $$
+    \begin{aligned}
+    \sum_{1\le i=j,k}P(i,j,k)&=\sum_{1\le i=j,k}[i+j+k=n](1-[k\ge n/2])\\
+    &=\sum_{1\le i}[n-2i\ge 1]-\sum_{1\le i}[n/2\le n-2i]\\
+    &=\left\lfloor\frac{n-1}{2}\right\rfloor-\left\lfloor\frac{n}{4}\right\rfloor.
+    \end{aligned}
+    $$
+    以及
+    $$
+    \begin{aligned}
+    &\sum_{1\le i,j,k}P(i,j,k)\\
+    &=\sum_{1\le i,j,k}[i+j+k=n](1-[i\ge n/2]-[j\ge n/2]-[k\ge n/2])\\
+    &=\sum_{1\le i,j,k}[i+j+k=n]-3\sum_{1\le i,j,k}[i+j+k=n][i\ge n/2]\\
+    &=\sum_{1\le i,j,k}[i+j+k=n]-3\sum_{1\le (i-\lceil n/2\rceil+1),j,k}[(i-\lceil n/2\rceil+1)+j+k=n-(\lceil n/2\rceil-1)]\\
+    &=\binom{n-1}{2}-3\binom{\lfloor n/2\rfloor-2}{2},
+    \end{aligned}
+    $$
+
+    这个做法可以比较方便地从三角形扩展到一般的 $k$ 边形（在旋转和翻转下数等价类）。
+
+\begin{summary}
+    \begin{itemize}
+        \item 熟悉求和符号和艾弗森括号的使用
+        \item 处理和式的基本方法：简化条件、提出无关项、拆开 $\sum (a_i+b_i)$、下标变换、交换求和号
+        \item 处理和式的常见技巧：扰动法、对称、差分再求和、分部求和法、指示器变量、和的幂的展开
+        \item 拆括号容斥
+        \item 下降幂的差分与求和，普通幂和下降幂的互转
+    \end{itemize}
+\end{summary}

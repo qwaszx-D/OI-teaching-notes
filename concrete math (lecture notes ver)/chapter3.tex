@@ -1,0 +1,373 @@
+\chapter{取整函数}
+\begin{overview}
+    \begin{itemize}
+    \item 同余等差数列的结构
+    \item 处理取整的一些技巧
+    \item 整除分块
+    \item 单位根反演
+    \end{itemize}
+\end{overview}
+\section{课前任务}
+    阅读《具体数学》第三章。本章中最重要的内容包括：底和顶（上/下取整）的定义与等价不等式、含有取整的求和的处理方法、$\bmod$ 的部分应用。
+    
+    挑选的部分习题：1 3 7 9 12 16 20 22 31 36 39 
+
+    % 课堂练习：2 5 8 10 14 17 21 23 34
+\section{同余等差数列的结构}
+    序列 $(ik\bmod n)_{i=0}^{n-1}$ 长什么样子？当 $\gcd(k,n)=1$ 时，这是 $0,\ldots,n-1$ 的一个排列。这是因为对任何 $0\le i<j<n$，$n\not|(j-i)k$，从而 $ik\bmod n\ne jk\bmod n$。
+
+    当 $\gcd(k,n)=d$ 时，$ik\bmod n=d(i(k/d)\bmod (n/d))$，而 $\gcd(k/d,n/d)=1$。所以此时序列是 $0,\ldots,n/d-1$ 的一个排列重复 $d$ 次。
+\section{处理取整的一些技巧}
+    技巧一：$\left\lfloor\frac{n}{m}\right\rfloor=\frac{n}{m}-\frac{n\bmod m}{m}$。另外，在分子比较复杂时，提前分离出整除的部分常常是方便的，如
+    $$
+    \begin{aligned}
+    \sum_{i=0}^{m-1}\left\lfloor\frac{n+i}{m}\right\rfloor&=\sum_{i=0}^{m-1}\left\lfloor\frac{m\lfloor n/m\rfloor+(n\bmod m)+i}{m}\right\rfloor\\
+    &=\sum_{i=0}^{m-1}\left\lfloor\frac{n}{m}\right\rfloor+\left\lfloor\frac{(n\bmod m)+i}{m}\right\rfloor\\
+    &=m\left\lfloor\frac{n}{m}\right\rfloor+\sum_{i=0}^{m-1}[(n\bmod m)+i\ge m]\\
+    &=m\left\lfloor\frac{n}{m}\right\rfloor+(n\bmod m)\\
+    &=n
+    \end{aligned}
+    $$
+
+    技巧二：在处理含有取整的求和时，可以引入一个新的求和变量替代取整，然后将原本的取整变为一个不含取整的条件括号。形式化地说，就是
+    $$
+    \lfloor x\rfloor=\sum_k k[\lfloor x\rfloor=k]=\sum_k k[k\le x<k+1].
+    $$
+
+    技巧三：把一个量写成差分的前缀和再次发挥作用。例如 $\lfloor x\rfloor^2=\sum_{i\ge 1}(i^2-(i-1)^2)[i\le \lfloor x\rfloor]=\sum_{i\ge 1}(i^2-(i-1)^2)[i\le x]$。在使用技巧二和三时，要记得交换求和总是很有用。
+
+    技巧四：另一种差分技巧，将 $S(N)$ 写作 $S(0)+\sum_{n=1}^N(S(n)-S(n-1))$。一般配合 $\lfloor\frac{n}{i}\rfloor-\lfloor\frac{n-1}{i}\rfloor=[i|n]$ 使用。
+
+    \begin{example}
+        $$
+        \begin{aligned}
+        \sum_{i\ge 1}\left\lfloor\frac{N}{i}\right\rfloor&=\sum_{n=1}^N \sum_{i\ge 1}\left\lfloor\frac{n}{i}\right\rfloor-\left\lfloor\frac{n-1}{i}\right\rfloor\\
+        &=\sum_{n=1}^N \sum_{i\ge 1}[i|n]\\
+        &=\sum_{n=1}^N d(n),
+        \end{aligned}
+        $$
+        其中 $d(n)$ 为 $n$ 的约数个数。
+    \end{example}
+
+    \begin{example}
+    对所有 $1\le n\le N$ 求
+    $$
+    S(n)=\sum_{i=1}^n a_i\left\lfloor\frac{n}{i}\right\rfloor.
+    $$ 
+
+    $N\le 10^6$
+    \end{example}
+\begin{solution}
+    $$
+    \begin{aligned}
+    \nabla S(n)&=S(n)-S(n-1)\\
+    &=\sum_{i\ge 1}a_i\left(\left\lfloor\frac{n}{i}\right\rfloor-\left\lfloor\frac{n-1}{i}\right\rfloor\right)\\
+    &=\sum_{i\ge 1}a_i[i|n]\\
+    &=\sum_{i|n}a_i.
+    \end{aligned}
+    $$
+
+    枚举 $i$，对所有 $i$ 的倍数 $n$ 令 $\nabla S(n)\leftarrow \nabla S(n)+a_i$。最后再做一次前缀和还原出 $S$。复杂度 $O(nH_n)=O(n\ln n)$。
+\end{solution}
+\begin{remark}
+    $\nabla S(n)=A\ast \mathbf 1$ 实际上是狄利克雷前缀和，可以 $O(n\log\log n)$ 计算。\graffiti{2025 年大家发现了一般序列狄利克雷卷积的 $O(n(\log\log n)^2)$ 算法。参见\href{https://www.cnblogs.com/Elegia/p/18795045/alternative-dirichlet-convolution}{EI 博客}。}
+\end{remark}
+\begin{solution}[另解]
+    枚举 $i$，则 $a_i$ 在一个 $\lfloor n/i\rfloor$ 的等值段上都会对 $S(n)$ 造成相同的贡献 $a_i\lfloor n/i\rfloor$。等值段为所有的 $[ki,(k+1)i)$，有 $O(n/i)$ 段。所以问题变成 $O(nH_n)$ 个区间加，最后求所有值，差分即可。
+\end{solution}
+
+
+\section{整除分块}
+    $\lfloor n/i\rfloor$ 只有 $\le 2\sqrt{n}$ 种不同的取值（要么 $n/i\le \sqrt{n}$，要么 $i\le \sqrt{n}$）。在一个 $\lfloor n/i\rfloor$ 的等值区间内，可以做一些批量的操作（如区间加/求和等）。
+
+    如何得知一个等值段的端点？假设目前在 $i$，我们希望知道最大的满足 $\lfloor n/j\rfloor=\lfloor n/i\rfloor$ 的 $j$。记 $t=\lfloor n/i\rfloor$，则 $\lfloor n/j\rfloor\ge t\Longleftrightarrow n/j\ge t\Longrightarrow j\le n/t\Longrightarrow j\le\lfloor n/t\rfloor$。所以最大的满足 $\lfloor n/i\rfloor=\lfloor n/j\rfloor$ 的 $j$ 即为 $\lfloor n/t\rfloor$。
+
+    \begin{example}[最常见的形式]
+        $$
+        \sum_{i=1}^n f(\lfloor n/i\rfloor)g(i).
+        $$
+    \end{example}
+    \begin{solution}
+        根据 $\lfloor n/i\rfloor$ 的值划分等值段，每段内的求和都形如 $\sum_{i=L}^R f(t)g(i)=f(t)\sum_{i=L}^R g(i)$，那么整个式子可以在 $O(\sqrt{n}\cdot\ \text{time}(\text{计算一次}\ g\ \text{的区间和}))$ 内完成。$g$ 的区间和通常可以快速计算（比如提前预处理前缀和）。
+    \end{solution}
+    \begin{remark}
+        典型的无需预处理也可以快速计算的 $g$ 是 $P(i)r^i$（其中 $P$ 是低次多项式）。
+    \end{remark}
+
+    \begin{example}[模积和]
+        求
+        $$
+        \sum_{i=1}^n\sum_{j=1}^m[i\ne j](n\bmod i)(m\bmod j).
+        $$
+        $n,m\le 10^9$
+    \end{example}
+    \begin{solution}
+        不妨设 $n\le m$。首先容斥掉 $i\ne j$ 的限制得到
+        $$
+        \left(\sum_{i=1}^n n\bmod i\right)\left(\sum_{j=1}^m m\bmod j\right)-\sum_{i=1}^n(n\bmod i)(m\bmod j).
+        $$
+
+        先看前半部分。乘积的两部分是同一种形式，考虑如何计算其中一个。把 $n\bmod i$ 写作 $n-i\lfloor n/i\rfloor$，则每个 $\lfloor n/i\rfloor$ 的等值段内的 $\sum_i n-i\lfloor n/i\rfloor$ 是容易计算的。
+
+        再看后半部分，类似地改写 $\bmod$ 得到
+        $$
+        \sum_{i=1}^n (n-i\lfloor n/i\rfloor)(m-i\lfloor m/i\rfloor).
+        $$
+
+        扩展前面等值段的想法，考虑 $i$ 的段划分，满足在每一段上 $\lfloor n/i\rfloor$ 相同、$\lfloor m/i\rfloor$ 也相同。注意这些段的断点是由「 $\lfloor n/i\rfloor$ 的段划分断点 $\cup$ $\lfloor m/i\rfloor$ 的段划分断点」形成的，所以总共的段数不超过 $2(\sqrt{n}+\sqrt{m})$。
+
+        实现时，只要每次在 $\lfloor n/i\rfloor$ 的下一个变值点和 $\lfloor m/i\rfloor$ 的下一个变值点中取一个较小的跳过去即可。
+    \end{solution}
+    \begin{example}
+        求
+        $$
+        \sum_{i\ge 1}\left\lfloor \frac{n}{i^2}\right\rfloor.
+        $$
+        $n\le 10^{18}$
+    \end{example}
+    \begin{solution}
+        注意到要么 $i\le \sqrt[3]{n}$，要不然 $i>\sqrt[3]{n}\Rightarrow n/i^2<\sqrt[3]{n}$，所以 $\lfloor n/i^2\rfloor$ 只有不超过 $2\sqrt[3]{n}$ 个不同的值。
+
+        下一个变值点可以这样算：$\lfloor n/i^2\rfloor\ge t\Longleftrightarrow n/i^2\ge t\Longrightarrow i\le \sqrt{n/t}\Longrightarrow i\le\lfloor\sqrt{n/t}\rfloor$. 所以最大的满足 $\lfloor n/i^2\rfloor=\lfloor n/j^2\rfloor$ 的 $j$ 即为 $\lfloor\sqrt{n/t}\rfloor$。
+    \end{solution}
+    
+
+
+
+\begin{example}[整除分块的嵌套]
+    求
+
+    $$
+    \sum_{i,j\ge 1}\left\lfloor\frac{n}{ij}\right\rfloor.
+    $$
+
+    $n\le 10^{10}$
+
+    另外，你能证明这是一个积性函数前缀和吗？
+\end{example}
+\begin{remark}
+    不难用差分技巧发现原式即为
+    $$
+    \sum_{i=1}^N\sum_{j\mid i}\sum_{k\mid \frac{i}{j}}1=\sum_{i=1}^N (1\ast 1\ast 1)(i),
+    $$
+    这是一个积性函数前缀和，可以用 zky 筛做到 $\tilde O\footnotemark(\sqrt{n})$。然而没什么实用价值。
+    \footnotetext{$\tilde O(f(n))$ 代表 $O(f(n)\log^{O(1)}f(n))$，用在不关心 $\log$ 因子的时候。然而，OI 中 $\log$ 因子几乎总是重要的。}
+\end{remark}
+\begin{solution}
+    $$
+    \sum_{i,j\ge 1}\left\lfloor\frac{n}{ij}\right\rfloor=\sum_{i\ge 1}\sum_{j\ge 1}\left\lfloor\frac{\lfloor n/i\rfloor}{j}\right\rfloor.
+    $$
+
+    记 $f(n)=\sum_{j\ge 1}\lfloor n/j\rfloor$，则原式即 $\sum_{i\ge 1}f(\lfloor n/i\rfloor)$.
+
+    枚举所有 $\lfloor n/i\rfloor$ 的等值段，每次花费 $O(\sqrt{n/i})$ 的复杂度。总复杂度为
+    $$
+    O\left(\sum_{i=1}^{\sqrt{n}}\sqrt{i}+\sum_{i=1}^{\sqrt{n}}\sqrt{n/i}\right).
+    $$
+
+    这个如何计算？使用一些微积分知识，我们有下面的结果
+    \begin{lemma}
+        \graffiti{我更愿意称之为「事实」而非「引理」}
+         对 $\alpha\in\mathbb R$，当 $n\to\infty$ 时，
+        $$
+        \sum_{i=1}^n i^{\alpha}\sim \begin{cases}\frac{n^{\alpha+1}}{\alpha+1}&\alpha>-1\\\ln n&\alpha=-1\\ \zeta(-\alpha)=O(1)&\alpha<-1\end{cases}.
+        $$
+
+        另外，在 $\alpha<-1$ 的时候还有
+        $$
+        \sum_{i\ge n}i^{\alpha}\sim \frac{n^{\alpha+1}}{\alpha+1}.
+        $$
+    \end{lemma}
+
+    所以这个复杂度就是
+    $$
+    O\left(\sum_{i=1}^{\sqrt{n}}i^{1/2}+\sqrt{n}\sum_{i=1}^{\sqrt{n}}i^{-1/2}\right)=O((\sqrt{n})^{3/2}+\sqrt{n}\cdot(\sqrt{n})^{1/2})=O(n^{3/4}).
+    $$
+\end{solution}
+\begin{solution}[更进一步]
+    我们可以通过预处理做到更好的复杂度。在先前的例子中，我们已经证明了 $f(n)$ 是约数个数函数 $d(n)$ 的前缀和。对于任何积性函数，我们可以用线性筛筛出其前 $n$ 项，进而求出其前缀和。所以，我们可以用 $O(B)$ 的复杂度预处理所有 $k\le B$ 的 $f(k)$。对于 $k>B$ 的部分，我们还是用整除分块计算。假设 $B>\sqrt{n}$。现在，只有 $\lfloor n/i\rfloor \ge B$ 也就是 $i\le n/B$ 的部分需要使用整除分块，总复杂度为
+    $$
+    O\left(B+\sum_{i=1}^{n/B}\sqrt{n}i^{-1/2}\right)=O\left(B+n/B^{1/2}\right).
+    $$
+
+    为寻求其最小值，我们可以令 $B=n/B^{1/2}$，这样得到 $B=n^{2/3}$。此时，上面的复杂度变成 $O(n^{2/3})$。
+\end{solution}
+
+\section{单位根反演}\graffiti{这个名字应该是 OI 圈生造的。反演在哪？}
+    假设存在某个 $\omega_n$ 使得
+    $$
+    \frac{1}{n}\sum_{j=0}^{n-1}(\omega_n^i)^j=[i\bmod n=0],
+    $$
+    则把 $[i\bmod n=0]$ 用这个和式替代往往是有用的。
+    \begin{exercise}
+    对于 $[i\bmod n=j]$，导出一个类似的和式
+    \end{exercise}
+
+    \textbf{本原单位根}就满足这个性质。定义如下：
+    \begin{definition}[单位根（root of unity）]
+        任何满足 $\omega_n^n=1$ 的元素 $\omega_n\in\mathbb F$ 都是域 $\mathbb F$ 中的一个 $n$ 次\textbf{单位根}。如果额外满足 $\forall 0<i<n,\omega_n^i\ne 1$，那么称为 $n$ 次\textbf{本原单位根}。  
+    \end{definition}
+
+    下面我们说单位根的时候都指的是本原单位根。
+
+    \begin{exercise}
+        对于本原单位根 $\omega_n$，证明 $\omega_n,\omega_n^1,\omega_n^2,\cdots,\omega_n^{n-1},1$ 为方程 $x^n=1$ 的 $n$ 个\textbf{不同}的根。
+    \end{exercise}
+
+    \begin{remark}
+            目前，你可以认为域是一个可以做加减乘除的集合。常见的域包括有理数 $\mathbb Q$，实数 $\mathbb R$，复数 $\mathbb C$，以及 OI 中最常见的有限域 $\mathbb F_p$（可以认为是 $\bmod\ p$ 下做运算）。需要注意前面几个和最后一个的性质很不相同\graffiti{这是因为它们的\textbf{特征}不同}。
+    \end{remark}
+    \begin{theorem}[“单位根反演”]
+        设 $\omega_n$ 是一个 $n$ 次本原单位根，那么
+        $$
+        \frac{1}{n}\sum_{j=0}^{n-1}(\omega_n^i)^j=[i\bmod n=0].
+        $$
+    \end{theorem}
+    \begin{proof}
+        考虑
+        $$
+        \sum_{j=0}^{n-1}(\omega_n^i)^j
+        $$
+        是什么。首先有 $\omega_n^{i}=\omega_n^{i\bmod n}$。所以不妨设 $0\le i<n$。当 $i=0$ 时，每一项都是 $\omega_n^{0\cdot j}=1$；当 $i\ne 0$ 时，这是等比数列求和
+        $$
+        \frac{1-(\omega_n^i)^n}{1-\omega_n^i}=0.
+        $$
+
+        所以
+        $$
+        \sum_{j=0}^{n-1}(\omega_n^i)^j=\begin{cases}
+            n&i\bmod n=0\\
+            0&\text{otherwise}
+        \end{cases}
+        =n[i\bmod n=0]
+        $$
+    \end{proof}
+    \begin{example}
+        在特征不为 $2$ 的域中，$\pm 1$ 是 $x^2=1$ 的两个根，所以 $-1$ 可以作为 $\omega_2$。于是我们有
+        $$
+        [n\bmod 2=0]=\frac{1^n+(-1)^n}{2},\quad [n\bmod 2=1]=\frac{1^n-(-1)^n}{2},
+        $$
+        这也许是最常见的应用。
+
+        在复数域 $\mathbb C$ 上，$e^{2\pi i/n}$ 是一个 $n$ 次单位根。
+
+        在数论中有原根的概念。我们只考虑模素数 $p$ 的情况：如果 $g,g^2,\cdots,g^{\varphi(n)-1},g^{p-1}=1$ 在 $\bmod\ p$ 下互不相同，则称 $g$ 是 $\bmod\ p$ 下的一个原根。换句话说，$g$ 是 $\bmod\ p$ 下的一个 $p-1$ 次单位根。例如，$3$ 是 $998244353$ 的一个原根，所以是 $\bmod\ 998244353$ 时的 $998244352=2^{23}\times 7\times 17$ 次单位根。
+
+        $\omega_n^{d}$ 是一个 $n/\gcd(n,d)$ 次单位根。所以，在 $\bmod\ p$ 时，如果 $n\mid (p-1)$，那么 $\omega_{p-1}^{(p-1)/n}=g^{(p-1)/n}$ 就是一个 $n$ 次单位根，其中 $g$ 是 $\bmod\ p$ 下的原根。
+    \end{example}
+    \begin{example}
+            求 $\sum_{i}\binom{n}{2i}x^{2i}$ 的封闭形式.
+
+    $2$ 换成 $3$ 或者 $4$ 呢？
+    \end{example}
+    \begin{solution}
+        $$
+        \begin{aligned}
+        \sum_i \binom{n}{2i}x^{2i}&=\sum_i [i\bmod 2=0]\binom{n}{i}x^i\\
+        &=\sum_{i}\binom{n}{i}x^i\cdot \frac{1^i+(-1)^i}{2}\\
+        &=\frac{(1+x)^n+(1-x)^n}{2}.
+        \end{aligned}
+        $$
+
+        更一般地，不难得到
+        $$
+        \sum_i \binom{n}{ki+r}x^{ki+r}
+        $$
+        的做法（$0\le r<k$，假设 $\omega_k$ 存在）。
+    \end{solution}
+    \begin{remark}
+        实际上这是\textbf{离散傅里叶变换}（Discrete Fourier Transform, DFT）的一个特例。离散傅里叶变换 $\mathtt{DFT}_n$ 事实上是在 $\bmod (x^n-1)$ 下做的。换句话说，
+    $$
+    \mathtt{IDFT}_n(\mathtt{DFT}_n(F(x)))=F(x)\bmod(x^n-1),
+    $$
+    而 $[i\bmod n=0]$ 刚好就是 $[x^0](x^i\bmod(x^n-1))$，做一下上面的正逆变换刚好就是单位根反演的形式。
+    \end{remark}
+\subsection{扩域}
+    有时候单位根不存在，此时怎么办呢？我们以 $\omega_3,\omega_4$ 为例。一般情况涉及到比较深的背景知识。
+
+    先看 $\omega_3$。我们把原本的数扩充成 $a+b\omega_3$ 的形式（用标准的术语来说，我们在 $\mathbb F[\omega_3]$ 中做运算），然后考虑加法和乘法的形式。加法就是对应项相加，而乘法是
+    $$
+    (a+b\omega_3)(c+d\omega_3)=ac+(ad+bc)\omega_3+bd\omega_3^2.
+    $$
+    对于这里新出现的 $\omega_3^2$，我们注意到 $\omega_3$ 满足 $1+\omega_3+\omega_3^2=0$，所以可以把 $\omega_3^2$ 用 $-1-\omega_3$ 替换。
+
+    $\omega_4$ 也是类似的，只需要注意到 $\omega_4^4-1=(\omega_4-1)(\omega_4+1)(\omega_4^2+1)=0$ 导致 $\omega_4^2+1=0$。
+    
+    在一般情况下，$\omega_k$ 的幂之间的关系由其\textbf{最小多项式} $M(x)$ 决定。假设其次数 $\deg M(x)=m$，那么 $1,\omega_k,\ldots,\omega_k^{m-1}$ 之间线性无关，元素之间的乘法可以视为在 $\bmod\ M(x)$ 下做运算。这部分可以参考域论以及 Galois 理论。
+\section{Kummer 定理}
+    对于素数 $p$，记 $v_p(n)$ 为 $n$ 的质因子分解中 $p$ 的指数。
+
+    \begin{theorem}[Kummer 定理]
+        $v_p(\binom{a+b}{a})$ 等于 $a$ 和 $b$ 在 $p$ 进制下做加法时的进位次数。
+    \end{theorem}
+    \begin{proof}
+        \begin{itemize}
+            \item $v_p(n!)$ 是多少？
+            \item $v_p(\binom{a+b}{a})$ 是多少
+            \item $\lfloor a/p^k\rfloor+\lfloor b/p^k\rfloor$ 和 $\lfloor (a+b)/p^k\rfloor$ 的关系是什么？
+        \end{itemize}
+    \end{proof}
+
+\section{补充的 OI 题及解答}
+    补充的 OI 题：洛谷 P2260 P6826 P5170 P5591 
+    
+    \begin{example}[月下轻花舞]
+        求
+        $$
+        \sum_{i=l}^r(i-1)\sum_{j=1}^n\lceil\log_i j\rceil.
+        $$
+    \end{example}
+    \begin{solution}
+        $$
+        \begin{aligned}
+        \sum_{i=l}^r(i-1)\sum_{j=1}^n\lceil\log_i j\rceil &= \sum_{i=l}^r(i-1)\sum_{j=1}^n\sum_{k\ge 1}[k\le \lceil \log_i j\rceil]\\
+        &=\sum_{i=l}^r(i-1)\sum_{j=1}^n\sum_{k\ge 1}[k<\log_i j+1]\\
+        &=\sum_{i=l}^r(i-1)\sum_{j=1}^n\sum_{k\ge 1}[i^{k-1}<j]\\
+        &=\sum_{k\ge 1}\sum_{i=l}^r(i-1)\max(n-i^{k-1},0)
+        \end{aligned}
+        $$
+        注意到当 $k-1>\log_2 n$ 时，求和项一定为 $0$。所以 $k$ 只需要枚举到大概 $\log_2 n$ 左右。对每个 $k$，考虑 $n-i^{k-1}\ge 0$ 可以得到 $i$ 有意义的范围，然后里面的东西就是一些 $\sum i^k$ 的形式。 
+
+        我们在前面已经讲过如何对一个固定的 $n$ 在 $O(k^2)$ 时间内计算
+        $$
+        P_k(n)=\sum_{i=1}^n i^k,
+        $$
+        而现在的问题是对一些不同的 $k$ 和 $n_k$ 计算这个式子。事实上，我们可以在以前的推导过程中将 $n$ 视为\textbf{变量}，这样我们就能得到关于 $n$ 的\textbf{多项式} $P_k(n)$。这样，我们就可以用 $O(k)$ 的代价查询一个 $n_k$ 的结果。
+
+        我们讲过的两种推导都需要 $O(k^3)$ 的预处理时间。而通过生成函数\graffiti{虽然我们还没有讲}，我们可以得到一个 $O(k^2)$ 的预处理算法。考虑 EGF
+        $$
+        \begin{aligned}
+        \sum_k \frac{x^k}{k!}\sum_{i=0}^{n-1}i^k&=\sum_{i=0}^{n-1} e^{ix}=\frac{e^{nx}-1}{e^x-1}.
+        \end{aligned}
+        $$
+        我们提前预处理伯努利数 $B(x)=\frac{x}{e^x-1}$ 的系数。那么提取 $[x^k]$ 就得到
+        $$
+        \begin{aligned}
+        [x^k]\frac{e^{nx}-1}{e^x-1}&=[x^k]\left(\frac{e^{nx}-1}{x}\right)\left(\frac{x}{e^x-1}\right)\\
+        &=\sum_{i=0}^k B_{k-i}[x^i]\left(\frac{e^{nx}-1}{x}\right)\\
+        &=\sum_{i=0}^k B_{k-i}\frac{n^{i+1}}{(i+1)!}.
+        \end{aligned}
+        $$
+    \end{solution}
+    \begin{example}[类欧几里得算法]
+        
+    \end{example}
+    \begin{solution}
+        TODO.
+    \end{solution}
+    \begin{example}[小猪佩奇学数学]
+        
+    \end{example}
+    \begin{solution}
+        TODO.
+    \end{solution}
+
+\begin{summary}
+    \begin{itemize}
+    \item 同余等差数列的结构：$((a+it)\bmod n)_{i=0}^{n-1}$ 形成 $d=\gcd(n,t)$ 个相同的长为 $n/d$ 的排列。
+    \item 处理取整的一些技巧：分离整数和小数部分、用新变量和不等式条件替换取整、差分再求和、关于 $n$ 差分
+    \item 整除分块：$\lfloor n/i\rfloor$ 的取值很少，用 $\lfloor n/\lfloor n/i\rfloor\rfloor$ 计算当前取值的 $i$ 的右端点
+    \item $\sum_{i=1}^n i^{\alpha}\sim\begin{cases}\frac{n^{\alpha+1}}{\alpha+1}&\alpha>-1\\\ln n& \alpha=-1\\O(1)&\alpha<-1\end{cases}$
+    \item 单位根反演：$[n\bmod k=0]=\frac{1}{k}\sum_{i=0}^{k-1}\omega_k^{in}$
+    \end{itemize}
+\end{summary}

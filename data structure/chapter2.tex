@@ -1,0 +1,733 @@
+\chapter{静态区间数据结构}
+
+\section{信息与合并}
+
+在讨论具体的数据结构之前，我们需要首先理解什么是「信息」以及信息的「合并」。我们以区间信息为例。给定序列 $a=(a_1,\ldots,a_n)$ 以及待查询的函数 $f_{[l,r]}(a)$，我们首先需要确定结果的\textbf{可能集合} $S$，也就是 $f$ 的陪域。如果 $S$ 本身就是一个巨大的集合，那么我们自然无法期望得到一个快速的算法。
+\begin{example}
+    假设 $a$ 的所有元素都在集合 $A$ 中。
+    \begin{itemize}
+        \item $f_{[l,r]}(a)=(a_l,\ldots,a_r)$ 是一个平凡的无法快速查询的函数，因为它本身就需要写出所有的值。此时，$S=\{\epsilon\}+A+ A\times A+ A\times A\times A+\cdots$ 是一个巨大的集合。
+        \item $f_{[l,r]}(a)=x_0\odot a_l\odot a_{l+1} \odot\cdots\odot a_r$ 是一个常见的情况，其中 $\odot$ 是一个定义在 $A$ 上的满足结合律的二元运算\graffiti{这是\textbf{半群}}。此时，$S=A$。
+            \begin{itemize}
+                \item 尝试代入 $\odot=+,\max,\times,\gcd$。
+            \end{itemize}
+        \item $f_{[l,r]}(a)=\bigoplus_{[i,j]\subseteq [l,r]}\left(a_i\odot \cdots\odot a_{j}\right)$ 是另一个常见的情况，其中 $\odot$ 同上一条，$\oplus$ 是另一个定义在 $A$ 上的满足交换律和结合律的二元运算（请注意 $\odot$ 和 $\oplus$ 在这里\graffiti{但是在下面暗示了。}并不暗示分配律）。也就是说，枚举所有的子区间，子区间内做运算 $\odot$，然后再把所有子区间的结果用 $\oplus$ 合并。
+        \item $f_{[l,r]}(a)=\text{区间众数的出现次数}$ 是一个虽然 $S$ 很小但也没有 $\mathrm{polylog}$ 做法的问题。
+    \end{itemize}
+\end{example}
+\begin{remark}
+    从信息论的角度看，至少需要 $\log |S|/w$ 个变量才能表示一个 $S$ 中的元素。从 OI 的角度看，$S$ 中每个元素都是表示成一个结构体的，那么存储 $S$ 中的元素就需要花费结构体中的变量个数那么多的代价。
+\end{remark}
+
+一般的 $f$ 并不容易快速回答。但是，$f$ 经常有一些好的性质。如果学过一些基本的线段树知识，那么可以发现我们在对询问区间进行切分，使得每个切出来的区间都被预处理过了。我们将此抽象为\textbf{可分解性}\graffiti{这是 GPT 起的名字}，这是最重要和常见的性质：
+\begin{definition}[可分解性]
+    如果存在 $S$ 上的二元运算 $\odot$，使得对任何 $l\le m<r$ 都有 $f_{[l,r]}(a)=f_{[l,m]}(a)\odot f_{[m+1,r]}(a)$，则称 $f$ \textbf{可分解}。
+\end{definition}
+\begin{exercise}\label{exercise: reduce function to binary operations}
+    \begin{enumerate}
+        \item 假设 $f$ 的值域为 $T\subseteq S$，证明 $\odot$ 在 $T$ 上满足结合律。为什么 $T$ 以外的部分无关紧要？
+        \item 证明 $f_{[l,r]}(a)=f_{l}(a)\odot f_{l+1}(a)\odot \cdots\odot f_r(a)$。
+        \item 说明为什么我们可以不失一般性地只考虑形如 $g_{[l,r]}(b)=b_l\odot b_{l+1}\odot\cdots \odot b_r$ 的问题。
+    \end{enumerate}
+\end{exercise}
+\begin{exercise}
+    假设存在一个幺元 $0\in S$（注意这里的 $0$ 是抽象的 $0$）使得 $x\odot 0=0\odot x=x$。此时，我们可以避免一些边界上的麻烦。例如，我们可以设 $f_{\varnothing}(a)=0$，从而在 $m=r$ 时也有 $f_{[l,r]}(a)=f_{[l,m]}(a)\odot f_{[m+1,r]}(a)$。
+    
+    如果不存在幺元，说明我们总是可以人为补上一个。
+\end{exercise}
+\begin{example}
+    \begin{itemize}
+        \item $f_{[l,r]}(a)=\{a_l\}\times \{a_{l+1}\}\times \cdots\times \{a_r\}$ 也是满足结合律的（在同构意义下）！然而，我们显然不想用它来计算。
+        \item $f_{[l,r]}(a)=a_l\odot\cdots\odot a_r$ 显然是可分解的。
+        \item $f_{[l,r]}(a)=\bigoplus_{[i,j]\subseteq [l,r]}\left(a_i\odot \cdots\odot a_{j}\right)$ 并不直接可分解。但是，如果 $\odot$ 和 $\oplus$ 满足分配律\graffiti{这是\textbf{环}} $x\odot (y\oplus z)=(x\odot y)\oplus (x\odot z)$，那么我们可以构造出一个包含 $f$ 的可分解的函数。令 
+        $$
+        g_{[l,r]}(a)=\left(\begin{matrix}
+            f_{[l,r]}(a)\\
+            fl_{[l,r]}(a)\\
+            fr_{[l,r]}(a)\\
+            flr_{[l,r]}(a)
+        \end{matrix}\right)=\left(\begin{matrix}
+            \bigoplus_{[i,j]\subseteq [l,r]}\left(a_i\odot \cdots\odot a_{j}\right)\\
+            \bigoplus_{[l,j]\subseteq [l,r]}\left(a_l\odot \cdots\odot a_{j}\right)\\
+            \bigoplus_{[i,r]\subseteq [l,r]}\left(a_i\odot \cdots\odot a_{r}\right)\\
+            a_l\odot\cdots\odot a_r
+        \end{matrix}\right),
+        $$
+        找出使得 $g_{[l,r]}(a)=g_{[l,m]}\otimes g_{[m+1,r]}$ 的运算 $\otimes$。（提示：$[l,r]$ 的子区间由三部分组成：$[l,m]$ 的子区间、$[m+1,r]$ 的子区间、跨越 $[m,m+1]$ 的子区间，最后一部分相当于由一个 $[l,m]$ 的后缀拼上一个 $[m+1,r]$ 的前缀。可以将 $(\oplus,\odot)$ 想象成 $(+,\times)$。）
+    \end{itemize}
+\end{example}
+\begin{remark}
+    有许多运算 $(\oplus,\odot)$ 都构成\textbf{环}，也就是 $\oplus$ 交换结合、$\odot$ 结合、$\odot$ 对 $\oplus$ 有分配律。常见的例子有 $(+,\times)$, $(\max,+)$, $(\max,\min)$。这里 $\max$ 和 $\min$ 是等效的。还有很多运算相当于多维的 $\max$ 或 $\min$，如位运算 $\&$ 和 $|$，$\mathrm{lcm}$ 和 $\gcd$，集合运算 $\cup$ 和 $\cap$。
+        
+    另一方面，环导出的矩阵乘法也是一个环。所以，我们已经可以处理相当多的运算。
+\end{remark}
+\begin{remark}
+    我们从这个例子中可以看到，虽然原本的 $f$ 无法直接处理，但放到更大的结构 $g$ 中反而就能够处理了。往小了说，这是设计信息时的常见技巧：补充缺少的元素，直到结构变得封闭；往大了说，这是一种深刻的哲学：发展新的概念和理论，让困难的问题变得平凡。\graffiti{「比起用锤头敲开核桃，不如用海水把它泡软。」}
+\end{remark}
+
+现在，所谓的「信息合并」无非就是找到相对简单的可分解的函数 $f$ 以及对应的运算 $\odot$。让我们来做一些具体的练习。
+
+\begin{exercise}\label{exercise: design range info}
+    对以下询问，找到合适的能够回答询问的可分解的 $f$ 以及对应的运算 $\odot$：
+    \begin{itemize}
+        \item 区间和 $a_l+\cdots+a_r$
+        \item 区间乘积 $a_l\cdots a_r$，在 $\mathbb F_p$ 下做运算（也就是有一个全局固定的模数 $p$）
+        \item 区间最值 $\max(a_l,\ldots,a_r)$
+        \item 区间最大子段和 $\max_{[i,j]\subseteq [l,r]} (a_i+\cdots+a_j)$
+        \item 区间异或和 $a_l\oplus\cdots\oplus a_r$\graffiti{这里的 $\oplus$ 是异或而不是抽象运算。}
+        \item 区间方差 $\frac{1}{r-l+1}\sum_{i=l}^r (a_i-\bar a_{[l,r]})^2$，其中 $\bar a_{[l,r]}=\frac{1}{r-l+1}\sum_{i=l}^r a_i$。
+        \item 区间 $k$ 次方和 $a_l^k+\cdots+a_r^k$
+        \item 区间位置乘值的和 $\sum_{i=l}^r ia_i$
+        \item 区间两两乘积的和 $\sum_{l\le i<j\le r}a_ia_j$
+        \item 区间相邻乘积的和 $\sum_{l\le i<r}a_ia_{i+1}$
+        \item 区间字符串哈希 $\sum_{l\le i\le r}a_i B^{r-i}$
+        \item 区间 $\gcd$ $\gcd(a_l,\ldots,a_r)$
+        \item 区间最长连续 $0$ 长度 $\max_{[i,j]\subseteq [l,r]}[\forall k\in [i,j],a_k=0]$
+        \item 区间做括号匹配剩下的不匹配括号
+        \item 区间内有多少个子区间同时包含 $1,2,\ldots,k$ （可以设计 $O(k)$ 大小的信息和 $O(k)$ 完成的运算）
+        \item 区间内只保留最值位置上的值，然后考虑以上信息
+    \end{itemize}    
+\end{exercise}
+
+在实现代码时，一种方便的写法是将 $S$ 的表示封装进结构体，然后重载 $S$ 上的 $+$ 运算符。然后，在写数据结构时，我们用 $+$ 即可完成「信息合并」。通过这种方式，我们\textbf{解耦}了数据结构与其维护的信息。
+\begin{lstlisting}[language=C++, caption={信息的封装}]
+struct Info {
+    // 表示 S 中的一个元素需要的若干变量。我们以最大子段和为例。
+    long long s,sl,sr,slr;  
+    // 默认构造函数：对应幺元 0。如果没有直接的表示，那么可以再加一个 bool 变量表示。
+    Info() : s(-INF), sl(-INF), sr(-INF), slr(0) {}
+    // 构造函数，将序列的元素 x 转成 S 中的元素
+    Info(int x) : s(x),sl(x),sr(x),slr(x) {}
+
+    // 重载 + 运算符：实现运算 \odot
+    friend Info operator + (const Info &a, const Info &b) 
+    {
+        Info res;
+        res.s = max(max(a.s, b.s), a.sl + b.sr);          
+        res.sl = max(a.sl, a.slr + b.sl);
+        res.sr = max(b.sr, b.slr + a.sr);
+        res.slr = a.slr + b.slr;
+        return res;
+    }
+};
+
+// 在数据结构中使用示例：
+// a[u] = Info(x);
+// a[u] = a[u << 1] + a[u << 1 | 1];
+\end{lstlisting}
+
+有时，$\odot$ 是\textbf{可逆}的，也就是已知 $a\odot b$ 和 $a$ 时可以解出 $b$。此时，我们可以通过求出 $f_{[1,r]}$ 和 $f_{[1,l-1]}$ 来解出 $f_{[l,r]}$。这样的问题可以通过前缀和来做到线性。
+
+\begin{remark}
+    这个概念对应\textbf{消去律}。这和\textbf{逆元}、\textbf{交换律}都是不同的概念。
+\end{remark}
+
+\begin{exercise}
+    \cref{exercise: design range info} 中，哪些是可逆的？据此得到它们的线性做法。
+\end{exercise}
+
+最后一个有用的性质是\textbf{幂等律}，它是说 $a\odot a=a$。典型的满足幂等律的运算是最值 $\max,\min$ 以及它们的多维版本。幂等律没有前面两个性质那么有用。在同时具备结合律的情况下，幂等律允许我们把待查询的区间拆成可重叠的区间，据此减少需要预处理的区间数量。具体来说，我们有 
+$$
+\begin{aligned}
+\bigodot_{k=l}^r a_k&=\left(\bigodot_{k=l}^{i-1} a_k\right) \odot \left(\bigodot_{k=i}^{j} a_k\right)\odot \left(\bigodot_{k=j+1}^r a_k\right)\\
+&=\left(\bigodot_{k=l}^{i-1} a_k\right) \odot \left(\bigodot_{k=i}^{j} a_k\right)\odot \left(\bigodot_{k=i}^{j} a_k\right)\odot \left(\bigodot_{k=j+1}^r a_k\right)\\
+&=\left(\left(\bigodot_{k=l}^{i-1} a_k\right) \odot \left(\bigodot_{k=i}^{j} a_k\right)\right)\odot \left(\left(\bigodot_{k=i}^{j} a_k\right)\odot \left(\bigodot_{k=j+1}^r a_k\right)\right)\\
+&=\left(\bigodot_{k=l}^{j} a_k\right) \odot \left(\bigodot_{k=i}^{r} a_k\right)
+\end{aligned}
+$$
+
+也就是说，我们不光可以用 $f_{[l,i]}(a)$ 和 $f_{[i+1,r]}(a)$ 拼出 $f_{[l,r]}(a)$，还可以用 $f_{[l,j]}(a)$ 和 $f_{[i,r]}(a)$（$j\ge i$）拼出 $f_{[l,r]}(a)$。
+
+
+
+\section{静态区间数据结构}
+
+在本节中，我们假设询问都是 $f[l,r]=a_l\odot\cdots \odot a_r$ 的形式，其中 $\odot$ 是有结合律的可以 $O(1)$ 计算的二元运算。我们在\cref{exercise: reduce function to binary operations}中解释了为什么可以这么做。\graffiti{我们没有解释为什么可以假设能 $O(1)$ 计算。实际上，如果需要 $O(T)$ 计算，那么最后复杂度往往要再乘一个 $T$。}[-5em]
+
+\subsection{幂等律与 ST 表}
+
+我们先来展示如何对于额外满足幂等律的 $\odot$ 设计简单的数据结构来回答区间询问，也就是 ST 表（Sparse Table）\graffiti{翻译之后多出了一个表（Table）。}
+
+\begin{descbox}{数据结构}[ST 表]
+\paragraph{预处理. }对于所有满足 $1\le i+2^k-1\le n$ 的 $i,k$，预处理 $st_k[i]=f[i,i+2^k)$。这个递推是容易的：$st_0[i]=f[i]=a_i$，$st_k[i]=st_{k-1}[i]\odot st_{k-1}[i+2^{k-1}]$。
+
+\paragraph{询问.} 询问 $f[l,r]$ 时，找到最大的 $k$ 使得 $2^k\le r-l+1$。此时，$[l,l+2^k)$ 和 $(r-2^k,r]$ 可以覆盖整个区间 $[l,r]$。所以 $f[l,r]=st_k[l]\odot st_k[r-2^k+1]$。
+\end{descbox}
+
+现在来看一下复杂度。总共有 $O(n\log n)$ 个预处理的项，所以预处理时间为 $O(n\log n)$。每次查询只需要合并两个预处理的项，故查询复杂度 $O(1)$。对于寻找最大的 $k=\lfloor \log_2 (r-l+1)\rfloor$，可以预处理或者使用内置的 \verb|__builtin_ctz|。\graffiti{这个函数是 GCC 私货。以前是 CCF 系列赛事原则上禁用的。}
+
+\begin{lstlisting}[language=C++, caption={ST 表}]
+Info st[LOGN][N];
+// O(nlogn) 预处理
+void build() {
+    lg[1] = 0;
+    for (int i = 2; i <= n; i++) lg[i] = lg[i >> 1] + 1;
+
+    for (int i = 1; i <= n; i++) st[0][i] = Info(a[i]);
+    for (int k = 1; (1 << k) <= n; k++)
+        for (int i = 1; i + (1 << k) - 1 <= n; i++)
+            st[k][i] = st[k - 1][i] + st[k - 1][i + (1 << (k - 1))];
+}
+// O(1) 询问
+Info query(int l, int r) {
+    int k = lg[r - l + 1];  // 也可以用 k=__builtin_ctz(r - l + 1);
+    return st[k][l] + st[k][r - (1 << k) + 1];
+}
+\end{lstlisting}
+
+\begin{remark}
+   幂等律对于更低复杂度的数据结构设计并无太多帮助。然而，通过幂等律放松限制是一个重要的思想，这在最优化类型的动态规划中有时可以降低复杂度。 
+\end{remark}
+
+\begin{exercise}
+    通过将 $[l,r]$ 拆成 $O(\log n)$ 个 $[p_i,p_i+2^i)$ 的不交并，说明 ST 表也可以在 $O(\log n)$ 的时间内查询不满足幂等律的信息。
+\end{exercise}
+\begin{exercise}
+    说明 ST 表支持 $O(\log n)$ 的末尾插入。再拼合双端队列，我们就能支持 $O(\log n)$ 的头尾插入。
+\end{exercise}
+
+\subsection{分治与二区间合并}
+
+现在，我们来考虑只有结合律的情况。一种想法是\textbf{分治}：将目前待处理的区间 $[l,r]$ 分为两半 $[l,m]$ 和 $[m+1,r]$，那么询问有三种情况：要么完全在左边，要么完全在右边，要么跨过中点。完全在某一边的情况可以变成子问题递归处理，而对于跨过中点的询问，我们可以将其变成一个 $[l,m]$ 上的后缀询问加上一个 $[m+1,r]$ 上的前缀询问，再用一次 $\odot$ 拼合。于是我们可以考虑预处理每个分治区间的这样的前后缀询问的结果，这样就得到了以下的数据结构：\graffiti{在 OI 圈中，这个结构经常被叫做“猫树”。这是一个乱起名字的例子，参见\href{https://qoj.ac/blog/fr/blog/1546}{此博客}。}
+
+\begin{descbox}{数据结构}[二区间合并]\label{desc: two-interval-merge}
+\paragraph{预处理. }从 $[1,n]$ 开始分治。假设当前的分治区间为 $[l,r]$，设其中点为 $m=\lfloor (l+r)/2\rfloor$。如果 $l=r$，那么结束；否则，预处理所有 $[l,m]$ 的后缀询问的结果以及所有 $[m+1,r]$ 的前缀询问的结果，然后递归处理 $[l,m]$ 和 $[m+1,r]$。
+
+\paragraph{查询. }对于查询 $[lq,rq]$，从 $[1,n]$ 开始分治。假设当前的分治区间是 $[l,r]$，中点为 $m=\lfloor (l+r)/2\rfloor$。如果 $l=r$，那么直接返回 $a_l$；如果 $[lq,rq]$ 完全在 $[l,m]$ 或者 $[m+1,r]$，则递归下去处理；否则，用预处理的前后缀计算 $f[lq,m]\odot f[m+1,rq]$ 并返回。
+\end{descbox}
+
+现在来看一下复杂度。设长为 $n$ 的分治区间需要花费 $T(n)$ 的时空预处理。那么左右两个子问题各自花费 $T(n/2)$ 的时空处理，预处理前后缀询问花费 $O(n)$ 时空，所以总的时空复杂度是 $T(n)=2T(n/2)+O(n)=O(n\log n)$。对于询问，代价是 $Q(n)=Q(n/2)+O(1)=O(\log n)$。
+
+\begin{remark}
+   这个数据结构在询问时只使用了一次 $\odot$。在这个限制下，$\Omega(n\log n)$ 的预处理复杂度是必要的。 
+
+   另外，我们注意到询问的瓶颈事实上在于找到那个可以用前后缀回答的分治区间。我们将在练习中看到这个过程可以优化到 $O(1)$。
+\end{remark}
+
+\begin{lstlisting}[language=C++, caption={二区间合并}]
+Info a[N];
+// 每一层分治对应一层数组
+Info pre[LOGN][N], suf[LOGN][N];
+void build(int l, int r, int dep) {
+    if (l == r) return;
+    int m = (l + r) >> 1;
+    suf[dep][m] = a[m];
+    for (int i = m - 1; i >= l; i--) 
+        suf[dep][i] = a[i] + suf[dep][i + 1];   //注意：加号（实际代表 \odot）未必有交换律，所以两边不能反过来
+    pre[dep][m + 1] = a[m + 1];
+    for (int i = m + 2; i <= r; i++) 
+        pre[dep][i] = pre[dep][i - 1] + a[i];
+    build(l, m, dep + 1);
+    build(m + 1, r, dep + 1);
+}
+// 查询 [lq, rq]
+Info query(int l, int r, int lq, int rq, int dep) {
+    if (lq <= l && r <= rq) {
+        if (l == r) return a[l];
+    }
+    int m = (l + r) >> 1;
+    if (rq <= m) return query(l, m, lq, rq, dep + 1);
+    else if (lq > m) return query(m + 1, r, lq, rq, dep + 1);
+    else return suf[dep][lq] + pre[dep][rq];
+}
+Info query(int lq, int rq) {
+    return query(1, n, lq, rq, 0);
+}
+\end{lstlisting}
+
+\subsubsection{树与区间划分}
+
+上面这个代码并没有那么显然，它隐式地使用了一个事实：“一层”内的区间是不交的。为了更直观的理解这个事实，我们来考察区间划分与树的联系。对每个分治区间，我们建立一个结点\graffiti{一些资料显示结点是比节点更规范的表述，虽然实际上并没有人在意。在英文中，它们都是 node。}在分治中，一个分治区间会被划分为两个子区间，我们就把这两个子区间对应的结点作为它的孩子。这样，我们会得到一个树结构。\cref{fig:div-interval} 和 \cref{fig:div-tree} 展示了这两个结构，它们都可以帮助我们直观地考察数据结构。一般来说，我们会在区间划分结构上思考问题，而分治树结构则只用于提醒我们这是一棵树。
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.9,
+        interval segment/.style={thick, black},
+        tick mark/.style={thick, black}
+    ]
+    % --- 参数定义 ---
+    \def\U{1.4}          % 单位长度
+    \def\LayerH{1.0}     % 层间距
+    \def\gap{0.1}        % 缝隙大小
+
+    % 绘制宏
+    \newcommand{\drawGapInterval}[3]{
+        \pgfmathsetmacro{\xL}{#1*\U + \gap}
+        \pgfmathsetmacro{\xR}{#2*\U - \gap}
+        \draw[interval segment] (\xL, #3) -- (\xR, #3);
+        \draw[tick mark] (\xL, #3) -- (\xL, #3 + 0.15);
+        \draw[tick mark] (\xR, #3) -- (\xR, #3 + 0.15);
+    }
+
+    % 第一层
+    \drawGapInterval{1}{7}{0}
+    % 第二层
+    \drawGapInterval{1}{4}{-\LayerH}
+    \drawGapInterval{4}{7}{-\LayerH}
+    % 第三层
+    \drawGapInterval{1}{3}{-2*\LayerH}
+    \drawGapInterval{3}{4}{-2*\LayerH}
+    \drawGapInterval{4}{6}{-2*\LayerH}
+    \drawGapInterval{6}{7}{-2*\LayerH}
+    % 第四层 (叶子层)
+    \foreach \x in {1, 2, 4, 5} {
+        \pgfmathtruncatemacro{\nextx}{\x+1}
+        \drawGapInterval{\x}{\nextx}{-3*\LayerH}
+    }
+    \end{tikzpicture}
+    \caption{区间划分}
+    \label{fig:div-interval}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.9,
+        node style/.style={
+            rectangle, rounded corners=2pt, draw=black, 
+            fill=white, text=black, thick,
+            minimum size=6mm, inner sep=3pt, font=\small\sffamily
+        },
+        every child/.style={thick, black},
+        level 1/.style={sibling distance=50mm},
+        level 2/.style={sibling distance=25mm},
+        level 3/.style={sibling distance=12mm},
+        level distance=15mm
+    ]
+    
+    \node[node style] {$[1,6]$}
+        child { node[node style] {$[1,3]$} 
+            child { node[node style] {$[1,2]$} 
+                child { node[node style] {$[1,1]$} }
+                child { node[node style] {$[2,2]$} }
+            }
+            child { node[node style] {$[3,3]$} }
+        }
+        child { node[node style] {$[4,6]$} 
+            child { node[node style] {$[4,5]$} 
+                child { node[node style] {$[4,4]$} }
+                child { node[node style] {$[5,5]$} }
+            }
+            child { node[node style] {$[6,6]$} }
+        };
+    \end{tikzpicture}
+    \caption{分治树}
+    \label{fig:div-tree}
+\end{figure}
+
+我们立刻可以从图中得到以下的结论：
+
+\begin{property}[分治树的性质]
+    \begin{itemize}
+    \item 一层中的区间是不交的。
+    \item 叶子未必具有相同的高度。
+    \item 所有结点的区间长度之和不超过 $n\times \text{高度}$。
+    \item 两个叶子的 LCA 对应了它们被划分到两侧的那个分治区间。
+\end{itemize}
+\end{property}
+\begin{exercise}[组合数学复习]
+    如果允许任意选择分治点（而不是固定为中点），那么有多少种可能的分治树？
+\end{exercise}
+
+
+下面的练习将询问的复杂度优化到 $O(1)$。
+
+\begin{exercise}[优化二区间合并的询问复杂度]
+    \begin{enumerate}
+        \item 假设你有一个 $O(n)$ 预处理、$O(1)$ 查询 LCA 的算法\graffiti{这种算法真的存在，不过也许有点麻烦。}。在这种情况下，说明询问复杂度可以达到 $O(1)$。
+        \item 即使没有这样的算法，我们也可以实现 $O(1)$ 查询。首先，在序列末尾填充一些 $0$ 来将序列长度补齐为 $2^k$。这样我们总是可以假设 $n$ 是 $2$ 的幂，并且不改变预处理复杂度。说明对于这样的 $n$，两个叶子的 LCA 可以 $O(1)$ 计算，从而可以做到 $O(1)$ 询问。尝试用代码实现这个算法。
+        \begin{itemize}
+            \item \begin{hint}[提示一]
+                观察每个结点对应的区间在二进制下的表示
+            \end{hint}
+            \item \begin{hint}[提示二]
+                叶子 $[l,l]$ 和 $[r,r]$ 的 LCA 对应的区间是什么？
+                
+            \end{hint}
+            \item \begin{hint}[提示三]
+                如何快速计算这个区间所在的层数？
+            \end{hint}
+        \end{itemize}
+    \end{enumerate}
+\end{exercise}
+
+\section{线段树}
+
+在\cref{desc: two-interval-merge}中，我们通过预处理的方式回答了前后缀询问。那么，如果我们直接通过递归来回答前后缀询问呢？不妨考虑 $[l,r]$ 的前缀询问 $[l,i]$。如果 $i\le m$，那么直接递归 $[l,m]$；否则，可以用 $f[l,m]\odot f[m+1,i]$，而后者是 $[m+1,r]$ 的一个前缀。我们预处理所有\textbf{完整区间}的 $f[l,r]$，询问时通过递归回答。这就得到了线段树。
+
+\begin{descbox}{数据结构}[线段树]\label{desc: segment-tree}
+\paragraph{预处理. }从 $[1,n]$ 开始分治。假设当前的分治区间为 $[l,r]$，设其中点为 $m=\lfloor (l+r)/2\rfloor$。如果 $l=r$，那么结束；否则，递归处理 $[l,m]$ 和 $[m+1,r]$，然后用 $f[l,r]=f[l,m]\odot f[m+1,r]$ 计算出本区间的结果。
+
+\paragraph{查询. }对于查询 $[lq,rq]$，从 $[1,n]$ 开始分治。假设当前的分治区间是 $[l,r]$，中点为 $m=\lfloor (l+r)/2\rfloor$。如果 $[lq,rq]=[l,r]$，那么直接返回预处理的 $f[l,r]$；如果 $[lq,rq]$ 完全在 $[l,m]$ 或者 $[m+1,r]$，则递归下去处理；否则，递归 \texttt{query(l,m,lq,m)} 和 \texttt{query(m+1,r,m+1,rq)} 来算出 $f[lq,m]$ 和 $f[m+1,rq]$，然后返回 $f[lq,m]\odot f[m+1,rq]$。
+\end{descbox}
+
+现在来看一下复杂度。预处理的复杂度是 $T(n)=2T(n/2)+O(1)=O(n)$，而询问的复杂度初看似乎是 $Q(n)=2Q(n/2)+O(1)=O(n)$。然而，根据我们先前的分析，在第一次两侧递归后，两个询问就都变成了前/后缀询问。而对于前/后缀询问，只有一侧需要递归计算。所以复杂度是 $Q(n)=Q(n/2)+O(1)=O(\log n)$。
+
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.8, % 稍微缩小比例以适应 N=12
+        interval segment/.style={thick, black},
+        tick mark/.style={thick, black},
+        % 定义高亮（被选中）区间的样式
+        highlight segment/.style={ultra thick, red},
+        highlight tick/.style={ultra thick, red}
+    ]
+    % --- 参数定义 ---
+    \def\U{1.0}          % 单位长度 (缩到 1.0)
+    \def\LayerH{1.0}     % 层间距
+    \def\gap{0.08}       % 缝隙大小
+
+    \tikzset{
+        highlight red/.style={ultra thick, red},
+        highlight blue/.style={ultra thick, blue},
+        tick red/.style={ultra thick, red},
+        tick blue/.style={ultra thick, blue}
+    }
+
+    % #1: L, #2: R, #3: Y坐标, #4: 颜色模式 (red / blue / 留空)
+    \newcommand{\drawGapIntervalColor}[4][]{
+    \pgfmathsetmacro{\xL}{#1*\U + \gap}
+    \pgfmathsetmacro{\xR}{#2*\U - \gap}
+    
+    % 默认先画一层底色（可选，增加视觉层次感）
+    \draw[interval segment] (\xL, #3) -- (\xR, #3);
+    
+    \ifstrequal{#4}{red}{
+        % 红色高亮分支
+        \draw[highlight red] (\xL, #3) -- (\xR, #3);
+        \draw[tick red] (\xL, #3) -- (\xL, #3 + 0.2);
+        \draw[tick red] (\xR, #3) -- (\xR, #3 + 0.2);
+    }{
+        \ifstrequal{#4}{blue}{
+            % 蓝色高亮分支
+            \draw[highlight blue] (\xL, #3) -- (\xR, #3);
+            \draw[tick blue] (\xL, #3) -- (\xL, #3 + 0.2);
+            \draw[tick blue] (\xR, #3) -- (\xR, #3 + 0.2);
+        }{
+            % 默认样式 (黑色)
+            \draw[tick mark] (\xL, #3) -- (\xL, #3 + 0.15);
+            \draw[tick mark] (\xR, #3) -- (\xR, #3 + 0.15);
+        }
+    }
+}
+
+    % --- 辅助绘制：顶部的询问区间提示 ---
+    % 在 x=5 到 x=11 (即 [5,10]) 顶部画一个指示条
+    \pgfmathsetmacro{\xQuerL}{5*\U}
+    \pgfmathsetmacro{\xQuerR}{11*\U}
+    \draw[dashed, gray!60] (\xQuerL, 0.5) -- (\xQuerL, -4.5*\LayerH);
+    \draw[dashed, gray!60] (\xQuerR, 0.5) -- (\xQuerR, -4.5*\LayerH);
+    \draw[<->, thick, red!80] (\xQuerL, 0.7) -- (\xQuerR, 0.7) node[midway, above, font=\small\sffamily] {询问区间 $[5,10]$};
+
+
+    % --- 绘制 N=12 的线段树分层区间 ---
+    % 注意：端点索引从 1 到 13 (对应 12 个单位)
+
+    % 第一层: [1,12]
+    \drawGapIntervalColor[1]{13}{0}{blue}
+
+    % 第二层: [1,6], [7,12]
+    \drawGapIntervalColor[1]{7}{-\LayerH}{blue}
+    \drawGapIntervalColor[7]{13}{-\LayerH}{blue}
+
+    % 第三层: [1,3], [4,6], [7,9], [10,12]
+    \drawGapIntervalColor[1]{4}{-2*\LayerH}{}
+    \drawGapIntervalColor[4]{7}{-2*\LayerH}{blue} % [4,6]
+    \drawGapIntervalColor[7]{10}{-2*\LayerH}{red} % [7,9]
+    \drawGapIntervalColor[10]{13}{-2*\LayerH}{blue} % [10,12]
+
+    % 第四层: 递归划分
+    % [1,2], [3,3], [4,5], [6,6], [7,8], [9,9], [10,11], [12,12]
+    \drawGapIntervalColor[1]{3}{-3*\LayerH}{}  % [1,2]
+    \drawGapIntervalColor[3]{4}{-3*\LayerH}{}  % [3,3] 叶子
+    
+    % 高亮结点 1: [5,5] 是 [4,6] 的右子，被包含在 [5,10] 中
+    \drawGapIntervalColor[4]{6}{-3*\LayerH}{blue} % [4,5] 的原区间
+    % \drawGapIntervalColor[5]{6}{-3*\LayerH}{} % [5,5] 叶子 - 被选中
+    
+    % 高亮结点 2: [6,6] 是 [4,6] 的左子，被包含在 [5,10] 中
+    \drawGapIntervalColor[6]{7}{-3*\LayerH}{red} % [6,6] 叶子 - 被选中
+
+    % 高亮结点 3: [7,9] 是 [7,12] 的左子，被包含在 [5,10] 中
+    \drawGapIntervalColor[7]{9}{-3*\LayerH}{} % [7,8] 
+    \drawGapIntervalColor[9]{10}{-3*\LayerH}{} % [9,9]
+
+    \drawGapIntervalColor[10]{12}{-3*\LayerH}{blue} % [10,11]
+    \drawGapIntervalColor[12]{13}{-3*\LayerH}{} % [12,12] 叶子
+
+    % 第五层 (部分叶子):
+    % [1,1], [2,2], [4,4], [7,7], [8,8], [10,10], [11,11]
+    \foreach \x in {1, 4, 7, 8, 10, 11} {
+        \pgfmathtruncatemacro{\nextx}{\x+1}
+        \drawGapIntervalColor[\x]{\nextx}{-4*\LayerH}{}
+    }
+    \drawGapIntervalColor[2]{3}{-4*\LayerH}{}
+
+    \drawGapIntervalColor[5]{6}{-4*\LayerH}{red}
+    % 高亮结点 4: [10,10] 是 [10,12] 的左子 -> [10,11] 的左子，被包含在 [5,10] 中
+    \drawGapIntervalColor[10]{11}{-4*\LayerH}{red} % [10,10] 叶子 - 被选中
+
+    \drawGapIntervalColor[11]{12}{-4*\LayerH}{} % [11,11] 叶子
+
+    \end{tikzpicture}
+    \caption{线段树上定位区间}
+    \label{fig:segtree-query-process}
+\end{figure}
+
+\cref{fig:segtree-query-process} 展示了在线段树上定位 $[5,10]$ 的情况。红色的区间代表 $[lq,rq]=[l,r]$ 的终止区间，蓝色的区间代表需要到两侧递归询问的区间。结合上面对询问的分治过程的分析，我们可以得到以下定理：
+
+\begin{theorem}[区间在线段树上的分解]
+    设线段树树高为 $h\ge 3$。对任何询问区间，其在线段树上的分治过程中至多会访问 $2h-3$ 个蓝色区间（需要进一步分治的区间）和 $2h-4$ 个红色区间（可以直接返回的区间）。
+\end{theorem}
+\begin{remark}
+    常数 $-3$ 和 $-4$ 其实并不重要。但是系数 $2$ 是重要的。
+\end{remark}
+\begin{proof}
+    先考虑前/后缀询问的情况。除了最后一层，每层至多产生一个蓝色区间；除了第一层，每层至多产生一个红色区间。所以任何前/后缀会访问不超过 $h-1$ 个蓝色区间和 $h-1$ 个红色区间。
+
+    现在考虑一般的询问区间。在其分解为前后缀询问之前，每层恰好访问一个蓝色区间。所以最坏情况是在第一层就分解为前后缀询问，此时总共访问的蓝色区间数量不超过 $1+2(h-2)$，红色区间数量不超过 $2(h-2)$。
+\end{proof}
+
+使用上面的定理时需要知道树高。这是容易看出的：
+\begin{property}[线段树的树高]
+    按照 $m=\lfloor(l+r)/2\rfloor$ 划分区间为 $[l,m]$ 和 $[m+1,r]$ 得到的线段树高度为 $h(n)=h(\lceil n/2\rceil)+1=1+\lceil \log_2 n\rceil$。
+\end{property}
+\begin{remark}
+    这里暗示了不均匀划分的线段树的存在。虽然不均匀划分一般没什么用，但是会有人拿来出题。
+\end{remark}
+
+在实现线段树的代码之前，我们需要思考一个问题：如何方便地表示所有预处理的 $f[l,r]$？自然的想法是，对分治树的每个结点，在这个结点上记录其对应的区间的 $f$。那么问题就转换为了如何存储这棵树。一般的做法当然是指针式的，即每个结点记录其左右儿子结点的编号（或者干脆就是指针）。不过在这里，我们可以类似二叉堆来编号，即让结点 $u$ 的左右儿子分别编号为 $2u$ 和 $2u+1$。\cref{fig:div-tree} 中的分治树的结点编号如 \cref{fig:div-tree-indexed} 所示。
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        scale=0.9,
+        node style/.style={
+            rectangle, rounded corners=2pt, draw=black, 
+            fill=white, text=black, thick,
+            minimum size=6mm, inner sep=3pt, font=\small\sffamily
+        },
+        every child/.style={thick, black},
+        level 1/.style={sibling distance=50mm},
+        level 2/.style={sibling distance=25mm},
+        level 3/.style={sibling distance=12mm},
+        level distance=15mm
+    ]
+    
+    \node[node style] {$1$}
+        child { node[node style] {$2$} 
+            child { node[node style] {$4$} 
+                child { node[node style] {$8$} }
+                child { node[node style] {$9$} }
+            }
+            child { node[node style] {$5$} }
+        }
+        child { node[node style] {$3$} 
+            child { node[node style] {$6$} 
+                child { node[node style] {$12$} }
+                child { node[node style] {$13$} }
+            }
+            child { node[node style] {$7$} }
+        };
+    \end{tikzpicture}
+    \caption{\cref{fig:div-tree} 中分治树的编号}
+    \label{fig:div-tree-indexed}
+\end{figure}
+
+有两个事情需要注意：第一，最后一层也就是叶子层的编号并不是连续的；第二，最大的编号可以达到 $4n-O(1)$ 级别，我们有一个练习来仔细计算这个值。
+
+\begin{lstlisting}[language=C++, caption=线段树]
+INFO tree[N<<2];
+void build(int u, int l, int r) {
+    if (l == r) {
+        tree[u] = a[l];
+        return;
+    }
+    int mid = (l + r) >> 1;
+    build(u << 1, l, mid);
+    build(u << 1 | 1, mid + 1, r);
+    tree[u] = tree[u << 1] + tree[u << 1 | 1];
+}
+Info query(int u, int l, int r, int lq, int rq) {
+    if (l==lq && r==rq) {
+        return tree[u];
+    }
+    int mid = (l + r) >> 1;
+    if (rq <= mid) return query(u << 1, l, mid, lq, rq);
+    else if(lq > mid) return query(u << 1 | 1, mid + 1, r, lq, rq);
+    else return query(u<<1,l,mid,lq,mid)+query(u<<1|1,mid+1,r,mid+1,rq);
+}
+\end{lstlisting}
+
+\begin{remark}
+    事实上，线段树可以认为是在描述分治结构。在本讲义中，我们有时会混用“线段树”和“分治树”，即将线段树视为一种结构的描述，而非专门的数据结构。
+\end{remark}
+
+\begin{exercise}[线段树的动态开点]
+    在本练习中，我们说明可以对长度巨大但是“有意义的位置”很少的序列在合理的时空复杂度内构建线段树。形式化地说，假设序列长度为 $n$，其中只有 $m$ 个位置上的元素被特殊指定，其余位置上的元素由某种默认模式给出，如默认置为某个固定元素 $x_0$。对于一个不含特殊指定元素的区间，需要能够在 $O(1)$ 时间内计算这个区间的 $f[l,r]$。
+    
+    \begin{enumerate}
+        \item 堆式编号还能用吗？应该如何存储树？
+        \item 在 \texttt{build} 中，如果当前区间 $[l,r]$ 不含特殊指定元素，那么可以直接计算此区间的 $f[l,r]$ 作为 \texttt{tree[u]} 并返回。事实上，甚至不需要建立这个区间对应的结点。基于这一观察，计算需要建立的结点的数量级。
+        \item 如何判断当前区间是否含有特殊指定元素？\begin{hint}
+        对特殊指定元素按位置升序排序，那么一段区间中的特殊指定元素在这个排序后的序列上也是一段区间。
+        \end{hint}
+        \item 修改 \texttt{build} 和 \texttt{query}，使得 \texttt{build} 的时空复杂度为 $O(m\log n)$，并且 \texttt{query} 能在和原来相同的时间内回答询问。
+    \end{enumerate}
+\end{exercise}
+\begin{remark}
+    可以通过压缩 Trie 进一步把空间降为 $O(m)$，但是一般没有必要。
+\end{remark}
+\begin{remark}
+    在下一节中，我们会通过单点修改的方式完成相同的目标。
+\end{remark}
+
+\begin{exercise}[分治树的末尾插入]\label{exercise:segtree-insert-to-end}
+    在本练习中，我们给出一种从左到右动态构建分治树的算法，从而让二区间合并和线段树都支持末尾插入。
+
+    想象我们有完整的长为 $n=2^k$ 的序列，然后在其上建立分治树。而实际上，在任意时刻，我们只拥有这个序列的一个前缀。在分治树上，这个前缀对应“左下角”的一些部分。具体来说，如果一个结点对应的区间中的元素都已经被插入，那么我们就称这个结点是完整的。我们的算法思想非常简单：在末尾插入一个元素后，把分治树上所有因为这个插入变得完整的结点构建出来。
+
+    \begin{center}
+        \centering
+    \begin{tikzpicture}[
+        scale=0.8, % 稍微缩小比例以适应 N=12
+        interval segment/.style={thick, black},
+        tick mark/.style={thick, black},
+        % 定义高亮（被选中）区间的样式
+        highlight segment/.style={ultra thick, red},
+        highlight tick/.style={ultra thick, red}
+    ]
+    % --- 参数定义 ---
+    \def\U{1.0}          % 单位长度 (缩到 1.0)
+    \def\LayerH{1.0}     % 层间距
+    \def\gap{0.08}       % 缝隙大小
+
+    \tikzset{
+        highlight red/.style={ultra thick, red},
+        highlight blue/.style={ultra thick, blue},
+        tick red/.style={ultra thick, red},
+        tick blue/.style={ultra thick, blue},
+        interval gray/.style={thick, gray!50},
+        tick gray/.style={thick, gray!50},
+    }
+
+    % #1: L, #2: R, #3: Y坐标, #4: 颜色模式 (red / blue / 留空)
+    \newcommand{\drawGapIntervalColor}[4][]{
+    \pgfmathsetmacro{\xL}{#1*\U + \gap}
+    \pgfmathsetmacro{\xR}{#2*\U - \gap}
+    
+    % 默认先画一层底色（可选，增加视觉层次感）
+    \draw[interval segment] (\xL, #3) -- (\xR, #3);
+    
+    \ifstrequal{#4}{red}{
+        % 红色高亮分支
+        \draw[highlight red] (\xL, #3) -- (\xR, #3);
+        \draw[tick red] (\xL, #3) -- (\xL, #3 + 0.2);
+        \draw[tick red] (\xR, #3) -- (\xR, #3 + 0.2);
+    }{
+        \ifstrequal{#4}{blue}{
+            % 蓝色高亮分支
+            \draw[highlight blue] (\xL, #3) -- (\xR, #3);
+            \draw[tick blue] (\xL, #3) -- (\xL, #3 + 0.2);
+            \draw[tick blue] (\xR, #3) -- (\xR, #3 + 0.2);
+        }{
+            \ifstrequal{#4}{gray}{
+                % 蓝色高亮分支
+                \draw[interval gray] (\xL, #3) -- (\xR, #3);
+                \draw[tick gray] (\xL, #3) -- (\xL, #3 + 0.2);
+                \draw[tick gray] (\xR, #3) -- (\xR, #3 + 0.2);
+            }{
+                % 默认样式 (黑色)
+                \draw[tick mark] (\xL, #3) -- (\xL, #3 + 0.15);
+                \draw[tick mark] (\xR, #3) -- (\xR, #3 + 0.15);
+            }
+        }
+    }
+}
+
+    % --- 辅助绘制：顶部的询问区间提示 ---
+    % 在 x=5 到 x=11 (即 [5,10]) 顶部画一个指示条
+    % \pgfmathsetmacro{\xQuerL}{5*\U}
+    % \pgfmathsetmacro{\xQuerR}{11*\U}
+    % \draw[dashed, gray!60] (\xQuerL, 0.5) -- (\xQuerL, -4.5*\LayerH);
+    % \draw[dashed, gray!60] (\xQuerR, 0.5) -- (\xQuerR, -4.5*\LayerH);
+    % \draw[<->, thick, red!80] (\xQuerL, 0.7) -- (\xQuerR, 0.7) node[midway, above, font=\small\sffamily] {询问区间 $[5,10]$};
+
+
+    % --- 绘制 N=8 的线段树分层区间 ---
+    % 注意：端点索引从 1 到 9 (对应 12 个单位)
+
+    % 第一层: [1,12]
+    \drawGapIntervalColor[1]{9}{0}{gray}
+
+    % 第二层: [1,6], [7,12]
+    \drawGapIntervalColor[1]{5}{-\LayerH}{}
+    \drawGapIntervalColor[5]{9}{-\LayerH}{gray}
+
+    % 第三层: [1,3], [4,6], [7,9], [10,12]
+    \drawGapIntervalColor[1]{3}{-2*\LayerH}{}
+    \drawGapIntervalColor[3]{5}{-2*\LayerH}{} % [4,6]
+    \drawGapIntervalColor[5]{7}{-2*\LayerH}{} % [7,9]
+    \drawGapIntervalColor[7]{9}{-2*\LayerH}{gray} % [10,12]
+
+    \foreach \x in {1, 2, 3, 4, 5, 6, 7} {
+        \pgfmathtruncatemacro{\nextx}{\x+1}
+        \drawGapIntervalColor[\x]{\nextx}{-3*\LayerH}{}
+    }
+    \drawGapIntervalColor[8]{9}{-3*\LayerH}{gray}
+    % 第五层 (部分叶子):
+    % [1,1], [2,2], [4,4], [7,7], [8,8], [10,10], [11,11]
+    \end{tikzpicture}
+    \captionof{figure}{序列前缀在分治树上}
+    \label{fig:prefix-of-divtree}
+\end{center}
+
+    \begin{enumerate}
+        \item 假设目前给出了序列的前 $m$ 个元素。说明我们相当于在长为 $2^{\lceil\log_2 m\rceil}$ 的序列形成的分治树上操作。
+        \item 末尾插入 $a_i$ 后，哪些结点会变得完整？
+        \item 说明这个算法在插入 $q$ 次后花费的总时间不超过 $T(2^{\lceil \log_2 q\rceil})$，其中 $T(m)$ 是对长为 $m$ 的静态序列构建数据结构所需的时间。所以，在通常的情况下（也就是 $T(m)=m^{O(1)}$），每次插入的均摊复杂度不超过 $O(T(q)/q)$。分别对于二区间合并和线段树计算这个复杂度。
+        \item 说明不完整结点永远不会作为 \texttt{query} 中$[l,r]=[lq,rq]$ 的结点。因此，\texttt{query} 几乎不需要任何改动即可回答询问（只需要修改存储树的方式）。
+    \end{enumerate}
+\end{exercise}
+\begin{remark}
+    另一个理解这个算法的视角是\textbf{二进制分组}：考虑目前序列长度 $m$ 的二进制拆分，$2^{k_1}+2^{k_2}+\cdots+2^{k_t}$（$k_i$ 递减），那么可以视为我们维护了 $t$ 个大小指数递减的分治树，第 $i$ 个分治树对应的区间是 $[2^{k_1}+\cdots+2^{k_{i-1}}+1,2^{k_1}+\cdots+2^{k_i}]$。在末尾插入时，我们首先新增一棵大小为 $1$ 的线段树，然后暴力做“进位”操作：只要有两棵树的大小相同，那么就将其合并得到两倍大小的线段树。
+\end{remark}
+
+
+\begin{exercise}[分治树的末尾插入删除]
+    本练习在 \cref{exercise:segtree-insert-to-end} 的基础上给出一种支持末尾插入删除的算法。这个算法可以配合双端队列实现双端的插入删除。
+
+    \begin{enumerate}
+        \item 说明通过反复在某一个特定位置删除插入可以使得 \cref{exercise:segtree-insert-to-end} 中的算法复杂度变劣。如果构建一个结点需要 $\Theta(1)$ 时间，那么均摊复杂度将劣化至 $\Theta(\log q)$；如果构建一个结点需要 $\Theta(\text{区间长度})$ 时间，那么均摊复杂度将劣化至 $\Theta(q)$。
+        \item 改变创建非叶子的完整结点的时刻：对于一个非叶结点 $u$，当它\textbf{右边}的结点变得完整时才构建 $u$；当已构建结点变得不完整时，摧毁此结点。为什么这样就能避免前面的问题？
+        \item 分析线段树一层内的结点的总构建次数与操作次数 $q$ 的关系。据此说明这个构建算法的均摊复杂度不超过 $O(T(q)/q)$。
+        \item 修改询问函数，使其能正确组合\textbf{已构建}的结点的信息来回答询问，并且复杂度不变。\begin{hint}
+            对于 $[l,r]=[lq,rq]$ 的结点，如果其已被构建那么就直接返回，否则继续分治。观察询问在区间划分结构上递归的过程，说明每层至多访问 $O(1)$ 个结点。
+        \end{hint}
+    \end{enumerate}
+\end{exercise}
+\begin{remark}
+    也可以通过二进制分组的视角得到类似的算法。我们允许每种大小的分治树有\textbf{两个}，当出现第三个相同大小的分治树时，合并前两个。
+\end{remark}
+
+\begin{remark}
+    TODO 插入与合并。
+\end{remark}
+
+\section{*一般的静态区间数据结构}
+
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{@{}llll@{}}
+% \toprule
+% 数据结构 & 预处理 & 查询 & 适用范围 \\ \midrule
+% 前缀和 & $O(n)$ & $O(1)$ & 具有逆元 (群) \\
+% ST 表 & $O(n \log n)$ & $O(1)$ & 可重复贡献 (半格) \\
+% 线段树 & $O(n)$ & $O(\log n)$ & 一般半群 \\
+% Disjoint ST & $O(n \log n)$ & $O(1)$ & 一般半群 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}

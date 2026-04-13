@@ -1,72 +1,27 @@
-\documentclass[11pt,aspectratio=169]{beamer}
 
 % --------------------
-% Theme
-% --------------------
-\usetheme{Madrid}
-\usecolortheme{default}
-\usefonttheme{professionalfonts}
-\setbeamertemplate{navigation symbols}{}
-\setbeamersize{text margin left=0.5cm, text margin right=0.5cm}
+\begin{frame}{前言}
+    本课件是笔者在讲授《具体数学》部分相关内容时整理的讲义。然而，阅读《具体数学》、完成其部分习题本身是作为课下任务去布置的。在课上，笔者希望能够传达一些书上没有但是在 OI 中较为常见的方法和技巧。
 
-% --------------------
-% Packages
-% --------------------
-\usepackage{ctex}
-\usepackage{amsmath, amssymb}
-\usepackage{listings}
-\usepackage{xcolor}
+    由于时间和难度的原因，课件无法面面俱到。由于语言的局限，课件中可能有许多无法解释清楚的地方，也无法完美地传达笔者的所思所想。不过，笔者尽量补齐了课上讲过和希望讲的所有内容，并力图读者\textbf{在 AI 工具的辅助下}能够清楚和深入地理解本课件的内容与其背后的\textbf{思路}。
 
-% --------------------
-% Code Style
-% --------------------
-\lstset{
-    language=C++,
-    basicstyle=\ttfamily\small,
-    keywordstyle=\color{blue},
-    commentstyle=\color{gray},
-    numbers=left,
-    numberstyle=\tiny,
-    breaklines=true,
-    frame=single
-}
-
-\usepackage{tikz}
-\usetikzlibrary{trees, positioning}
-
-\setlength{\parskip}{0.7em}  % 调整段落间距
-
-% --------------------
-% Title Info
-% --------------------
-\title{具体数学选讲}
-\author{qwaszx}
-\date{\today}
-
-% ====================
-% Document
-% ====================
-\begin{document}
-
-% --------------------
-\begin{frame}
-  \titlepage
+    本课件并不完全按照学习的顺序来编写。例如，几乎每道题我们都给出了生成函数的方法，而生成函数本身要到最后才学习。因此，对于这类内容
+    % （以 \pending 标记）
+    ，初学时应当暂时跳过，等到学完相关知识后回头再看。还有一些较为困难的内容（以 * 标记），初学时可能难以完全掌握，可以量力而为。
 \end{frame}
-
-% --------------------
-\begin{frame}
+\begin{frame}{对《具体数学》的介绍}
     从本书能学到的东西：
 
     \begin{itemize}
-        \item 一些方法和技巧
+        \item 一些有用的方法和技巧
         \item 大师是如何思考问题的
         \item “数学成熟度”
     \end{itemize}
 \end{frame}
 \begin{frame}{目录}
-    本书直到 5.4 为止都是对 OI 非常有用的内容。
+    本书直到 5.4 为止都是对 OI 非常有用并且在其他地方难以学到的内容。
 
-    再往后的内容与 OI 关联不大，但读了也能有很大收获。
+    再往后的内容中，有些与 OI 关联不大，有些会在其他地方学到。但是，读一读仍然会有很大收获。
 \end{frame}
 
 \begin{frame}{另一本书：《离散数学及其应用》}
@@ -99,15 +54,3 @@
         \item 帮我批改一下这份作业，题目是具体数学第x章后面的对应习题。（后附作业内容）
     \end{itemize}
 \end{frame}
-
-\input{chapter1.tex}
-
-\input{chapter2.tex}
-
-\input{chapter3.tex}
-
-\input{chapter5.tex}
-
-
-
-\end{document}

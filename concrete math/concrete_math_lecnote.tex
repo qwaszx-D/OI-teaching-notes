@@ -1,0 +1,83 @@
+\documentclass[11pt]{article}
+
+\usepackage{beamerarticle}
+
+% --------------------
+% Theme
+% --------------------
+\usetheme{Madrid}
+\usecolortheme{default}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=0.5cm, text margin right=0.5cm}
+
+% --------------------
+% Packages
+% --------------------
+\usepackage{ctex}
+\usepackage{amsmath, amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% --------------------
+% Code Style
+% --------------------
+\lstset{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny,
+    breaklines=true,
+    frame=single
+}
+
+\usepackage{tikz}
+\usetikzlibrary{trees, positioning}
+
+\usepackage{hyperref}
+
+\hypersetup{
+    colorlinks=true,      % 开启链接颜色（默认为红色方框）
+    linkcolor=blue,       % 内部文档链接颜色（如目录、引用）
+    filecolor=magenta,    % 本地文件链接颜色
+    urlcolor=cyan,        % 外部 URL 链接颜色（href 用的就是这个）
+    pdftitle={Overleaf Example},
+}
+
+\usepackage{fontawesome5}
+\newcommand{\pending}{\faHourglassHalf\ }
+
+% --------------------
+% Title Info
+% --------------------
+\title{具体数学选讲}
+\author{qwaszx}
+\date{\today}
+
+% ====================
+% Document
+% ====================
+\begin{document}
+
+% --------------------
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\input{introduction.tex}
+
+\input{chapter1.tex}
+
+\input{chapter2.tex}
+
+\input{chapter3.tex}
+
+\input{chapter5.tex}
+
+\input{reference.tex}
+
+
+
+\end{document}

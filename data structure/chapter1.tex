@@ -1,0 +1,267 @@
+\chapter{基础数据结构}
+
+\begin{itemize}
+    \item 加深对于 \texttt{vector}、栈、队列、链表、堆等数据结构的理解
+    \item 识别常见的可以使用这些数据结构解决的问题
+    \item 强化数据结构思维：抽象问题与数据结构的对应
+\end{itemize}
+
+提到复杂度时默认指最坏复杂度
+
+\section{\texttt{vector}}
+
+\subsection{基本操作}
+\texttt{vector} 支持
+
+\begin{itemize}
+    \item 均摊 $O(1)$ 的末尾插入删除
+    \item $O(1)$ 的随机访问\footnotemark
+    \item $O(\mathrm{size}-i)$ 加均摊 $O(1)$ 在第 $i$ 个位置插入删除
+    \item $O(\max\mathrm{size})$ 的空间
+\end{itemize}
+
+参考：https://cppreference.cn/w/cpp/container/vector
+
+\footnotetext{
+指任意访问某个 \texttt{a[i]}
+}
+
+\subsection{常见问题}
+在使用时，需要注意一些陷阱：
+\begin{itemize}
+    \item 迭代器失效：修改后，迭代器可能变得不可用
+    \item 占用空间正比于历史最大 \texttt{size} 而不是当前 \texttt{size}
+    \item \texttt{clear} 不会释放内存。可以用 \texttt{vector<T>().swap(a)} 来释放 
+    \item 大量 \texttt{push\_back} 会带来很大的常数。可以使用 \texttt{resize} 一次性分配需要的长度，这样和数组基本一样快
+\end{itemize}
+
+\subsection{实现}
+我们给出一种 \texttt{vector} 的实现：如果 \texttt{size} 超过了当前容量，那么把当前容量加倍，重新申请空间，把所有东西都搬过去。
+
+每次重新分配后，容量约等于两倍 \texttt{size}。触发下一次重新分配需要 $\Omega(\mathtt{size})$ 次修改，重新分配的代价是 $O(\mathtt{size})$。所以，平均每次修改的代价是 $O(1)$。
+
+    \begin{question}
+        如果额外要求空间线性于 \texttt{size} 而不是历史最大 \texttt{size} 呢？
+    \end{question}
+    \begin{solution}
+    \texttt{size} 小于当前容量的 $1/4$ 时，把容量减半并重新分配空间（为什么是 $1/4$ 而不是 $1/2$？）
+    \end{solution}
+   
+\section{链表}   
+
+\subsection{基本操作}
+    链表支持
+
+    \begin{itemize}
+        \item $O(1)$ 在指定元素处插入删除单个元素/另一个链表（例如可以实现 $O(1)$ 拼接）
+        \item $O(\text{位置})$ 随机访问
+        \item $O(\mathtt{size})$ 的空间
+    \end{itemize}
+
+    \begin{example}
+        洛谷P10466 邻值查找 / 洛谷P1168 中位数
+    \end{example}
+
+    插入往往需要平衡树之类的数据结构，但是如果倒着来就只需要先排序然后一直删除。如果排序可以线性，那么就能做到线性。
+
+\section{栈和队列}
+
+    基本操作是广为人知的，不再赘述。显然，栈在功能上弱于 \texttt{vector}，因此可以用 \texttt{vector} 实现栈。而队列则不能直接用 \texttt{vector} 实现。如果队列大小已知不超过某个上界，那么可以用数组模拟循环队列。而如果想做到 $O(\mathtt{size})$ 空间，就需要用链表或者双端队列实现
+
+\section{双端队列}
+    双端队列在功能上强于 \texttt{vector} 和队列，但是实现更复杂，常数也更大。
+
+\subsection{基本操作}
+    \begin{itemize}
+        \item 均摊 $O(1)$ 头尾插入删除
+        \item $O(1)$ 随机访问
+    \end{itemize}
+
+\subsection{实现}
+    STL 的 \texttt{deque} 即是标准的双端队列。然而，需要开很多双端队列时，要谨慎使用 STL 的 \texttt{deque}，因为一个空 \texttt{deque} 可能占用几百到几千字节的空间。\graffiti{NOI 2022 时有许多人因为 MLE 失去了一整道题的分数。} 
+
+    更好的实现是对顶栈。设想有两个栈，其底部粘在一起。于是其整体就成为一个两端开口的双端队列。唯一的问题出在某个栈空了还要继续删的情况。此时，我们暴力把整个序列倒出来重构即可。换句话说，我们重新把序列均分到两个栈里。
+
+    使用 \texttt{vector} 来实现栈就能支持随机访问了。如果需要很紧的空间，可以用之前提到的 $O(\mathtt{size})$ 空间的 \texttt{vector}。
+    
+    每次重构后，两个 \texttt{vector} 都有大概 $\mathtt{size}/2$ 个元素。到下次重构之前，至少有 $\mathtt{size}/2+|\mathtt{size}'-\mathtt{size}/2|=\Omega(\mathtt{size}')$ 次操作。重构花费 $O(\mathtt{size}')$ 的代价，所以插入删除是均摊 $O(1)$ 的。
+
+\subsection{维护信息}
+    在两个 \texttt{vector} 中各自维护自己的前缀信息，这样可以 $O(1)$ 查询目前队列中跨过分断点的任意子区间的信息和。
+
+    可以以 $\sum_i |l_i-l_{i-1}|+|r_i-r_{i-1}|$ 的代价回答多个区间询问。在很多问题中，这个总代价往往可以是线性的。
+    \begin{example}
+        支持双端队列操作、每次询问做背包后体积 $V_i$ 的结果。需要 $O(nV)$。
+    \end{example}
+
+    \begin{example}[“不删除双指针”]
+        询问最短的 $\gcd>1$ 的区间。
+    \end{example}
+
+    
+
+\section{二叉堆}
+
+\subsection{基本操作}
+
+    \begin{itemize}
+        \item $O(1)$ 查询最小值
+        \item $O(\log n)$ 插入
+        \item $O(\log n)$ 删除
+        \item $O(\log n)$ Decrease-Key
+        \item $O(n)$ 合并
+    \end{itemize}
+
+\begin{remark}
+    理论上最好的堆——Brodal Queue 支持
+    \begin{itemize}
+        \item $O(1)$ 查询最小值
+        \item $O(1)$ 插入
+        \item $O(\log n)$ 删除
+        \item $O(1)$ Decrease-Key
+        \item $O(1)$ 合并
+    \end{itemize}
+
+    但是实现复杂、常数很大。
+
+    算法/数据结构总是在复杂度、实际表现、实现难度、常数、功能之间做取舍。
+
+    还有其他一些常见的堆：左偏树、斜堆、随机堆、配对堆、二项堆、斐波那契堆。
+\end{remark}
+
+\section{扩展类问题}
+    从若干个初始状态开始，每个状态可以扩展出若干个后继状态，保证扩展出来的状态的权值小于原状态的权值。每次取权值最小的状态扩展，重复若干次。
+
+    通过一定的设计，很多求前 $k$ 大/小的问题可以变成这类问题。使用堆来维护所有目前的状态，每次取出最小的一个来扩展，注意去重。扩展形成一张图，复杂度为 $O(M\log M)$ 或 $O(k\log k+M)$（取决于堆），其中 $M$ 为前 $k$ 小的点邻接的\textbf{边数}。
+
+    如果每个点的扩展方式都是相同的，并且只有常数种扩展方式，并且扩展出来的状态的权值关于原状态的权值是单调的，那么可以使用队列替换堆来做到 $O(M)$。
+\begin{example}[序列合并]
+
+\end{example}
+\begin{solution}
+        方法一：$(i,j)$ 扩展出 $(i,j+1)$，初始状态为所有 $(i,1)$
+
+    方法二：$(i,j)$ 扩展出 $(i+1,j)$ 和 $(i,j+1)$，但是要去重
+
+    方法三：https://www.cnblogs.com/zkyJuruo/p/18428124
+\end{solution}
+
+\begin{example}[蚯蚓]
+    
+\end{example}
+\begin{solution}
+    首先处理掉“除了新的以外都加 $q$”，这可以变成全局加 $q$ 然后新的减掉 $q$。
+
+    这样就是 $x$ 扩展出 $\lfloor p(x+tq)\rfloor-(t+1)q$ 和 $(x+tq)-\lfloor p(x+tq)\rfloor-(t+1)q$
+
+    符合我们用队列替换堆时的要求
+\end{solution}
+\begin{example}[常数种非负边权的最短路]
+    BFS 扩展时，从 $x$ 扩展出 $O(1)$ 种固定的新状态
+
+    可以使用队列替换堆。
+\end{example}
+\begin{example}[前 $k$ 小子集和]
+
+\end{example}
+\begin{solution}
+    考虑一个 DFS 过程，枚举下一个选择的数在哪
+
+    然而这样会扩展出 $\Theta(n)$ 个状态
+
+    多叉树转二叉树：左儿子右兄弟（注意兄弟的顺序）
+\end{solution}
+\begin{example}[限制大小的前 $k$ 小子集和]
+    要求集合大小在 $[L,R]$ 内。
+\end{example}
+\begin{solution}
+    考虑怎么枚举 $\mathtt{size}=m$ 的集合。假设选了 $a_{i_1},\ldots,a_{i_m}$，转为枚举 $d_j=i_j-i_{j-1}$，只需要 $\sum_j d_j\le n-1$。
+    
+    初始所有 $d_j=1$，每次枚举下一个需要增加的 $d_j$ 即可。
+
+    同样用儿子兄弟表示法转为二叉树
+\end{solution}
+\begin{remark}
+    这类问题有可能与 $k$ 短路有关联，但我不会。有兴趣的同学可以自行研究或者一起讨论一下
+\end{remark}
+\begin{example}[合并果子]
+    由于合并的结果总是越来越大的，可以使用队列替换堆。
+\end{example}
+\begin{remark}
+    这就是 Huffman 编码。我们有结论
+
+    \begin{itemize}
+        \item Huffman 编码可以最小化 $\sum_i \mathrm{dep}_i\cdot w_i$
+        \item $w_i$ 的深度大约为 $\log\frac{W}{w_i}$，其中 $W=\sum w_i$
+    \end{itemize}
+
+    在\textbf{不均匀分治}（如树剖、点分治、分治FFT等）中，可以使用 Huffman 树来降低复杂度或常数，以后会提到。
+\end{remark}
+
+\section{单调队列和单调栈}
+
+\subsection{基本功能}
+
+    令 $b_i=\max\{a_i,a_{i+1},\ldots,a_r\}$。在 $r$ 从 $1$ 扫到 $n$ 的过程中，均摊 $O(1)$ 地维护所有 $b_i$。（栈中每个元素表示一段区间的 $b_i$）
+
+\subsection{例题}
+    \begin{example}[询问端点单调的区间最值]
+    多次查询 $\max\{a_{l_i},\ldots,a_{r_i}\}$，其中 $l_i,r_i$ 都单调不降。可以强制在线（指 $a$ 可能依赖先前的询问结果）
+
+    虽然双端队列也可以做，但是这种问题单调队列更方便。
+    \end{example}
+    \begin{exercise}
+    如果 $l_i$ 不单调呢？（允许复杂度变大一些）
+    \end{exercise}
+    \begin{solution}
+    单调栈上二分
+    \end{solution}
+
+    \begin{example}[求前驱后继]    
+    对每个元素，查询它左/右边第一个比它大/小的数的位置
+    \end{example}
+
+    \begin{example}[稍复杂一些的信息维护]
+        对每个 $r$，求 $\sum_{l=1}^r (r-l+1)\cdot \max\{a_l,\ldots,a_r\}$。强制在线。（提示：要记得单调栈中每个元素都代表了一段区间的 $\max\{a_l,\ldots,a_r\}$。）
+    \end{example}
+    \begin{solution}[离线的另解]
+        如果允许离线，那么可以考虑换种方式计算答案：对每个 $a_i$，看看它是哪些区间 $[l,r]$ 的 $\max$。这可以由先前提到的前驱后继来做。
+    \end{solution}
+
+    \begin{example}[最值版本]
+        求 $\max_{l,r}(r-l+1)\cdot\max\{a_l,\ldots,a_r\}$。
+    \end{example}
+    \begin{solution}
+        使用离线算贡献的方法是最容易的
+
+    在线对每个 $r$ 算的话需要维护凸包。
+    \end{solution}
+
+\subsection{悬线法}
+    有些题给了个二维黑白网格，要求全黑的矩形/正方形的最大面积/面积和之类的东西
+
+    对每个格子计算每个方向全黑能延伸到哪，然后就变成类似例三的问题
+
+\subsection{困难的例子}
+    给定 $X$，求有多少个区间 $[l,r]$ 满足 $\max+\min=X$
+
+    令 $b_i=X-a_i$，泛化成有多少个区间 $[l,r]$ 满足 $\max\{a_i\}=\max\{b_i\}$
+
+    $a,b$ 交替形成一个新序列，在这个新序列上扫的时候维护一个单调栈。单调栈中允许权值相同。
+
+    单调栈中形成若干个等值段，每个等值段都是若干个 $a$ 和若干个 $b$ 交替出现。一个等值段的贡献为开头到最后一次 $ab$ 切换的位置。
+
+
+
+% =========================================================
+
+% =========================================================
+\section{总结}
+
+本节课的核心内容如下：
+
+\begin{itemize}
+    \item 熟知讲过的几种线性数据结构的功能，能够把问题对应到数据结构上
+    \item 扩展类问题的思路
+    \item 加深对单调栈和单调队列的认识
+\end{itemize}

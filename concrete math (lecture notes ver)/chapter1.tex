@@ -1,0 +1,99 @@
+\chapter{递归式}
+
+\begin{overview}
+\begin{itemize}
+    \item 递归式的概念
+    \item 寻找递归式的基本方法
+    \item 数学归纳法
+    \item 解递归式的一些方法
+\end{itemize}
+\end{overview}
+
+\section{课前任务}
+
+《具体数学》的第一章中，最重要的内容有以下几点：递归式的概念、数学归纳法、如何写出递归式、“成套方法”。
+
+挑选的部分习题：1 3 5 8 9 12 14 16
+
+\section{写递归式}
+
+\begin{exercise}
+    对下面的问题写出递归式。事实上，大家在写 dp 的时候就在做这样的事情。
+    \begin{enumerate}
+        \item 骨牌覆盖：用 $1\times 2$ 和 $2\times 1$ 的骨牌覆盖一个 $2\times n$ 的网格，求方案数
+        \item 骨牌覆盖2：用 $1\times 2$ 和 $2\times 1$ 的骨牌覆盖一个 $3\times n$ 的网格，求方案数
+        \item 长为 $n$ 的 01 串，要求不能出现连续的三个 $1$，求方案数
+        \item 长为 $n$ 的 01 串，要求不能出现连续的三个 $1$ 或者连续的两个 $0$，求方案数
+        \item 用 $m$ 种颜色给 $1\times n$ 的网格涂色，要求相邻格子颜色不相同
+        \item 长为 $2n$ 的合法括号序列的数量
+        \item 从 $(0,0)$ 走到 $(n,n)$，每步可以向上或向右走，不能跨过对角线的方案数
+        \item $n$ 选 $k$ 排列数
+        \item $n$ 选 $k$ 组合数
+        \item 把 $n$ 写成若干单调不降正整数之和的方案数（hint: 你也许需要添加一维）
+        \item $n$ 个人围成一圈，选若干个人，要求不能相邻，求方案数
+        \item $n$ 个数的排列，要求 $a_i\ne i$，求方案数
+    \end{enumerate}
+    \graffiti{课上其实一道题都没做。}
+\end{exercise}
+
+\begin{remark}
+    你还能提出其他的问题吗？你能推广上面的某些问题吗？（无需会做）
+\end{remark}
+
+\begin{solution}
+    TODO
+\end{solution}
+
+下面是一些可能的推广：
+\begin{itemize}
+    \item 骨牌覆盖：用 $1\times 2$ 和 $2\times 1$ 的骨牌覆盖一个 $n\times m$ 的网格，求方案数
+    \item 长为 $n$、字符集大小为 $m$ 的字符串，要求某些子串不能出现，求方案数
+    \item 从 $(0,0)$ 走到 $(n,m)$，每步可选一个集合内的一种，另有对不能经过的位置的限制，求方案数
+    \item 把 $n$ 写成若干单调不降正整数之和的方案数，额外要求：严格递增/数都不超过 $k$/数都至少是 $k$/必须是奇数/...
+    \item $n$ 个数的排列，要求恰好 $k$ 个位置 $a_i\ne i$，求方案数
+\end{itemize}
+
+\section{解递归式}
+我们有两种目的：得到一个\textbf{封闭形式}，或者\textbf{快速计算}。对于只有一个递归项的递推式 $f_n=a_n f_{p(n)}+g(n)$，可以考虑展开变成求和：$f(n)=g(n)+a_n g(p(n))+a_na_{p(n)}g(p(p(n)))+\cdots$。
+\begin{example}
+    展开递推式
+    \[
+\begin{aligned}
+    J(n)&=3J(\lfloor n/2\rfloor)+\gamma n+a_{n\bmod 2}
+\end{aligned}
+\]
+\end{example}
+\begin{solution}
+    TODO
+\end{solution}
+
+对于形如 $f_n=\sum_{i=1}^k a_i f_{n-i}+r^nP(n)$（其中 $P(n)$ 是多项式）的递推，可以参考\textbf{常系数线性递推}理论。不过，也许大家更熟悉的方法是写成矩阵乘法然后快速幂，这是一个稍劣一些的做法。对于多个相互依赖的线性递推，可以考虑生成函数，也可以写成矩阵乘法然后快速幂。
+
+对于二维的递推，可以尝试的做法是对其中一维建立生成函数，然后转为生成函数的一维递推。但这通常也很困难。对于分式类型的递推（如 $f_n=\frac{1}{f_{n-1}+1}$），可以尝试将 $f_n$ 写为 $p_n/q_n$，然后导出对应的递推。其他的递推往往很难解。\graffiti{人生多艰。}
+
+
+
+\section{“成套方法”}
+事实上，下面的思想往往更有用：在处理非齐次递推（如 $f_{n,m}=f_{n-1,m}+f_{n,m-1}+g(n,m)$）时，可以转而考虑每个非齐次项 $g(i,j)$ 和初值项 $f_{0,\cdot},f_{\cdot,0}$ 对最终的 $f_{n,m}$ 的\textbf{贡献系数}。这种“算贡献”的思想对解决其他问题常常也有帮助。
+
+\begin{example}\label{example: 2d-recurrence}
+    对于递推式 $f_{n,m}=f_{n-1,m}+f_{n,m-1}+g(n,m)$，求出 $f_{n,m}$ 关于 $g(i,j)$、$f_{0,j}$ 和 $f_{i,0}$ $(1\le i\le n,1\le j\le m)$ 的表达式。
+\end{example}
+\begin{solution}
+    考虑 $g(i,j)$ 对 $f_{n,m}$ 的贡献系数 $\gamma(n,m)$，这是令 $g(i,j)=1$、其他的 $g$ 和 $f$ 的初值都为 $0$ 时 $f_{n,m}$ 的值。通过平移，可以知道这就是 $h_{x,y}=h_{x-1,y}+h_{x,y-1}+[x=y=0]$ 在 $(n-i,m-j)$ 处的值。通过组合意义，可以发现 $h_{x,y}$ 就是 $(0,0)$ 向右向上走到 $(x,y)$ 的方案数。所以 $g(i,j)$ 对 $f_{n,m}$ 的贡献系数为 $\binom{n-i+m-j}{n-i}$。
+    
+    初值 $f_{i,0}$ 和 $f_{0,j}$ 的贡献系数可以类似考虑，只不过要小心一点：我们只有 $n,m\ge 1$ 时才会调用上面的递推式进行计算，否则直接返回初值。所以，这里的贡献系数分别是 $h_{n-i,m-1}$ 和 $h_{n-1,m-j}$。
+
+    把上面的结果合到一起，我们就得到了
+    $$
+    f_{n,m}=\sum_{i,j\ge 1}g(i,j)\binom{n-i+m-j}{n-i}+\sum_{i=1}^n f_{i,0}\binom{n-i+m-1}{n-i}+\sum_{j=1}^m f_{0,j}\binom{n-1+m-j}{n-1}.
+    $$
+\end{solution}
+
+\begin{summary}
+    \begin{itemize}
+        \item 使用数学归纳法证明结论
+        \item 写递归式：分离“最后一个”或者“最特殊的一个”元素
+        \item 解递归式：直接展开求解；计算贡献系数求解
+    \end{itemize}
+\end{summary}

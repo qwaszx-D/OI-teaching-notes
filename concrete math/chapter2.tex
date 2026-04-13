@@ -16,6 +16,8 @@
     \begin{itemize}
         \item 尽量使用简单的求和条件
         \item 把无关项用分配律提出到求和号外
+        \item （通过拆成多个求和）让求和项只含有乘积
+        \item 通过换元让下标保持简单
         \item 交换求和号常常是有用的
     \end{itemize}
 \end{frame}
@@ -158,7 +160,18 @@
     \end{aligned}
     $$
 \end{frame}
-\begin{frame}{二项式反演}
+\begin{frame}{*更一般的特殊情况}
+    更一般地，$\sum\prod_{i\in S}[P_i]$ 可能只和 $S$ 的某些更简单特征有关，比如 $V(S)=\sum_{i\in S}a_i$。记这个和为 $N(V(S))$，可以枚举 $v=V(S)$ 得到
+    $$
+    \begin{aligned}
+        &\sum_{S\subseteq [k]} (-1)^{|S|}\sum \prod_{i\in S}[P_i]\\
+        &=\sum_{S\subseteq [k]}(-1)^{|S|}N(V(S))\\
+        &=\sum_v N(v)\sum_{S\subseteq [k]}[V(S)=v](-1)^{|S|}.
+    \end{aligned}
+    $$    
+    可以用其他方法（如背包）统计后面这个求和。
+\end{frame}
+\begin{frame}{*二项式反演}
     记 $g_i=\sum_{|S|=i}\sum\prod_{i\in S}[P_i]$ 为“钦定了 $i$ 个性质的方案数”，那么就有
     $$
     \begin{aligned}
@@ -170,7 +183,7 @@
     \end{aligned}
     $$
 \end{frame}
-\begin{frame}{二项式反演（续）}
+\begin{frame}{*二项式反演（续）}
     练习：反过来用 $f$ 表示 $g$。
     
     设 $h_i=\sum_{|S|=i}\sum\prod_{i\notin S}[\overline{P_i}]$ 为“至多满足 $i$ 个性质的方案数”，找出 $h$ 和 $f$ 之间的关系。
