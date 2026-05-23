@@ -1,0 +1,592 @@
+\chapter{带修区间数据结构}
+
+本章中，我们考虑\textbf{带修区间信息查询}，也就是在上一章中的问题的基础上，允许对序列 $a$ 的修改。我们仍然假设需要查询的函数 $f_{[l,r]}(a)$ 具有可分解性，即存在二元运算 $\odot$ 使得 $f_{[l,r]}(a)=f_l(a)\odot\cdots\odot f_r(a)$。此外，我们还假设 $f_{[l,r]}(a)$ 只与 $a_{[l,r]}$ 有关。  
+
+\section{单点修改}
+
+假设 $a_t$ 发生了变化，那么我们需要在先前的静态数据结构中更新所有包含 $t$ 的预处理区间 $[l,r]$ 的 $f$。如果这样的区间太多，我们就无法支持快速的修改。在分治树上看，$a_t$ 的变化会导致从根到叶子 $[t,t]$ 这条链上所有的结点的预处理区间的 $f$ 更新。如果预处理区间的数量至少是结点对应的区间长度级别，那么我们就无法支持快速的修改。所以，我们不能预处理前后缀询问。现在的子问题结构如下：
+
+\begin{itemize}
+    \item 对于询问，首先以块内子问题递归若干次，然后分裂成一个块内前缀询问、一个块间询问、一个块内后缀询问。
+    \item 对于前/后缀询问，每层都会分裂出一个块间询问以及一个块内前/后缀询问。
+    \item 对于修改，每次是一个块内子问题，以及更新这个块的信息导致的一个块间子问题。
+\end{itemize}
+
+在一般情况下，这个子问题结构会导致 $T(n)=\min_k T(n/k)+T(k)+1$ 的复杂度，而这是 $\Theta(\log n)$ 的。所以，线段树已经足够优秀。但有时，修改序列中的一个元素后，我们可以 $O(1)$ 更新完整区间的 $f$。此时，可以调整 $k$ 来让修改/查询中的一个复杂度降低、另一个复杂度提高。
+
+\begin{remark}
+    事实上，这里有一个下界。[Yao85] 证明了代数运算次数的下界满足 $t_q\log(1+t_u/t_q)=\Omega(\log n)$，[Pǎtraşcu, Demaine '04] 及后续工作则证明了内存访问次数的下界也是 $\Omega\left(\frac{\delta}{w}\log n\right)$，其中 $\delta$ 是每个元素的大小，$w$ 是机器字长。
+\end{remark}
+
+\begin{example}[多叉线段树]
+    TODO
+\end{example}
+
+线段树实现单点修改非常容易。
+
+\begin{lstlisting}[language=C++, caption={线段树单点修改}]
+void update(int u, int l, int r, int q, Info val) {
+    if(l == r) {
+        tree[u] = val;
+        return;
+    }
+    int m = (l + r) >> 1;
+    if(q <= m) update(u << 1, l, m, q, val);
+    else update(u << 1 | 1, m + 1, r, q, val);
+    tree[u] = tree[u << 1] + tree[u << 1 | 1];
+}
+\end{lstlisting}
+
+对于线段树来说，静态查询和单点修改几乎是等难的。我们现在可以完成一大批只需要单点修改的问题。
+
+\begin{exercise}[网格图连通性]
+    给一个 $m\times n$ 的黑白网格，$m$ 很小。支持
+    \begin{itemize}
+        \item 反转一个格子的颜色
+        \item 查询两个点是否在同一个同色连通块中
+        \item 查询一个子矩形内的同色连通块个数
+    \end{itemize}
+    P4121 P3300 P4246 都是类似的问题。P5897 最短路也可以类似地做（但是转移需要聪明一些）。
+\end{exercise}
+
+
+\section{全局修改}
+
+在讨论区间修改之前，我们先讨论一个更弱的问题，即全局修改。单点修改总是可以视为赋值。而对于批量修改，我们首先需要对修改进行刻画，以尝试提升计算效率。
+
+\begin{definition}[修改]
+    假设序列元素都在集合 $A$ 中，所有可能的序列集合记作 $A^*$。一个修改是一个 $A^*\to A^*$ 的\textbf{变换}\graffiti{什么花里胡哨的，这就是函数。}。所有 $A^*\to A^*$ 的变换的一个子集 $\mathcal M$ 刻画了允许的修改操作。
+\end{definition}
+
+显然，一般的修改可以非常复杂，这样的修改通常也没法处理。下面是一些没那么复杂的例子：
+
+\begin{example}
+    \begin{enumerate}
+        \item 加法：$\Phi_c(a)=(a_1+c,\ldots,a_n+c)$
+        \item 和 $x$ 取 $\max$：$\Phi_x(a)=(\max(a_1,x),\ldots,\max(a_n,x))$
+        \item 加等差数列：$\Phi_{d}(a)=(a_1,a_2+d,\ldots,a_n+(n-1)d)$
+        \item 翻转：$\Phi(a)=(a_n,\ldots,a_1)$
+        \item 排序：$\Phi(a)=$ $a$ 的升序排列
+        \item 做前缀和：$\Phi(a)=(a_1,a_1+a_2,\ldots,a_1+\cdots+a_n)$
+    \end{enumerate}
+\end{example}
+
+我们到目前为止讨论的数据结构都是假设序列结构不发生改变的，这类数据结构能处理的基本上只有\textbf{原地修改}，也就是每个 $a_i$ 的修改只依赖于 $a_i$ 本身，而不依赖于其他位置的元素。形式化地说，这就是 $\Phi(a)=(\phi_1(a_1),\ldots,\phi_n(a_n))$。原地修改的一个常见的例子是\textbf{一致修改}，也就是 $\phi_1=\cdots=\phi_n$ 的情况。
+
+\begin{exercise}
+    上面的例子中，哪些是原地修改甚至一致修改？写出对应的 $\phi_i$。
+\end{exercise}
+
+\subsection{全局查询}
+
+
+现在，我们考虑一下如何回答全局查询。我们希望全局修改 $\Phi$ 可以“整体”地应用到 $f$ 上。具体来说，也就是存在某个 $S$ 上的变换 $\tau_\Phi$，使得 $f(\Phi(a))=\tau_{\Phi}(f(a))$。这样，我们就不需要实际地做修改 $a\gets\Phi(a)$ 再计算 $f$，而是直接把 $\tau_\Phi$ 应用到 $f(a_1,\ldots,a_n)$ 上。
+
+紧接着的问题是，如何处理多次修改？我们有
+$$
+\begin{aligned}
+&f(\Phi_2(\Phi_1(a)))\\
+&=\tau_{\Phi_2}(f(\Phi_1(a)))\\
+&=\tau_{\Phi_2}(\tau_{\Phi_1}(f(a)))\\
+% &=(\tau_{\Phi_2}\circ\tau_{\Phi_1})(f(a)).
+\end{aligned}
+$$
+所以只要逐个应用 $\tau$ 即可。
+\begin{example}[矩阵乘法]
+    假设 $\mathbf a_i$ 都是 $k$ 维向量，修改是矩阵乘法 $\Phi_{\mathbf M}(\mathbf a)=(\mathbf M \mathbf a_1,\ldots,\mathbf M \mathbf a_n)$，查询是 $f(\mathbf a)=\sum_i \mathbf a_i$。
+\end{example}
+
+\subsection{区间查询}
+
+现在考虑如何回答区间查询。自然的想法是，我们寻找一个能把全局修改“落到”区间上的方法。也就是说，我们寻找 $\tau_{\Phi,[l,r]}$ 使得 $f_{[l,r]}(\Phi(a))=\tau_{\Phi,[l,r]}(f_{[l,r]}(a))$。这样，我们求出 $f_{[l,r]}(a)$ 后应用 $\tau_{\Phi,[l,r]}$ 即可。
+
+然而我们有多次修改，逐个计算 $\tau$ 并应用的代价过高。所以，我们希望首先复合出 $\Phi=\Phi_m\circ\cdots\circ \Phi_1$，然后再计算 $\tau_{\Phi,[l,r]}$。这一过程中，我们需要如下性质：
+\begin{itemize}
+    \item 修改集合 $\mathcal M$ 在复合下的闭包 $\overline{\mathcal M}$ 不太大，且 $\overline{\mathcal M}$ 中的任意两个修改 $\Phi_1,\Phi_2$ 都能够快速复合
+    \item 对任何 $\Phi\in\overline{\mathcal M}$，都可以快速计算 $\Phi$ 对 $f_{[l,r]}(a)$ 的影响 $\tau_{\Phi,[l,r]}(f_{[l,r]}(a))$.
+\end{itemize}
+满足这种性质的 $\overline{\mathcal M}$ 中的元素通常也叫做\textbf{标记}，它使用较少的信息描述了一个批量修改。
+
+\begin{remark}
+    注意第二个性质与修改 $\Phi$ 和信息 $f$ 都相关。有时，无法直接计算 $\Phi$ 对 $f$ 的影响，但是当我们把 $f$ 放到一个更大的信息 $g$ 中时，$\Phi$ 对 $g$ 的影响也许就会变得容易计算。
+
+    一个常见的做法是把 $[l,r]$ 或者 $r-l+1$ 放到 $f_{[l,r]}(a)$ 中，这样就可以把 $[l,r]$ 从 $\tau$ 的参数中去掉，也就是我们只需要考虑 $\tau_{\Phi}$。
+\end{remark}
+
+\begin{remark}
+    用矩阵乘法来描述修改几乎总是方便的，因为矩阵乘法自动是封闭的。这里矩阵乘法可以是广义运算意义下的，如 $(\max,+)$、$(\max,\min)$ 等。
+
+    在实现时，由于修改对应的矩阵乘法可能有特殊的性质，如上三角等。此时，可以只存储矩阵的非零元，并且手工计算这种矩阵乘法来加快效率。例如，计算 $2\times 2$ 矩阵乘法需要 8 次乘法和 4 次加法，而计算上三角矩阵乘法只需要 4 次乘法和 1 次加法。
+\end{remark}
+
+\begin{example}[线段树 2]
+    支持全局加、全局乘，查询区间和。在 $\mathbb Z_{m}$ 或者说模 $m$ 意义下做运算
+\end{example}
+\begin{solution}
+    这是一个一致修改，我们可以先关注每个元素上的变换。$\mathcal M$ 包含所有的 $x\mapsto x+b$ 以及 $x\mapsto kx$，这两种变换的复合是一次函数 $x\mapsto kx+b$。由于一次函数的复合还是一次函数，我们就得到了 $\mathcal M$ 的闭包 $\overline{\mathcal M}$ 的结构：所有逐元素的一次函数变换。
+
+    现在，考虑一个 $\overline{\mathcal M}$ 中的一个变换 $\Phi$，假设其执行了逐元素的 $x\mapsto kx+b$。我们来寻找 $\tau_{\Phi,[l,r]}$，这就是
+    $$
+    \begin{aligned}
+    f_{[l,r]}(\Phi(a))&=\sum_{i=l}^r ka_i+b\\
+    &=\left(k\sum_{i=l}^r a_i\right)+(r-l+1)b\\
+    &=kf_{[l,r]}(a)+(r-l+1)b.
+    \end{aligned}
+    $$
+    所以我们就得到 $\tau_{\Phi,[l,r]}(f_{[l,r]}(a))=kf_{[l,r]}(a)+(r-l+1)b$。
+
+    让我们关注另一个视角。如果我们把区间长度 $r-l+1$ 也加入到 $f_{[l,r]}(a)$ 中，也就是 $f_{[l,r]}(a)=\begin{bmatrix}\sum_{i=l}^r a_i\\ r-l+1\end{bmatrix}$，那么我们就可以把 $\tau$ 写成
+    $$
+\tau_{\Phi,[l,r]}f_{[l,r]}(a)=\begin{bmatrix}k&b\\0&1\end{bmatrix}f_{[l,r]}(a).
+    $$
+    这样 $\tau$ 和 $[l,r]$ 变得无关了。
+\end{solution}
+\begin{example}
+    维护两个序列 $a$ 和 $b$，支持
+    \begin{itemize}
+        \item 全局让 $a_i$ 或者 $b_i$ 乘 $x$ 或加 $x$
+        \item 全局让 $a_i$ 变成 $a_i+b_ix$
+        \item 全局让 $b_i$ 变成 $b_i+a_ix$
+        \item 查询区间 $a_i$ 的和以及 $b_i$ 的和
+    \end{itemize}
+    都在 $\mathbb Z_m$ 或者说模 $m$ 意义下做运算。
+\end{example}
+\begin{solution}
+    直接思考比较困难。然而，我们很容易用矩阵乘法描述所有的修改，这是因为所有的修改都是\textbf{仿射变换}：
+    $$
+    \begin{bmatrix}a_i\\b_i\end{bmatrix}\mapsto \begin{bmatrix}\alpha&\beta\\\gamma&\delta\end{bmatrix}\begin{bmatrix}a_i\\b_i\end{bmatrix}+\begin{bmatrix}u\\v\end{bmatrix}.
+    $$
+    那么这就是一个矩阵意义下的一次函数变换。
+\end{solution}
+\begin{remark}
+    现在，我们可以让每个 $a_i$ 都代表平面上的一个点，支持全局关于某个点旋转、缩放、平移，查询区间内的点的坐标和。
+\end{remark}
+\begin{exercise}
+    OI 中经常出现的情况是下面这样：给定序列 $a$ 以及显式或隐式给定的序列 $b$（如 $b_i=\mathrm{Fib}_i$），支持全局 $a_i$ 加 $x$ 或乘 $x$ 或让 $a_i$ 变成 $a_i+b_ix$，查询区间内 $a_i$ 的和。
+\end{exercise}
+\begin{example}
+    维护两个序列 $a$ 和 $b$，支持
+\begin{itemize}
+    \item 全局让 $a_i$ 或者 $b_i$ 乘 $x$ 或加 $x$
+    \item 查询区间内 $a_ib_i$ 的和
+\end{itemize}
+    都在 $\mathbb Z_m$ 或者说模 $m$ 意义下做运算。
+\end{example}
+\begin{solution}
+    根据线段树 2 的例子，这里的变换还是一次函数。我们考虑如何计算 $\tau$。有
+    $$
+    \begin{aligned}
+    f_{[l,r]}(\Phi(a))&=\sum_{i=l}^r (k_aa_i+d_a)(k_bb_i+d_b)\\
+    &=k_ak_b\sum_{i=l}^r a_ib_i+k_ad_b\sum_{i=l}^r a_i+d_ak_b\sum_{i=l}^r b_i+(r-l+1)d_ad_b.
+    \end{aligned}
+    $$
+    所以，我们需要 $\sum_{i=l}^r a_ib_i$、$\sum_{i=l}^r a_i$、$\sum_{i=l}^r b_i$、$r-l+1$ 这四个信息来计算 $\tau_{\Phi,[l,r]}$。那么自然的选择是把这四个信息都加入到 $f_{[l,r]}(a)$ 中。之后我们还需要考虑 $\sum_{i=l}^r a_i$、$\sum_{i=l}^r b_i$、$r-l+1$ 这三个量在一次函数变换下的变化，这是在线段树 2 中已经解决过的问题。
+\end{solution}
+\begin{exercise}
+    支持以上三个问题中的所有修改和询问。
+\end{exercise}
+\begin{example}
+    维护序列 $a$，支持全局加 $x$，全局和 $x$ 取 $\max$，全局赋值为 $x$，查询区间 $\max$。$x$ 可以为负值。
+\end{example}
+\begin{solution}
+    使用 $(\max,+)$ 矩阵乘法来描述修改。$\max$ 对应标准矩乘中的加法，$+$ 对应标准矩乘中的乘法。注意到修改也是类似仿射变换的形式：$x\mapsto \max(x+\alpha,\beta)$。将 $a_i$ 扩充一个 $0$ 来表示常数项，那么修改就可以用如下矩阵乘法来描述：加 $x$ 对应 $\begin{bmatrix}a_i\\0\end{bmatrix}\mapsto \begin{bmatrix}x&-\infty\\-\infty&0\end{bmatrix}\begin{bmatrix}a_i\\0\end{bmatrix}$，和 $x$ 取 $\max$ 对应 $\begin{bmatrix}a_i\\0\end{bmatrix}\mapsto \begin{bmatrix}0&x\\-\infty&-\infty\end{bmatrix}\begin{bmatrix}a_i\\0\end{bmatrix}$，赋值为 $x$ 对应 $\begin{bmatrix}a_i\\0\end{bmatrix}\mapsto \begin{bmatrix}-\infty&x\\-\infty&-\infty\end{bmatrix}\begin{bmatrix}a_i\\0\end{bmatrix}$。查询区间 $\max$ 就是 $(\max,+)$ 意义下的向量加法。
+\end{solution}
+\begin{remark}
+    通过 Segment Tree Beats \graffiti{这是吉如一(jiru\_2)发现的技巧，所以也有吉司机线段树、吉利线段树等名字。正文中这个名字来自番剧 Angel Beats!}技巧，还可以支持查询区间和。这个技巧依赖和 $x$ 取 $\max$ 这个操作的均摊性质。
+\end{remark}
+
+在下一节中，我们将看到以上这些问题都可以简单地扩展到区间修改。现在，让我们来总结一下标记与信息设计的一般原则。
+
+\begin{descbox}{原则}[标记与信息的设计原则]
+    \begin{itemize}
+        \item 首先观察修改在复合运算下的闭包 $\overline{\mathcal M}$ 的结构。这通常可以由矩阵刻画。
+        \item 根据 \cref{desc: design divide-and-conquer information} 初步设计分治信息 $f$。
+        \item 取一个 $\overline{\mathcal M}$ 中的一般修改 $\Phi$，尝试计算 $\tau_{\Phi,[l,r]}$，把需要的辅助信息添加进分治信息 $f$。
+        \item 重复上一步若干次。如果顺利，那么可以得到一个 $\tau$。否则，可能说明不存在简单的可以快速修改的分治信息。
+    \end{itemize}
+\end{descbox}
+
+在实现代码时，方便的做法是把修改的闭包 $\overline{\mathcal M}$ 中的元素封装成一个结构体 \texttt{Tag}，并实现修改的复合以及修改对信息的影响 $\tau_{\Phi}(f)$。
+
+\begin{lstlisting}[language=C++, caption={修改的封装}]
+struct Tag {
+    // 表示 M 中的一个元素需要的若干变量。我们以线段树 II 为例。
+    long long k, b;  
+    // 默认构造函数：对应恒等变换 x->x。如果没有直接的表示，那么可以再加一个 bool 变量表示。
+    Tag() : k(1), b(0) {}
+    // 构造函数
+    Tag(long long k_, long long b_) : k(k_), b(b_) {}
+
+    // 重载 Tag(Tag) 运算符：实现修改的复合。也可以用其他运算符表示，如 *。
+    Tag operator ()(const Tag &tag) 
+    {
+        return Tag(k * tag.k, k * tag.b + b.b);
+    }
+    // 重载 Tag(Info) 运算符：实现 \tau_\Phi(f)，也就是修改如何作用到信息上的函数。也可以用其他运算符表示，如 *。
+    Info operator()(const Info &info) 
+    {
+        return Info(k * info.sum + b * info.len, info.len);
+    }
+};
+\end{lstlisting}
+
+% 此外，我们可以注意到 $\tau_{\Phi,[l,r]}$ 自然诱导了分配律：一方面有 $f_{[l,r]}(\Phi(a))=\tau_{\Phi,[l,r]}(f_{[l,r]}(a))$，而另一方面又有 
+% $$
+% f_{[l,r]}(\Phi(a))=f_{[l,m]}(\Phi(a))\odot f_{[m+1,r]}(\Phi(a))=\tau_{\Phi,[l,m]}(f_{[l,m]}(a))   \odot\tau_{\Phi,[m+1,r]}(f_{[m+1,r]}(a)).
+% $$
+% 所以
+% $$
+% \tau_{\Phi,[l,r]}(f_{[l,r]}(a))=\tau_{\Phi,[l,m]}(f_{[l,m]}(a))   \odot\tau_{\Phi,[m+1,r]}(f_{[m+1,r]}(a)).
+% $$
+
+\section{区间修改}
+
+现在，我们来讨论最后的问题，即区间修改。相比全局修改 $\Phi$，区间修改 $\Phi_{[l,r]}$ 额外传入了一个区间作为参数。在 OI 的常规语境下，这代表只对 $a_{[l,r]}$ 进行修改。此处仍然只讨论原地修改，常见的情况有以下三类：
+\begin{itemize}
+    \item 一致修改：$\Phi_{[l,r]}(a)$ 将每个 $i\in[l,r]$ 的 $a_i$ 替换为 $\phi(a_i)$
+    \item 与相对位置有关的修改：$\Phi_{[l,r]}(a)$ 将每个 $i\in[l,r]$ 的 $a_i$ 替换为 $\phi_{i-l+1}(a_i)$
+    \item 与绝对位置有关的修改：$\Phi_{[l,r]}(a)$ 将每个 $i\in[l,r]$ 的 $a_i$ 替换为 $\phi_i(a_i)$
+\end{itemize}
+
+与询问相同，我们希望修改也具有可分解性。也就是说当对 $[l,r]$ 进行修改时，我们希望能够将修改分解到 $[l,m]$ 和 $[m+1,r]$ 上。形式化地说，对于修改 $\Phi_{[l,r]}$，我们希望存在 $\Phi_{[l,m]}$ 和 $\Phi_{[m+1,r]}$ 使得 $f_{[l,r]}(\Phi_{[l,r]}(a))=f_{[l,m]}(\Phi_{[l,m]}(a))\odot f_{[m+1,r]}(\Phi_{[m+1,r]}(a))$。
+
+\begin{example}
+    一致修改和与绝对位置有关的修改显然可分解。对于与相对位置有关的修改，通常需要 $\phi_i$ 容易平移，也就是 $(\phi_{m+1},\ldots,\phi_r)$ 容易用 $(\phi_1,\ldots,\phi_{r-m})$ 表示出来。例如，$\phi_i(x)=x+(ki+b)$ 和 $\phi_i(x)=x+kr^i$ 就满足这样的性质。而 $\phi_i(x)=x+b_i$ 则不满足这样的性质。
+\end{example}
+
+现在，与静态区间询问类似，我们可以在分治树上递归，把修改 $\Phi_{[L,R]}$ 分解到若干分治区间上，在这些区间上计算 $\tau$ 并应用，然后再重算分解过程中影响到的所有区间的 $f$。考虑分治树上的一个区间 $[l,r]$，有四种情况：
+\begin{itemize}
+    \item $[l,r]$ 是 $[L,R]$ 分解到的一个完整区间。那么我们通过 $\tau$ 算出了修改后的这个区间的 $f$。
+    \item $[l,r]$ 是 $[L,R]$ 分解到的一个完整区间的真子区间。那么虽然我们还没有计算 $\Phi_{[L,R]}$ 对这个区间的 $f$ 的影响，但是我们可以保证这个区间的 $f$ 应用上其分治树上祖先结点存储的修改后是正确的。
+    \item $[l,r]$ 与 $[L,R]$ 有交但不被包含，也就是说 $[l,r]$ 是 $[L,R]$ 分解过程中的一个区间。此时，我们通过子区间的 $f$ 计算出正确的本区间的 $f$。
+    \item $[l,r]$ 与 $[L,R]$ 没有交集，那么这个区间的 $f$ 不受 $\Phi_{[L,R]}$ 的影响。
+\end{itemize}
+
+此时，假设又有一个修改 $\Phi'_{[L',R']}$，我们仍然在分治树上做分解。然而，在递归时，有可能当前的分治区间 $[l,r]$ 上已经有先前分解出的修改 $\Phi_{[l,r]}$ 了。有两种情况：
+\begin{itemize}
+    \item $[l,r]$ 已经是一个完整区间了。此时，我们直接复合两个修改，也就是令 $\Phi_{[l,r]}\gets \Phi'_{[l,r]}\circ \Phi_{[l,r]}$。
+    \item $[l,r]$ 不是一个完整区间。此时，如果直接向下继续分解，那么就会导致新的修改作用在旧的修改之前。由于修改之间往往不交换，这样会导致结果出错。因此，我们需要先把当前区间记录的 $\Phi_{[l,r]}$ 分解到子区间 $[l,m]$ 和 $[m+1,r]$ 上，然后再继续递归分解 $\Phi'_{[l,r]}$，以保证新的修改总是作用在先前的旧修改之后。需要注意的是把 $\Phi_{[l,r]}$ 分解到子区间时也可能出现上一点中的情况。把一个分治区间上的修改分解到子区间上的这个过程叫做 \texttt{pushdown}。
+\end{itemize}
+
+也就是说，我们维护了下面这个不变量：对于分治树上的一个区间 $[l,r]$，假设其分治树上的祖先自下往上分别存储了修改 $\Phi_1,\ldots,\Phi_k$。那么在任意时刻，我们需要保证真实的 $f_{[l,r]}(a)$ 等于该结点当前存储的 $\hat f_{[l,r]}(a)$ \textbf{自下往上}地应用其分治树上所有祖先存储的修改得到的结果，也就是
+$$
+f_{[l,r]}(a)=\hat f_{[l,r]}(\Phi_k(\cdots\Phi_2(\Phi_1(a))))=(\tau_{\Phi_k}\circ\cdots\circ \tau_{\Phi_1})(\hat f_{[l,r]}(a)).
+$$
+所以，为了保证修改的顺序正确，我们需要在递归之前对当前结点进行 \texttt{pushdown}。
+
+现在来考虑区间询问。我们首先分解到若干完整的分治区间上，然后考虑每个分治区间的结果。根据我们维护的不变量，一个分治区间真实的 $f_{[l,r]}(a)$ 就是其存储的 $\hat f_{[l,r]}(a)$ 应用上其祖先存储的所有修改得到的结果。那么一种回答询问的方法就是在递归时记录祖先存储的修改复合的结果，最后再应用到存储的 $\hat f_{[l,r]}(a)$ 上。不过，更常见的做法是在递归过程中对访问到的所有结点 \texttt{pushdown}。这样做之后，祖先中的就没有修改了。根据我们的循环不变式，此时真实的 $f_{[l,r]}(a)$ 就等于存储的 $\hat f_{[l,r]}(a)$。
+
+\begin{remark}
+    在递归之前对当前结点 \texttt{pushdown} 总是对的。这是最通用和简便的写法。
+\end{remark}
+
+这样我们就得到了完整的支持区间修改和区间查询的线段树。
+
+\begin{lstlisting}[language=C++, caption={线段树区间修改}]
+struct SegTree {
+    int n;
+    vector<Info> tree;
+    vector<Tag> tag;  // 维护分治树上每个结点的修改。对于没有修改的结点，tag[u] 就是恒等变换。
+    SegTree(int n_) : n(n_), tree(4 * n_), tag(4 * n_) {}
+
+    void build(int u, int l, int r, const vector<int>&a) {
+        if(l == r) {
+            tree[u] = Info(a[l]);
+            return;
+        }
+        tag[u] = Tag();
+        int m = (l + r) >> 1;
+        build(u << 1, l, m, a);
+        build(u << 1 | 1, m + 1, r, a);
+        tree[u] = tree[u << 1] + tree[u << 1 | 1];
+    }
+    SegTree(const vector<int>&a) : SegTree(a.size()){
+        build(1, 1, n, a);
+    }
+    // 实现把修改作用到线段树结点上的函数。
+    void apply(int u, const Tag &newtag) {
+        tree[u] = newtag(tree[u]);
+        tag[u] = newtag(tag[u]);
+    }
+    void pushdown(int u, int l, int r) {
+        if(tag[u].isId()) return;   // 可以不加，但是加了通常快一些。
+        // 分解 tag[u]。通常就是 tag[u] 本身，此时不需要传入 l,r。
+        int m = (l + r) >> 1;
+        Tag tagL = tag[u], tagR = tag[u]; 
+        tag[u]=Tag()
+        
+        // 将分解后的修改作用到到子区间上
+        apply(u << 1, tagL);
+        apply(u << 1 | 1, tagR);
+    }
+    void update(int u, int l, int r, int lq, int rq, const Tag &newtag) {
+        if(l == lq && r == rq) {
+            apply(u, newtag);
+            return;
+        }
+        pushdown(u, l, r);
+        int m = (l + r) >> 1;
+        if(rq <= m) update(u << 1, l, m, lq, rq, newtag);
+        else if(lq > m) update(u << 1 | 1, m + 1, r, lq, rq, newtag);
+        else {
+            update(u << 1, l, m, lq, m, newtag);
+            update(u << 1 | 1, m + 1, r, m + 1, rq, newtag);
+        }
+        tree[u] = tree[u << 1] + tree[u << 1 | 1];
+    }
+    void update(int u, int l, int r, int q, const Info &val) {
+        if(l == r) {
+            tree[u] = val;
+            return;
+        }
+        pushdown(u, l, r);
+        int m = (l + r) >> 1;
+        if(q <= m) update(u << 1, l, m, q, val);
+        else update(u << 1 | 1, m + 1, r, q, val);
+        tree[u] = tree[u << 1] + tree[u << 1 | 1];
+    }
+    Info query(int u, int l, int r, int lq, int rq) {
+        if(l == lq && r == rq) return tree[u];
+        pushdown(u, l, r);
+        int m = (l + r) >> 1;
+        if(rq <= m) return query(u << 1, l, m, lq, rq);
+        else if(lq > m) return query(u << 1 | 1, m + 1, r, lq, rq);
+        else {
+            return query(u << 1, l, m, lq, m) + query(u << 1 | 1, m + 1, r, m + 1, rq);
+        }
+    }
+    void update(int l, int r, const Tag &newtag) {
+        update(1, 1, n, l, r, newtag);
+    }
+    void update(int q, const Info &val) {
+        update(1, 1, n, q, val);
+    }
+    Info query(int l, int r) {
+        return query(1, 1, n, l, r);
+    }
+};
+\end{lstlisting}
+
+通过修改 \texttt{Info} 和 \texttt{Tag}，我们已经可以完成不计其数的线段树板子题。下面的练习是基本上是\textbf{最困难的一批}，然而如果你已经完全理解了修改与信息设计的原则，那么下面的问题基本上都可以一眼看破。
+
+\begin{exercise}[括号序列]
+    维护括号序列，支持
+    \begin{itemize}
+        \item 区间赋值
+        \item 反转一个区间内的括号
+        \item 查询区间内左/右括号的数量
+        \item 查询区间内最多有多少个连续的左/右括号
+        % \item 查询区间内最长的合法括号子串的长度
+        \item 查询区间内最长的合法括号子序列的长度
+        \item 查询区间内至少要改变几个括号才能使得区间合法
+        \item 查询区间内有多少个极长连续段
+        \item 查询区间内所有极长连续段长度的最值和 $k$ 次方和
+    \end{itemize}
+    P2572；CF1149C
+\end{exercise}
+\begin{remark}
+    利用单侧递归技巧，我们还能查询区间内最长的合法括号\textbf{子串}的长度，以及\textbf{不匹配位置}的半群信息。
+\end{remark}
+
+\begin{exercise}[拆位]
+    维护数列，支持
+    \begin{itemize}
+        \item 区间按位异或/按位与/按位或 $x$
+        \item 查询区间和
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}[区间最大子段和]
+    维护数列，支持
+    \begin{itemize}
+        \item 区间赋值
+        \item 区间乘 $-1$
+        \item 查询区间最大子段和
+    \end{itemize}
+    强于 P4513
+\end{exercise}
+\begin{remark}
+    配合模拟费用流可以求出区间最大 $k$ 段子段和。
+\end{remark}
+
+\begin{exercise}[最值]
+    维护两个数列 $a$ 和 $b$，假设 $k$ 是比较小但是不固定的数，支持
+    \begin{itemize}
+        \item 两个数列上的区间加，区间赋值
+        \item 给定长为 $k$ 的序列 $s\in\{a,b\}^k$，查询区间 $[l,r]$ 的所有长度为 $k$ 的子序列/子段（设下标为 $i_1<\cdots<i_k$）中，$\sum_{j=1}^k [s_j]_{i_j}$ 的最值
+        \item 给定长为 $k$ 的序列 $s$，查询区间 $[l,r]$ 内是否存在长度为 $k$ 的子段（设下标为 $i_1<\cdots<i_k$），使得 $[s_j]_{i_j}$ 单调不降
+    \end{itemize}    
+    P7706
+\end{exercise}
+
+\begin{exercise}[历史最值]
+    维护两个数列 $a$ 和 $b$，支持
+    \begin{itemize}
+        \item 两个数列上的区间加、区间赋值、区间和 $x$ 取 $\max$
+        \item 区间内令 $a_i=\max(a_i,b_i+x)$
+        \item 区间内令 $b_i=\max(b_i,a_i+x)$
+        \item 查询两个数列的区间 $\max$
+    \end{itemize}
+\end{exercise}
+\begin{remark}
+    如果没有第二个操作、第三个操作换成 $b_i=\max(b_i,a_i)$，那么 $b_i$ 相当于记录了 $a_i$ 的\textbf{历史最值}。
+\end{remark}
+
+\begin{exercise}[数列]
+    维护数列，在 $\mathbb Z_m$ 也就是 $\bmod\  m$ 下做运算。下面的 $k$ 都是比较小但不固定的数。支持
+    \begin{itemize}
+        \item 区间加 $x$，区间乘 $x$，区间赋值为 $x$
+        \item 查询区间内所有数的 $k$ 次方和
+        \item 查询区间内所有相邻 $k$ 个数的乘积的和
+        \item 查询区间内所有 $k$ 元组乘积的和
+    \end{itemize}
+    P4247, P5142
+\end{exercise}
+
+\begin{exercise}[哈希]
+    维护数列，固定 $B$ 和 $p$，支持
+    \begin{itemize}
+        \item 区间加，区间乘，区间赋值
+        \item 计算区间的 $B$ 进制哈希值 $\sum_{i=l}^r a_i B^{r-i}\bmod p$
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}[$\gcd$]
+    维护数列，支持
+    \begin{itemize}
+        \item 区间加，区间赋值
+        \item 查询区间内所有数的 $\gcd$
+    \end{itemize}
+    \begin{hint}
+        $\gcd(a_1,\ldots,a_n)=\gcd(a_1,a_2-a_1,a_3-a_2,\ldots,a_n-a_{n-1})$
+    \end{hint}
+\end{exercise}
+\begin{remark}
+    注意无论按照何种顺序，顺次计算 $n$ 个数的 $\gcd$ 的复杂度都是 $O(n+\log V)$。
+\end{remark}
+
+\begin{exercise}[小值域]
+    维护数列 $a$ 和另一个分治信息序列 $b$，$a$ 在 $\mathbb Z_k$ 也就是模 $k$ 下做运算且 $k$ 很小，支持
+    \begin{itemize}
+        \item 给定 $x,y\in\mathbb Z_k$ 把区间内所有 $a_i=x$ 的 $a_i$ 变成 $y$
+        \item 查询区间内 $a$ 的中位数和众数
+        \item 给一个集合 $S\subseteq \mathbb Z_k$，查询区间内最短的子段，使得所有 $x\in S$ 都在这个子段内出现
+        \item 给一个集合 $S\subseteq \mathbb Z_k$，把区间内所有 $a_i\in S$ 的位置拉出来形成一个子序列，然后询问这个子序列的 $b$ 的合并结果
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}[加矩阵幂]
+    固定矩阵 $\mathbf M$，维护向量列 $\mathbf a$，支持
+    \begin{itemize}
+        \item 给定向量 $\mathbf v$ 和区间 $[l,r]$，对所有 $i\in [l,r]$，令 $\mathbf a_i\gets \mathbf a_i+\mathbf M^{i-l}\mathbf v$
+        \item 区间加，区间乘任意矩阵，区间赋值
+        \item 查询区间和
+    \end{itemize}
+\end{exercise}
+\begin{remark}
+    这个包括了区间加线性递推的情况，而线性递推又包括了区间加等差和等比数列的情况。
+\end{remark}
+
+\section{特殊情况的优化}
+
+\subsection{标记永久化}
+
+需要 \texttt{pushdown} 的原因是标记之间不交换。然而标记经常是可交换的，比如只有区间加、只有区间乘、只有区间和 $x$ 取 $\max$ 等等。对于这种情况，我们就不需要 \texttt{pushdown} 了。在查询时，我们通过递归计算出没有作用过当前结点以及祖先的修改的信息 $\hat f_{[lq,rq]}(a)$，然后再应用当前结点的修改 $\Phi_{[l,r]}$ 即可。
+
+\begin{example}[矩形面积并]
+    给定平面上的若干矩形，我们要计算它们的并的面积。这个问题的做法是扫描线，也就是考虑每个横坐标段 $(l,r)$，满足所有矩形的横坐标区间要么与 $(l,r)$ 不交，要么完全包含 $(l,r)$。这样的段可以由所有矩形的横坐标形成的 $2n$ 个点切分出来。之后，我们只需要考虑每个段的纵坐标区间并的长度，而这是一个一维的问题。从一个段移动到它的下一个段的时候，会加入或者离开一个纵坐标区间。以上这些操作形成了下面的子问题：
+
+    维护数轴，支持
+    \begin{itemize}
+        \item 插入一条线段
+        \item 删除一条线段，保证曾经插入过，并且还没有被删除
+        \item 查询当前所有线段的并的长度
+    \end{itemize}
+\end{example}
+
+\begin{exercise}
+    上面的问题可以泛化成：维护数列，支持
+    \begin{itemize}
+        \item 区间加 $1$，区间减 $1$，保证任意时刻所有位置非负。
+        \item 查询有多少个位置大于 $0$。
+    \end{itemize}
+    注意这个问题不能用上一题中的标记永久化方法解决。
+    \begin{hint}
+        由于始终非负，大于 $0$ 的位置数量就相当于\textbf{非最小值的个数}。
+    \end{hint}
+\end{exercise}
+\begin{remark}
+    如果没有所有位置始终非负的假设，这个问题有矩阵乘法归约，无法做到 $\mathrm{polylog}n$。在有了这个假设时，这是个比较常见的技巧。
+\end{remark}
+
+\subsection{增量修改与前缀查询：树状数组}
+
+当查询都是前缀形式的时候，可以发现线段树的所有左儿子都是无用的。此时，可以直接将所有的左子结点删去，把剩余的结点重连成树。这就得到了树状数组。不过，实际使用时，另一种理解可能会更加方便。定义 $\mathtt{lowbit}(i)$ 为 $i$ 的二进制表示中最低位的 $1$ 所代表的数，如 $\mathtt{lowbit}(20)=\mathtt{lowbit}((10100)_2)=(100)_2=4$。那么树状数组就是维护一个 $n$ 大小的数组 $c$，其中 $c_i$ 存储了 $f_{(i-\mathtt{lowbit}(i),i]}(a)$。这样，查询前缀 $f_{[1,r]}(a)$ 就是把 $[1,r]$ 拆成若干 $(x-\mathtt{lowbit}(x),x]$ 然后合并。对于\textbf{增量修改}（修改 $a_i$ 后可以直接算出此修改对包含 $i$ 的区间信息 $f_{[l,r]}(a)$ 的影响），可以找出所有包含 $i$ 的 $(x-\mathtt{lowbit}(x),x]$，然后修改对应的 $c_x$。
+
+\begin{descbox}{数据结构}[树状数组]\label{desc: Fenwick tree}
+
+\paragraph{预处理. }初始令所有 $c_i=f_{i}(a)$。从 $0$ 开始枚举所有 $k$，对每个 $2^{k+1}$ 的倍数 $i$，令 $c_i=c_{i-2^k}\odot c_i$。
+
+\paragraph{查询. }初始令 $s=0$。对于查询 $[1,r]$，不断地执行 $s\gets c_r\odot s$，$r\gets r-\mathtt{lowbit}(r)$，直到 $r=0$。返回 $s$。
+
+\paragraph{修改. }对于修改 $a_x'=\varphi(a_x)$，假设存在 $\tau_{\varphi,[l,r]}$ 使得对任何包含 $x$ 的区间 $[l,r]$，都有 $f_{[l,r]}(a')=\tau_{\varphi,[l,r]}(f_{[l,r]}(a))$。不断地令 $c_x\gets \tau_{\varphi,(x-\mathtt{lowbit}(x),x]}(c_x)$，$x\gets x+\mathtt{lowbit}(x)$，直到 $x>n$。
+\end{descbox}
+
+不难发现预处理的复杂度为 $O(n)$，而修改查询的复杂度都是 $O(\log n)$。实现代码时，有一个细节需要处理——如何计算 $\mathtt{lowbit}(x)$？可以注意到这等于 \verb|x&(~(x-1))|。此外，根据整数的表示法，我们还有 \verb|~(x-1)=-x|。在代码中，通常会用 \verb|x&(-x)| 来实现 $\mathtt{lowbit}$。
+\begin{lstlisting}[language=C++, caption={树状数组}]
+Info s[N];
+// 每一层分治对应一层数组
+void build(int n) {
+    for(int i=1;i<=n;i++)
+        s[i]=Info(a[i]);
+    for(int k=1;k<=n;k<<=1)
+        for(int i=k<<1;i<=n;i+=(k<<1))
+            s[i]=s[i-k]+s[i];
+}
+Info query(int r) {
+    Info ans;
+    for(;r;r-=r&(-r)))
+        ans=s[r]+ans;
+    return ans;
+}
+void upd(const Modify &phi, int x, Info &info) {
+    // 应用 phi 对区间 (x-lowbit(x),x] 的信息 info 的影响)
+}
+void update(int x, const Modify &phi) {
+    for(;x<=n;x+=x&(-x))
+        upd(phi,x,s[x]);
+}
+\end{lstlisting}
+
+\begin{exercise}[树状数组的常见应用]
+    \begin{itemize}
+        \item 单点加，单点赋值，查询区间和
+        \item 单点加非负整数，单点和 $x$ 取 $\max$，查询前缀 $\max$ 和后缀 $\max$
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}
+    假设修改和查询的位置在 $[1,n]$ 中均匀随机，$n$ 是 $2$ 的幂。说明查询和修改的期望循环次数是 $\frac{1}{2}\log_2 n$。
+\end{exercise}
+
+\begin{exercise}[树状数组的区间查询与任意单点修改]
+    说明树状数组可以在 $O(\log^2 n)$ 时间内查询区间信息。对于一般的单点修改，说明树状数组可以在 $O(\log^2 n)$ 内实现。
+\end{exercise}
+
+\subsection{可差分的修改}
+
+像区间加、区间异或这种修改可以通过差分来变成单点修改，这样就能通过提高查询的代价来简化修改。由于区间修改通常是麻烦的，能差分的问题总是应该差分。之后，维护的信息还常常是可减的，此时可以通过树状数组大大减小常数。
+
+\begin{example}
+    假设 $p$ 是质数。在 $\mathbb F_p$ 或者说模 $p$ 意义下，乘法不是直接可差分的修改，因为存在乘 $0$ 的情况。然而如果我们把 $0$ 视为变量 $x$ 并且在 $\mathbb F_p(x)$ 下做运算，那么乘法就是可差分的了。具体来说，我们把每个元素视为 $ax^b$，那么区间乘除 $0$ 就变成了 $b$ 的区间加减。维护区间乘积也同理。需要注意这个做法只适用于\textbf{只有乘法}的情况。
+\end{example}
+
+\begin{example}
+    支持
+    \begin{itemize}
+        \item 区间加
+        \item 查询区间和
+    \end{itemize}
+    差分后使用树状数组完成。
+\end{example}
+

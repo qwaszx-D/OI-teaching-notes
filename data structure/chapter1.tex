@@ -1,23 +1,44 @@
 \chapter{基础数据结构}
 
+\begin{overview}
 \begin{itemize}
-    \item 加深对于 \texttt{vector}、栈、队列、链表、堆等数据结构的理解
-    \item 识别常见的可以使用这些数据结构解决的问题
-    \item 强化数据结构思维：抽象问题与数据结构的对应
+    \item \texttt{vector}、栈、队列、链表、堆支持的操作，及其实现
+    \item 常见的可以使用这些数据结构解决的问题
 \end{itemize}
+\end{overview}
+
+
+
 
 提到复杂度时默认指最坏复杂度
 
+\section{数组}
+
+相信大家都会使用常数长度的数组。但是也有开变量长度的数组的方法：\verb|int* a=new int[n]|。\graffiti{很多编译器也支持直接定义 \texttt{a[n]}，但这不是标准的。}通过这种方法，我们可以开每维长度不同的二维数组：
+\begin{lstlisting}[language=C++]
+int pool[1000000]; // 数组充当内存池
+int* a[1000]; // 定义一个指针数组充当二维数组
+int* cur=pool; // 内存池指针
+for (int i=0; i<1000; i++) {
+    // a[i] 占用 [cur, cur+L[i]) 这一段空间
+    a[i]=cur; 
+    cur+=L[i];
+}
+a[i][j]; // 访问 a[i][j]
+\end{lstlisting}
+相比 \texttt{vector} 套 \texttt{vector}，这种方法的内存是连续的，且常数更小。
+
 \section{\texttt{vector}}
 
+变长数组。基本可以完全替代数组。
+
 \subsection{基本操作}
-\texttt{vector} 支持
 
 \begin{itemize}
-    \item 均摊 $O(1)$ 的末尾插入删除
-    \item $O(1)$ 的随机访问\footnotemark
+    \item 均摊 $O(1)$ 的末尾插入 \texttt{push\_back}
+    \item 均摊 $O(1)$ 的末尾删除 \texttt{pop\_back}
+    \item $O(1)$ 的随机访问\footnotemark \texttt{a[i]}
     \item $O(\mathrm{size}-i)$ 加均摊 $O(1)$ 在第 $i$ 个位置插入删除
-    \item $O(\max\mathrm{size})$ 的空间
 \end{itemize}
 
 参考：https://cppreference.cn/w/cpp/container/vector
@@ -26,13 +47,14 @@
 指任意访问某个 \texttt{a[i]}
 }
 
+
 \subsection{常见问题}
 在使用时，需要注意一些陷阱：
 \begin{itemize}
-    \item 迭代器失效：修改后，迭代器可能变得不可用
-    \item 占用空间正比于历史最大 \texttt{size} 而不是当前 \texttt{size}
-    \item \texttt{clear} 不会释放内存。可以用 \texttt{vector<T>().swap(a)} 来释放 
     \item 大量 \texttt{push\_back} 会带来很大的常数。可以使用 \texttt{resize} 一次性分配需要的长度，这样和数组基本一样快
+    \item 迭代器失效：修改导致长度 \texttt{size} 变化后，迭代器可能变得不可用
+    \item \texttt{pop\_back} 不会释放内存，所以占用空间正比于历史最大 \texttt{size} 而不是当前 \texttt{size}
+    \item \texttt{clear} 不会释放内存。可以用 \texttt{vector<T>().swap(a)} 来释放 
 \end{itemize}
 
 \subsection{实现}
@@ -64,20 +86,21 @@
 
     插入往往需要平衡树之类的数据结构，但是如果倒着来就只需要先排序然后一直删除。如果排序可以线性，那么就能做到线性。
 
-\section{栈和队列}
+\begin{remark}
+    值域为 $n^{O(1)}$ 的排序可以通过\textbf{多关键字计数排序}，或者说\textbf{基数排序}来做到线性。
+\end{remark}
 
+\section{栈和队列}
     基本操作是广为人知的，不再赘述。显然，栈在功能上弱于 \texttt{vector}，因此可以用 \texttt{vector} 实现栈。而队列则不能直接用 \texttt{vector} 实现。如果队列大小已知不超过某个上界，那么可以用数组模拟循环队列。而如果想做到 $O(\mathtt{size})$ 空间，就需要用链表或者双端队列实现
 
 \section{双端队列}
-    双端队列在功能上强于 \texttt{vector} 和队列，但是实现更复杂，常数也更大。
-
-\subsection{基本操作}
+    双端队列在功能上强于 \texttt{vector} 和队列，但是实现更复杂，常数也更大。双端队列的支持的操作如下：
     \begin{itemize}
         \item 均摊 $O(1)$ 头尾插入删除
         \item $O(1)$ 随机访问
     \end{itemize}
+    注意如果没有随机访问的要求，那么可以直接用链表完成。
 
-\subsection{实现}
     STL 的 \texttt{deque} 即是标准的双端队列。然而，需要开很多双端队列时，要谨慎使用 STL 的 \texttt{deque}，因为一个空 \texttt{deque} 可能占用几百到几千字节的空间。\graffiti{NOI 2022 时有许多人因为 MLE 失去了一整道题的分数。} 
 
     更好的实现是对顶栈。设想有两个栈，其底部粘在一起。于是其整体就成为一个两端开口的双端队列。唯一的问题出在某个栈空了还要继续删的情况。此时，我们暴力把整个序列倒出来重构即可。换句话说，我们重新把序列均分到两个栈里。
@@ -87,18 +110,20 @@
     每次重构后，两个 \texttt{vector} 都有大概 $\mathtt{size}/2$ 个元素。到下次重构之前，至少有 $\mathtt{size}/2+|\mathtt{size}'-\mathtt{size}/2|=\Omega(\mathtt{size}')$ 次操作。重构花费 $O(\mathtt{size}')$ 的代价，所以插入删除是均摊 $O(1)$ 的。
 
 \subsection{维护信息}
-    在两个 \texttt{vector} 中各自维护自己的前缀信息，这样可以 $O(1)$ 查询目前队列中跨过分断点的任意子区间的信息和。
-
-    可以以 $\sum_i |l_i-l_{i-1}|+|r_i-r_{i-1}|$ 的代价回答多个区间询问。在很多问题中，这个总代价往往可以是线性的。
+    在两个 \texttt{vector} 中各自维护自己的前缀信息，这样可以 $O(1)$ 查询当前双端队列中跨过分断点的任意区间的分治信息。\graffiti{分治信息的定义和例子将在下一章中给出。}
     \begin{example}
-        支持双端队列操作、每次询问做背包后体积 $V_i$ 的结果。需要 $O(nV)$。
+        支持双端队列操作、每次询问以体积 $V_i$ 做 01 背包的结果。需要 $O((n+q)V)$。
+    \end{example}
+
+    假设当前询问区间是 $[l,r]$，那么通过双端队列操作，我们可以 $O(1)$ 移动到 $[l\pm 1,r\pm 1]$。这样，我们就可以通过移动区间端点来在 $\sum_i |l_i-l_{i-1}|+|r_i-r_{i-1}|$ 的时间内回答多个区间询问。在很多问题中，这个总代价往往可以是线性的。
+
+    \begin{example}[滑动窗口]
+        给定序列 $a$ 和整数 $k$，查询所有 $[i,i+k-1]$ 的分治信息（如最大子段和）。
     \end{example}
 
     \begin{example}[“不删除双指针”]
-        询问最短的 $\gcd>1$ 的区间。
+        询问最短的 $\gcd>1$ 的区间。$\gcd>1$ 可以换成 $\max\ge x$、按位或 $\ge x$ 之类的有单调性的条件。
     \end{example}
-
-    
 
 \section{二叉堆}
 
@@ -130,6 +155,7 @@
 \end{remark}
 
 \section{扩展类问题}
+    \graffiti{可惜没时间讲。}
     从若干个初始状态开始，每个状态可以扩展出若干个后继状态，保证扩展出来的状态的权值小于原状态的权值。每次取权值最小的状态扩展，重复若干次。
 
     通过一定的设计，很多求前 $k$ 大/小的问题可以变成这类问题。使用堆来维护所有目前的状态，每次取出最小的一个来扩展，注意去重。扩展形成一张图，复杂度为 $O(M\log M)$ 或 $O(k\log k+M)$（取决于堆），其中 $M$ 为前 $k$ 小的点邻接的\textbf{边数}。
@@ -182,7 +208,7 @@
     同样用儿子兄弟表示法转为二叉树
 \end{solution}
 \begin{remark}
-    这类问题有可能与 $k$ 短路有关联，但我不会。有兴趣的同学可以自行研究或者一起讨论一下
+    这类问题应该还有很大研究空间，现在知道的有 \href{https://www.cnblogs.com/AK-IOI/p/18418766}{这篇} 和 \href{https://www.cnblogs.com/Cry-For-theMoon/p/17629760.html}{这篇}。有兴趣的同学可以自行研究或者和我一起讨论一下
 \end{remark}
 \begin{example}[合并果子]
     由于合并的结果总是越来越大的，可以使用队列替换堆。
@@ -200,30 +226,54 @@
 
 \section{单调队列和单调栈}
 
-\subsection{基本功能}
+令 $b_i=\max\{a_i,a_{i+1},\ldots,a_r\}$，即 $b$ 是只考虑 $a_1,\ldots,a_r$ 时的 $a$ 的后缀 $\max$。我们可以在 $r$ 从 $1$ 扫到 $n$ 的过程中均摊 $O(1)$ 地隐式维护所有 $b_i$。
+具体来说，维护一个栈，栈中元素是 $a$ 的一个子序列。假设自底向上的第 $k$ 个元素是 $a_{i_k}$，那么对任何 $i_{k-1}<j\le i_k$，都有 $b_j=a_{i_k}$，也就是说栈中每个元素都表示一段以它为结尾的区间的 $b_i$。由于 $b$ 是不升的，栈中元素也是不升的。当 $r$ 移动到 $r+1$ 时，考虑 $a_{r+1}$ 的影响。假设当前栈中有 $k$ 个元素。如果 $a_{r+1}<a_{i_k}$，那么 $a_{r+1}$ 不会对 $b_{[1,r]}$ 造成任何影响，只需要把 $a_{r+1}$ 加入栈中表示 $b_{r+1}$ 即可。如果 $a_{r+1}\ge a_{i_k}$，那么我们可以想象 $b_{[1,r]}$ 发生的变化：一个后缀会全都变成 $a_{r+1}$。在栈中，这表现为弹出若干栈顶，直到栈顶的 $a_{i_k}>a_{r+1}$，最后再把 $a_{r+1}$ 加入栈中。暴力做这个过程的均摊复杂度就是正确的，因为每个 $a_i$ 最多入栈出栈各一次。
 
-    令 $b_i=\max\{a_i,a_{i+1},\ldots,a_r\}$。在 $r$ 从 $1$ 扫到 $n$ 的过程中，均摊 $O(1)$ 地维护所有 $b_i$。（栈中每个元素表示一段区间的 $b_i$）
+\begin{exercise}
+    把 $\max$ 换成 $\min$。
+\end{exercise}
 
-\subsection{例题}
-    \begin{example}[询问端点单调的区间最值]
+    \begin{example}[询问端点单调 RMQ]\label{example:sliding-rmq}
     多次查询 $\max\{a_{l_i},\ldots,a_{r_i}\}$，其中 $l_i,r_i$ 都单调不降。可以强制在线（指 $a$ 可能依赖先前的询问结果）
 
     虽然双端队列也可以做，但是这种问题单调队列更方便。
     \end{example}
-    \begin{exercise}
-    如果 $l_i$ 不单调呢？（允许复杂度变大一些）
-    \end{exercise}
     \begin{solution}
-    单调栈上二分
+        单调栈中维护了所有的后缀 $\max$，答案就是下标 $\ge l_i$ 的第一个元素。由于 $l_i$ 不降，我们直接弹出队头就可以均摊 $O(1)$ 地维护这个事情。
     \end{solution}
+    \begin{exercise}[滑动窗口]
+        对每个 $1\le l\le n-k+1$ 查询 $\max\{a_i\mid i\in [l,l+k-1]\}$。
+    \end{exercise}
+    \begin{exercise}\label{exercise:monotone-stack-rmq}
+        在\cref{example:sliding-rmq}的基础上减弱问题的假设。
+        \begin{enumerate}
+            \item 去掉 $l_i$ 单调的假设，允许询问复杂度变大一些
+            \item 再通过离线去除 $r_i$ 单调的假设
+            \item *再通过可持久化数组支持在线
+            \item 在 $n\le 64$ 时，通过位运算来存储每个 $r$ 的栈中元素集合，从而实现 $O(n)-O(1)$ 的在线 RMQ。我们将在下一章中配合其他技巧做到任意 $n$ 的线性 RMQ。
+        \end{enumerate}
+    \end{exercise}
 
     \begin{example}[求前驱后继]    
     对每个元素，查询它左/右边第一个比它大/小的数的位置
     \end{example}
+    \begin{solution}
+        右边就是把序列倒过来的左边，所以只考虑左边。这就是单调栈中倒数第二个元素。
+    \end{solution}
 
     \begin{example}[稍复杂一些的信息维护]
         对每个 $r$，求 $\sum_{l=1}^r (r-l+1)\cdot \max\{a_l,\ldots,a_r\}$。强制在线。（提示：要记得单调栈中每个元素都代表了一段区间的 $\max\{a_l,\ldots,a_r\}$。）
     \end{example}
+    \begin{solution}
+        假设栈中元素是 $a_{i_1}, a_{i_2}, \ldots, a_{i_k}$，其中 $i_1 < i_2 < \ldots < i_k$，那么答案是
+        $$
+        \begin{aligned}
+        \sum_{j=1}^k a_{i_j}\sum_{i_{j-1}<l\le i_j}(r-l+1)&=\sum_{j=1}^k a_{i_j}\cdot(i_j-i_{j-1})\cdot(r-i_j+1)\\
+        &=(r+1)\sum_{j=1}^k a_{i_j}-\sum_{j=1}^k a_{i_j}(S_{i_j}-S_{i_{j-1}}),
+        \end{aligned}
+        $$
+        其中 $S_i=\sum_{k=1}^i k$。直接维护这个式子即可。
+    \end{solution}
     \begin{solution}[离线的另解]
         如果允许离线，那么可以考虑换种方式计算答案：对每个 $a_i$，看看它是哪些区间 $[l,r]$ 的 $\max$。这可以由先前提到的前驱后继来做。
     \end{solution}
@@ -237,31 +287,29 @@
     在线对每个 $r$ 算的话需要维护凸包。
     \end{solution}
 
-\subsection{悬线法}
+\begin{example}[悬线法]
     有些题给了个二维黑白网格，要求全黑的矩形/正方形的最大面积/面积和之类的东西
 
     对每个格子计算每个方向全黑能延伸到哪，然后就变成类似例三的问题
+\end{example}
 
-\subsection{困难的例子}
-    给定 $X$，求有多少个区间 $[l,r]$ 满足 $\max+\min=X$
+\begin{exercise}{困难的例子}
+    给定两个序列 $a,b$，求有多少个区间 $[l,r]$ 满足 $\max a[l,r]=\max b[l,r]$。
+\end{exercise}
+\begin{solution}
+    $a,b$ 交替形成一个新序列，在这个新序列上扫的时候用单调栈维护所有后缀 $\max$。在维护这个交替序列的后缀 $\max$ 的同时，我们可以顺便维护出每个后缀 $\max$ 是否同时也是只考虑 $a/b$ 的后缀 $\max$，以及只考虑 $a/b$ 时何时达到此后缀 $\max$。之后容易计算单调栈中每个项的贡献：假设只考虑 $a/b$ 时在原序列的 $l_a/l_b$ 位置达到此后缀 $\max$，则这一项的贡献即为 $\min(l_a,l_b)-\mathrm{pos}$，其中 $\mathrm{pos}$ 为此项在原序列中的位置，另外在此项是由 $b$ 产生的时候 $pos$ 需要再加一。
 
-    令 $b_i=X-a_i$，泛化成有多少个区间 $[l,r]$ 满足 $\max\{a_i\}=\max\{b_i\}$
-
-    $a,b$ 交替形成一个新序列，在这个新序列上扫的时候维护一个单调栈。单调栈中允许权值相同。
-
-    单调栈中形成若干个等值段，每个等值段都是若干个 $a$ 和若干个 $b$ 交替出现。一个等值段的贡献为开头到最后一次 $ab$ 切换的位置。
+    也可以扩展到多个序列。
+\end{solution}
 
 
+% =========================================================
 
 % =========================================================
 
-% =========================================================
-\section{总结}
-
-本节课的核心内容如下：
-
+\begin{summary}
 \begin{itemize}
-    \item 熟知讲过的几种线性数据结构的功能，能够把问题对应到数据结构上
+    \item 熟知讲过的几种线性数据结构的功能，能够把问题与数据结构进行对应
     \item 扩展类问题的思路
-    \item 加深对单调栈和单调队列的认识
 \end{itemize}
+\end{summary}

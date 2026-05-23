@@ -1,0 +1,225 @@
+\chapter{线段树的进阶操作}
+
+\section{zkw 线段树}
+
+zkw 线段树放弃了线段树的自上而下分治结构，而是改为自下而上合并。初始所有的叶子结点都是一个单元素区间 $[i,i]$，我们每次把所有的结点两个两个地合并成更大的区间，两端可能剩下的孤点不管。这样得到新的一些长为 $2$ 的区间，再继续做这个合并过程，直到只剩一个结点。加上每层得到的孤点，我们会形成一个森林结构。
+
+zkw 线段树的精髓在于标号。叶子 $[i,i]$ 的标号为 $n+i-1$，一个结点 $u$ 的父亲标号为 $\lfloor n/2\rfloor$。通过这样的标号方式，我们可以直接获得叶子结点的标号。考虑如何在 zkw 线段树上分解区间。我们用左闭右开区间 $[l,r)$ 来避免一些特判。从叶子开始，我们有左右两个区间结点 $u=l+n-1,v=r+n$。在 $v$ 是一个右儿子时，记 $v$ 的左邻居为 $v'$。如果 $u$ 是一个右儿子，那么 $u$ 会作为一个完整区间出现；否则，$u$ 会被其某个祖先作为完整区间包含。也就是说，$u$ 是分解出的最终区间当且仅当 $u$ 是一个右儿子。同理，$v'$ 是分解出的最终区间当且仅当 $v$ 是一个右儿子。确定完 $u,v'$ 是否是分解出的最终区间后，我们就把 $u,v$ 往上跳一层，递归寻找上面的结点，直到 $u,v$ 相同为止。这样我们就找到了所有分解出的最终区间。在有区间修改时，我们还需要知道所有的非最终区间来 \texttt{pushdown}。非最终区间分为两部分：一部分是最终区间的父亲，另一部分是 $u,v$ 相同后到根路径上的结点。
+
+\begin{lstlisting}[language=C++, caption={zkw 线段树}]
+struct SegTreeZKW
+{
+    vector<Info> info;
+    vector<Tag> tag;
+    int n;
+    SegTreeZKW(int n): n(n)
+    {
+        info.resize(2*n+2);
+        tag.resize(2*n+2);
+    }
+    template<typename SeqType>
+    SegTreeZKW(const vector<SeqType>& a): SegTreeZKW(a.size()-1) 
+    {
+        build(a);
+    }
+    void apply(int u, const Tag& newtag)
+    {
+        info[u] = newtag(info[u]);
+        tag[u] = newtag(tag[u]);
+    }
+    void pushdown(int u) 
+    {
+        if (!tag[u].isId()) 
+        {
+            apply(u << 1, tag[u]);
+            apply(u << 1 | 1, tag[u]);
+            tag[u] = Tag();
+        }
+    }
+    template<typename SeqType>
+    void build(const vector<SeqType>& a) 
+    {
+        for(int i=1;i<=n;i++) info[n + i] = Info(a[i]);
+        for(int i=n-1;i>=1;i--)
+            info[i] = info[i << 1] + info[i << 1 | 1];
+    }
+    Info query(int lq, int rq) 
+    {
+        lq += n; rq += n+1;
+        for(int i=__lg(n)+1;i>=1;i--)
+        {
+            pushdown(lq >> i);
+            if ((rq >> i) != (lq >> i))
+                pushdown(rq >> i);
+        }
+        Info resl, resr;
+        while(lq < rq)
+        {
+            if (lq & 1) resl = resl + info[lq++];
+            if (rq & 1) resr = info[--rq] + resr;
+            lq >>= 1; rq >>= 1;
+        }
+        return resl+resr;
+    }
+    void update(int lq, int rq, const Tag& newtag)
+    {
+        lq += n; rq += n+1;
+        for(int i=__lg(n)+1;i>=1;i--)
+        {
+            pushdown(lq >> i);
+            if ((rq >> i) != (lq >> i))
+                pushdown(rq >> i);
+        }
+        int u=0, v=0;
+        while(lq < rq)
+        {
+            if (lq & 1)
+            {
+                u=lq; 
+                apply(lq++, newtag);
+            }
+            if (rq & 1)
+            {
+                v=rq;    
+                apply(--rq, newtag);
+            }
+            do{u>>=1; info[u]=info[u << 1] + info[u << 1 | 1];}while(lq==rq && u);
+            do{v>>=1; info[v]=info[v << 1] + info[v << 1 | 1];}while(lq==rq && v);
+            lq >>= 1; rq >>= 1;
+        }
+    }
+};
+\end{lstlisting}
+
+注意到这种方式的空间从 $4n$ 降低到了 $2n$。在时间上，zkw 线段树只能节省\textbf{递归}的开销，而不能降低信息或标记合并的代价。zkw 线段树节省的递归开销大约相当于维护四到八个 \texttt{unsigned} 的和。所以，当信息或标记复杂时，这个性能提升就变得较为微弱。如果实现得不好，可能还会有额外的信息或标记合并开销。
+
+\section{动态开点}
+
+线段树的单点修改会访问至多 $\lceil\log_2 n\rceil+1$ 个结点，区间修改会访问至多 $4\lceil\log_2 n\rceil-3$ 个结点。没有被修改过的结点可以不显式建出结点，而是按照某种“默认模式”处理。
+
+\begin{lstlisting}[language=C++, caption={动态开点线段树}]
+// 不需要 build 了，可以使用 update 来替代 build
+// 假设不存在的结点编号为 0, 使用 newNode(l,r) 来创建新结点，初始化为 [l,r] 的默认信息
+// 大多数情况下，默认信息都是 0，此时 newNode 和 pushdown 都不需要传入 l,r。
+int newNode(int l, int r)
+{
+    ++nodeCnt;
+    ch[nodeCnt][0] = ch[nodeCnt][1] = 0;
+    info[nodeCnt] = defaultInfo(l, r);
+    tag[nodeCnt] = Tag();
+}
+void pushdown(int u, int l, int r)
+{
+    int mid = (l + r) >> 1;
+    if(!tag[u].isId())
+    {
+        if(!ch[u][0]) ch[u][0]=newNode(l, mid);
+        if(!ch[u][1]) ch[u][1]=newNode(mid + 1, r);
+        apply(ch[u][0], tag[u]);
+        apply(ch[u][1], tag[u]);
+        tag[u] = Tag();
+    }
+}
+Info query(int u, int l, int r, int lq, int rq)
+{
+    if(!u) return defaultInfo(lq,rq);
+    if (lq == l && r == rq)
+        return info[u];
+    int mid = (l + r) >> 1;
+    pushdown(u, l, r);
+    if (rq <= mid)
+        return query(ch[u][0], l, mid, lq, rq);
+    else if(lq > mid)
+        return query(ch[u][1], mid + 1, r, lq, rq);
+    else
+        return query(ch[u][0], l, mid, lq, mid) + query(ch[u][1], mid + 1, r, mid + 1, rq);
+}
+void update(int &u, int l, int r, int lq, int rq, const Tag& newtag)
+{
+    if(!u) u=newNode(l,r);
+    if(lq == l && r == rq)
+    {
+        apply(u, newtag);
+        return;
+    }
+    int mid = (l + r) >> 1;
+    pushdown(u, l, r);
+    if (rq <= mid)
+        update(ch[u][0], l, mid, lq, rq, newtag);
+    else if (lq > mid)
+        update(ch[u][1], mid + 1, r, lq, rq, newtag);
+    else
+    {
+        update(ch[u][0], l, mid, lq, mid, newtag);
+        update(ch[u][1], mid + 1, r, mid + 1, rq, newtag);
+    }
+    info[u] = (ch[u][0] ? info[ch[u][0]] : defaultInfo(l,mid)) + (ch[u][1] ? info[ch[u][1]] : defaultInfo(mid+1,r));
+    // 如果 defaultInfo 的代价比较大，那么也可以选择在这里把不存在的子节点建出来。这样做会让空间变为两倍。
+}
+\end{lstlisting}
+
+\begin{example}[CF803G Periodic RMQ Problem]
+    维护序列 $a$，初始为某个序列 $b$ 重复 $k$ 次得到的序列。支持区间赋值、查询区间最值。
+\end{example}
+
+
+
+\section{线段树上二分}
+
+有时，我们需要支持查询一个区间内满足某个条件的最左或最右位置，如查询区间内第一个前缀 $\max$ 大于等于某个值的位置。此时，直接的想法是套上一层二分，内部用线段树来判断。然而，我们可以利用线段树的结构，直接在线段树上进行二分查找，从而省掉一个 $\log$。从理论上来说，我们可以先把区间在线段树上分解为不超过 $2\log n$ 个区间，然后从左到右遍历找到答案所在的完整区间，然后递归进那个完整区间分治查找。不过，实现上要容易得多：
+
+\begin{lstlisting}[language=C++, caption={线段树上二分}]
+//以查询区间 [l,r] 内最左的满足 s[l,i]>=x 的 i 的位置为例
+int query(int u, int l, int r, int lq, int rq, Info& preinfo, int x)
+{
+    if(l==lq&&r==rq)
+    {
+        if(info[u].s<x)
+        {
+            preinfo = preinfo + info[u];
+            return -1;
+        }
+        //否则，说明答案就在此区间内
+    }
+    if(l==r)
+        return l;
+    pushdown(u);
+    int mid=(l+r)>>1;
+    if(rq<=mid)
+        return query(u<<1, l, mid, lq, rq, preinfo, x);
+    else if(lq>mid)
+        return query(u<<1|1, mid+1, r, lq, rq, preinfo, x);
+    else
+    {
+        int ans=query(u<<1, l, mid, lq, mid, preinfo, x);
+        if(ans!=-1) return ans;
+        else return query(u<<1|1, mid+1, r, mid+1, rq, preinfo, x);
+    }
+}
+int query(int lq, int rq, int x)
+{
+    return query(1,1,n,lq,rq,Info(),x);
+}
+\end{lstlisting}
+
+\begin{exercise}[树状数组上二分]
+    在树状数组上二分来实现：查询序列中最靠左的满足某个条件的位置。
+\end{exercise}
+
+\begin{exercise}[权值线段树]
+    \begin{itemize}
+        \item 假设值域为 $V$，通过维护每个值的出现次数来在 $O(\log V)$ 的时间和 $O((n+q)\log V)$ 的空间内实现普通平衡树的所有功能。
+        \item 在 $V=O(n)$ 时，使用树状数组来实现。
+    \end{itemize}
+\end{exercise}
+
+\section{线段树分裂与合并}
+
+\section{单侧递归}
+
+\section{李超线段树}
+
+\section{Segment Tree Beats}
+
+\section{KTT}
+

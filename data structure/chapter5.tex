@@ -1,0 +1,288 @@
+\chapter{扫描线与几何模型}
+
+通过扫描问题的某一维度并考虑两个相邻状态之间的差，我们往往可以将一个多维范围查询问题变为少一维的范围修改查询问题。在本章中，我们尝试用一些例子让大家感受\textbf{维度}，并给出十分常用的\textbf{平面矩形建模}。
+
+本章的大部分问题都可以直接通过可持久化数据结构实现强制在线，我们在此仅考虑离线情况。
+
+
+\section{平面数点问题}
+
+很多时候我们会遇到由不等式框定的查询范围，如 $l\le x\le r$。此时，一个可能有利于直观的办法是将不等式的限制转到平面坐标系中。每一个不等号都对应一个半平面，多个不等式的交集就对应一个平面图形。我们可以把每个元素看成平面上的一个点，那么查询就变成了数点问题：查询范围内所有点的信息和。
+
+\subsection{可减信息}
+
+对于可减的情况，可以通过容斥把 $\ge$ 变成 $\le$。所以每个维度只需要处理单侧的限制。
+
+\begin{example}[矩形数点]
+    给定一些 $(x_i,y_i,w_i)$，多次查询
+    $$
+    \sum_i [l_x\le x_i\le r_x][l_y\le y_i\le r_y]w_i.
+    $$
+    这对应于：给定平面上 $n$ 个带权点，多次查询一个矩形内的点权和。
+\end{example}
+
+通过坐标变换（或者说变量代换），可以把平行四边形变成矩形。
+
+\begin{example}[平行四边形数点]
+    给定一些 $(x_i,y_i,w_i)$，多次查询
+    $$
+    \sum_i [l_x\le x_i\le r_x][y_i-x_i\in [l_{d},r_{d}]]w_i.
+    $$
+    这对应于：给定平面上 $n$ 个带权点，多次查询一个方向固定的平行四边形内的点权和。
+\end{example}
+\begin{remark}
+    在这里，“方向固定”指的是围成形状的这些半平面的边界线的斜率是固定的。
+\end{remark}
+
+通过在无限远处差分，可以把直角三角形变成两种四边形的差。
+
+\begin{example}[三角形数点]
+    给定一些 $(x_i,y_i,w_i)$，多次查询
+    $$
+    \sum_i [l_x\le x_i\le r_x][y_i-x_i\in [l_{d},r_{d}]][y_i+x_i\in [l_{s},r_{s}]]w_i.
+    $$
+    这对应于：给定平面上 $n$ 个带权点，多次查询一个等腰直角三角形内的点权和。
+\end{example}
+\begin{exercise}
+    把这个问题旋转 45 度。事实上，对于任何方向固定的三角形都可以做。
+\end{exercise}
+
+由于多边形总是可以切分成三角形，我们在理论上就可以做任意的方向固定的不规则图形的数点了。
+
+\begin{example}[梯形数点]
+    给定一些 $(x_i,y_i,w_i)$，多次查询
+    $$
+    \sum_i [l_x\le x_i\le r_x][y_i-x_i\in [l_{d},r_{d}]][y_i+x_i\in [l_{s},r_{s}]]w_i.
+    $$
+    这对应于：给定平面上 $n$ 个带权点，多次查询一个等腰梯形或者直角梯形内的点权和。
+\end{example}
+
+\begin{exercise}[*半平面交数点]
+    给定一些 $(x_i,y_i,w_i)$，多次查询
+    $$
+    \sum_i [x_i\in [l_x,r_x]][y_i\in [l_y,r_y]][x_i-y_i\in [l_{d},r_{d}]][x_i+y_i\in [l_{s},r_{s}]]w_i.
+    $$
+    这对应于：给定平面上 $n$ 个带权点，多次查询一个由一些半平面交出的一个“规则”多边形内的点权和。
+\end{exercise}
+
+\subsection{不可减信息}
+
+把以上问题中的求和换成 $\max$。此时，无法通过容斥把 $\ge$ 变成 $\le$，而是需要通过分治来实现。在此时，问题基本上就被一般化为 $d$ \textbf{维正交范围查询问题}。通常来说，$d$ 个半平面的限制会带来 $\tilde\Theta(\log^{d-1}n)$ 的复杂度。我们将在下一章中看到常见的做法。
+
+\subsection{转置}
+
+对于数点问题，我们可以有另一个理解。假设我们给点用 $1,\ldots,n$ 编号，询问用 $1,\ldots,q$ 编号。考虑矩形 $\mathbf A_{ij}=[\text{点 }j\text{ 在询问 }i\text{ 的范围内}]$，那么我们相当于在计算矩阵乘法 $\mathbf A \cdot \mathbf w$，其中 $\mathbf w$ 是点的权值向量。此问题的\textbf{转置}为：假设每个询问 $i$ 都有一个权值 $u_i$，我们想要计算 $\mathbf A^T\mathbf u$，即对每个 $i$ 计算 $\sum_j [\text{点 }j\text{ 在询问 }i\text{ 的范围内}]u_i$。这相当于：平面上有一些点，每个询问 $i$ 需要对其范围内的点的答案加上 $u_i$，最后计算每个点的结果。这个也称为\textbf{对偶}\graffiti{什么是对偶？}数点问题。
+
+通常来说，转置问题可以通过\textbf{转置原理}做到与原问题相同的复杂度。不过，在这里，我们只需要正常的思考即可得到合理的做法。
+\begin{example}[对偶二维数点]
+    给定平面上 $n$ 个带权矩形，多次查询包含某个点的矩形的权值和。
+\end{example}
+
+\section{矩形并问题}
+
+\begin{example}[矩形面积并]
+    \graffiti{为什么不叫矩形并面积？}给定平面上的若干矩形，求其并的面积
+\end{example}
+
+\begin{exercise}[至少被 $k$ 个矩形覆盖的面积]
+\end{exercise}
+
+\begin{exercise}[矩形并的周长]
+\end{exercise}
+
+
+
+\section{常见平面建模}
+
+有许多东西都可以被视为维度：序列下标、权值、时间等等。我们可以把它们中的一个或几个转化为平面坐标系中的维度，从而把问题转化为数点问题来解决。
+
+\begin{example}[序列 $\times$ 值域]
+    给一个序列 $a$，每次给定 $l,r,x,y$，查询有多少个 $i\in [l,r]$ 满足 $a[i] \in [x,y]$。
+\end{example}
+
+\begin{example}
+    多次询问：如果把 $a[l,r]$ 加一，那么序列中有多少个不同的值
+\end{example}
+
+\begin{example}[序列 $\times$ 序列]
+    给两棵树 $T_1$ 和 $T_2$，每次询问有多少个点在 $T_1$ 中位于 $u$ 的子树内且在 $T_2$ 中位于 $v$ 的子树内。
+\end{example}
+
+\begin{example}[区间包含关系]
+    初始给定 $n$ 个区间 $[l_i,r_i]$。每次给出 $[L,R]$，询问
+    \begin{itemize}
+        \item 有多少个区间包含 $[L,R]$？
+        \item 有多少个区间与 $[L,R]$ 相交？
+        \item 有多少个区间被 $[L,R]$ 包含？
+    \end{itemize}
+\end{example}
+\begin{example}
+    给一棵树，点从 $1$ 到 $n$ 编号，边从 $1$ 到 $n-1$ 编号。每次询问：只保留编号在 $[l,r]$ 内的点和编号在 $[l,r]$ 内的边时，这些点的导出子图有多少个连通块。
+    \begin{hint}
+        森林的重要结论是连通块数 $=|点| - |边|$。
+    \end{hint}
+\end{example}
+\begin{example}[NOIP2025 序列询问]
+    每次询问给定 $[L,R]$，对每个 $i$ 求出所有包含 $i$ 且区间长度在 $[L,R]$ 内的区间的和的最大值
+\end{example}
+
+
+\begin{example}[序列 $\times$ 时间]
+    给一个序列 $a$，支持单点加、查询区间和。将此问题视为二维数点。
+\end{example}
+
+\section{区间问题}
+
+我们经常通过扫描线来处理区间询问。此时，通常有两种理解：第一种是在扫描 $r$ 的过程中维护所有 $l$ 的答案；另一种是把 $l,r$ 视为两个维度，则所有可能的区间构成平面上的一个三角形。虽然通常来说前一种理解更常用，但也不要忘记后者。
+
+\subsection{数颜色类问题}
+
+有一些问题是查询区间内出现过的值的集合的一些信息。我们展示一些常见的例子和处理手法。
+
+\begin{example}{区间数颜色}
+    给定两个数列 $a,b$，查询所有 $a[l,r]$ 中出现过的值 $w$ 的 $b_w$ 之和。
+\end{example}
+\begin{solution}[做法一]
+    考虑一种拆贡献的方式：一个 $[l,r]$ 内的位置有贡献当且仅当其上一次出现的位置在 $[l,r]$ 之外。这样，我们预处理出每个值的上一次出现位置 $p_i$，则询问就变成 $i\in[l,r],p_i<l$ 的二维数点。
+\end{solution}
+\begin{solution}[做法二]
+    也可以考虑另一种拆贡献的方式：枚举所有权值 $w$，当 $a[l,r]$ 中包含 $w$ 时产生贡献。那么考虑一个值 $w$ 的所有出现位置，当 $[l,r]$ 包含其中某个位置时，在平面上的 $(l,r)$ 位置产生 $b_w$ 的贡献。注意到如果做一步容斥，即考虑\textbf{不包含} $w$ 的任意一次出现的区间，则所有这样的区间在平面上可以由 $\text{出现次数}+1$ 个三角形表达。而由于我们不会询问 $l>r$，也可以把三角形换成矩形。这样，问题就变成：有 $O(n)$ 个矩形加，最后查询单点值，即对偶二维数点。
+\end{solution}
+\begin{solution}[做法三]
+    $r$ 从 $1$ 扫描到 $n$，维护每个 $l$ 的答案。
+
+    假设 $a[i]$ 的上一次出现位置是 $j$，那么 $(j,i]$ 的答案加一，其他位置不变。
+\end{solution}
+\begin{remark}
+    在下一章中我们来处理带修的情况。
+\end{remark}
+
+\begin{exercise}
+    区间内只出现一次的数的和。
+\end{exercise}
+\begin{exercise}
+    区间内出现恰好 $k$ 次的数的和。
+\end{exercise}
+\begin{exercise}[CF1000F]
+    找出区间内任何一个只出现了一次的数，或者报告不存在
+\end{exercise}
+\begin{exercise}
+    区间内出现偶数次的数的异或和
+\end{exercise}
+
+
+
+
+
+
+\begin{example}
+    给定两个数列 $a,b$，每次给定 $[l,r]$，查询：$\sum_{w\in a[l,r]} \max\{b_i:a_i=w\}$，也就是对每个在 $a[l,r]$ 中出现过的值 $w$，计算其所有出现位置中 $b$ 的 $\max$，再求和 的 $b_w$ 之和。
+\end{example}
+\begin{exercise}[CF1422F]
+    区间 lcm（对常数模数取模），值域和 $n,q$ 同阶。
+\end{exercise}
+\begin{remark}
+    P5655 是值域非常大但 $n,q$ 比较小的情况。
+\end{remark}
+
+
+\begin{exercise}[CF522D]
+    查询区间内等值对的最小距离
+\end{exercise}
+
+
+\subsection{mex 类问题}
+
+集合 $S$ 的 mex 定义为不在 $S$ 中的最小非负整数。我们也可以通过扫描线来处理一些 mex 类问题。
+\begin{example}[区间 mex]
+    查询区间内最小的没有出现过的自然数（mex）。
+\end{example}
+\begin{solution}[做法一]
+    在扫描线的过程中，维护每个值最靠右的出现。查询时在线段树上二分。
+\end{solution}
+\begin{solution}[做法二]
+    在扫描线的过程中直接维护每个 $l$ 的答案 $m_l$，则 $m_l$ 构成若干单调不降的连续段。假设 $r$ 右移时遇到了元素 $x$，则只有对于 $m_l=x$ 的那些 $l$，答案会发生变化。假设这些 $l$ 对应的连续段为 $L,R$，我们可以 $O(\textbf{新的段数})$ 更新这一段的 $m$。首先使用做法一求出 $m_R$，然后查找 $m_R$ 在原数组中上一次出现的位置 $t$，则 $(t,R]$ 这一段会更新为 $m_R$，然后令 $R\gets t$ 继续做，直到 $t<L$。 
+\end{solution}
+
+事实上，上面的做法二可以导出区间 $\mathrm{mex}$ 的一个重要性质。
+\begin{definition}[极小 mex 区间]
+    如果区间 $[l,r]$ 满足其任何真子区间的 $\mathrm{mex}$ 都不等于 $[l,r]$ 的 $\mathrm{mex}$，则称 $[l,r]$ 是一个\textbf{极小 mex 区间}。
+\end{definition}
+\begin{theorem}[极小 mex 区间的结构]
+    极小 mex 区间即为做法二中的所有满足 $t\ge L$ 的 $[R,r]$。
+\end{theorem}
+\begin{exercise}
+    证明以下性质：
+    \begin{itemize}
+        \item 除了单点以外，极小 mex 区间至多有 $n+\min(V,n)$ 个\graffiti{有人想算算精确上界吗？}。
+        \item 极小 mex 区间之间没有包含关系
+        \item 极小 mex 区间 $[l,r]$ 的 mex 为 $\max(a_l,a_r)+1$，且 $a_l,a_r$ 在 $[l,r]$ 内都只出现过一次。
+        \item 一个区间 $[l,r]$ 的 mex 为被 $[l,r]$ 包含的极小 mex 区间中 mex 的最大值
+        \item 假设极小 mex 区间 $[l,r]$ 的 mex 为 $k$，则所有包含 $[l,r]$ 的 mex 为 $k$ 的区间都是 $(L,R)$ 的一个子区间，其中 $L,R$ 分别为 $k$ 在 $[l,r]$ 左/右边第一次出现的位置
+        \item mex 为 $k$ 的区间在平面上可以表示为 $O(\mathrm{cnt}_k)$ 个矩形，其中 $\mathrm{cnt}_k$ 是 mex 为 $k$ 的极小 mex 区间的个数
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}
+    对每个 $k$，询有多少个区间的 $\mathrm{mex}>k$。
+\end{exercise}
+\begin{solution}[做法一]
+    对每个右端点 $r$，维护 $l_k(r)$ 为可能的最靠右的左端点，则答案即 $\sum_r r-l_k(r)+1$。当 $k$ 增加时，相当于 $O(\text{出现次数})$ 次区间和 $x$ 取 $\min$。注意 $l_k(r)$ 关于 $r$ 单调不降，故区间取 $\min$ 可以二分出发生变化的位置后变成区间赋值。还需要维护全局和。ODT 或者线段树处理都可以。
+\end{solution}
+\begin{solution}[做法二]
+    计算出所有极小 mex 区间，然后对每个 $k$ 使用矩形面积并计算出 mex 为 $k$ 的区间数量。
+\end{solution}
+\begin{exercise}
+    求所有区间的 $\mathrm{mex}$ 之和。
+\end{exercise}
+
+\subsection{子区间类问题}
+有一些问题查询区间内所有子区间的信息和。此时，我们可以扫描 $r$，然后维护每个 $l$ 的答案的\textbf{历史和}。
+
+\begin{example}
+    全局固定 $k$。每次询问区间内有多少个子区间满足 $\mathrm{mex}>k$。
+\end{example}
+\begin{remark}
+    每次询问区间内所有子区间的 $\mathrm{mex}$ 的和也是能做的。以及 CF1148H 查询有多少个子区间满足 $\mathrm{mex}=k$，$k$ 每次不同。也可以使用极小 mex 区间机械地做。
+\end{remark}
+
+\begin{example}[CF997E Good Segments]
+    给一个排列，每次询问一个区间有多少子区间满足 $\max-\min=r-l$。
+    \begin{hint}
+        由于 $\max-\min\ge r-l$，就可以维护 $w_l=\max-\min-(r-l)$，然后统计历史和即为对所有\textbf{最小值位置}加一。
+    \end{hint}
+\end{example}
+
+\begin{example}[带有询问矩形的矩形面积并]
+    矩形并局限在一个询问矩形内的面积。
+\end{example}
+
+\begin{example}[NOIP 2022 比赛]
+    给定两个序列 $a,b$，每次询问
+    $$
+    \sum_{[i,j]\subseteq [l,r]}\max a[i,j]\cdot\max b[i,j].
+    $$
+\end{example}
+
+\section{维护时间维}
+
+\begin{example}
+    维护序列，每个位置是一个栈，初始均为空。支持对区间内的栈压入一个分治信息；查询只考虑 $[l,r]$ 时刻的修改时，第 $i$ 个栈中的信息和。
+\end{example}
+\begin{remark}
+    这个问题的强制在线需要一些聪明的手段。
+\end{remark}
+\begin{example}[IOI2021 分糖果]
+    维护序列 $a_i$，每个位置有一个上限 $c_i$。支持：区间加（可能有负数）并在加完之后让 $a_i$ 裁剪到 $[0,c_i]$（即小于 $0$ 变成 $0$，大于 $c_i$ 变成 $c_i$），查询单点值。
+\end{example}
+\begin{exercise}
+    P7560
+\end{exercise}
+
+\begin{example}
+    给一个序列 $a$，支持区间加，查询只考虑第 $l$ 到第 $r$ 个修改时的区间和。
+\end{example}
+\begin{example}[P8512]
+    给一个初值为 $0$ 的序列 $a$，支持区间赋值，查询只考虑第 $l$ 到第 $r$ 个修改时的区间和。
+\end{example}
+
