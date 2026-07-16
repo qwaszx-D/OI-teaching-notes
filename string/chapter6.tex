@@ -1,0 +1,174 @@
+\chapter{回文结构}
+
+如果 $s=s^R$，则称 $s$ 为回文串。容易用各种方法在线性时间内判断一个串是否是回文串。\graffiti{然而单带图灵机上需要 $\Omega(n^2)$ 时间来判定回文串。}由定义，回文串满足 $s[l,r]=s[-r,-l]^R$。反过来，$s$ 是回文串当且仅当存在若干并为 $[1,|s|]$ 的区间 $[l_i,r_i]$ 满足 $s[l_i,r_i]=s[-r_i,-l_i]^R$ 对所有 $i$ 成立，这给出了回文串的一个判据。
+
+\section{Manacher 算法}
+
+Manacher 算法可以在 $O(|s|)$ 的时间内计算出字符串 $s$ 以每个位置（包括两个字符之间）为中心能扩展出的最长串。方便起见，可以在字符串的每两个字符之间插入特殊字符，这样就不需要考虑相邻字符之间的位置作为中心的情况。设 $h_i$ 为以 $i$ 为中心的最长回文半径，即最大的满足 $s[i-h+1,i+h-1]$ 为回文串的 $h$。
+
+\begin{descbox}{算法}[Manacher]
+    从左到右扫描 $i$ 并维护最大的 $i+h_i$。假设目前的最值在 $j$ 处取到。当 $i-1$ 移动到 $i$ 时，由于 $s[j-h_j+1,j+h_j-1]$ 是回文串，$i$ 在 $r<j+h_j-i$ 半径内的子串 $s[i-r+1,i+r-1]$ 等于其对称点 $i'=2j-i$ 对应的子串的反串 $s[i'-r+1,i'+r-1]$。因此，$h_i\ge \min(j+h_j-i,h_{i'})$。从这个下界开始暴力尝试扩展即可。 
+
+    注意到只有 $h_{i'}\ge j+h_j-i$ 时才有可能发生扩展，此时 $h_i$ 的初值为 $j+h_j-i$，于是每次扩展都会增大 $i+h_i$ 的最大值。而 $i+h_i\le |s|+1$，于是整个过程中总共至多扩展 $|s|$ 次。 
+\end{descbox}
+\begin{exercise}
+    支持在线末尾添加字符，查询某个 $h_i$。
+\end{exercise}
+
+\begin{exercise}
+    求出以每个点为结尾的最长回文子串。
+\end{exercise}
+\begin{solution}
+    在 Manacher 算法首次将 $i+h_i-1$ 扩展到 $k$ 时，以 $k$ 为结尾的最长回文串即为 $s[i-h_i+1,i+h_i-1]$。 
+\end{solution}
+
+\begin{exercise}
+    求出以每个点为结尾的回文子串数量。
+\end{exercise}
+
+\begin{exercise}[{[NOI2023] 字符串}]
+    给定字符串 $s$，每次询问给定 $i,r$（保证 $i+2r-1\le |s|$），求有多少个 $1\le l\le r$ 满足 $s[i:i+l-1]<s[i+l:i+2l-1]^R$。 
+\end{exercise}
+\begin{solution}
+    令 $s'=ss^R$，则 $s[i:i+l-1]<s[i+l:i+2l-1]^R$ 当且仅当
+    \begin{itemize}
+        \item $s'[i:]<s'[i'_l:]$，其中 $i'_l=|s|+|s|-(i+2l-1)+1$
+        \item $s[i:i+l-1]\ne s[i+l:i+2l-1]^R$
+    \end{itemize}
+    容斥掉第二个限制，那么分别需要计算 $s'[i:]<s'[i'_l:]$ 的 $l$ 的数量以及 $s'[i:]<s'[i'_l:]$ 且 $s[i:i+l-1]=s[i+l:i+2l-1]^R$ 的 $l$ 的数量。前者二维数点即可，下面考虑后者。
+
+    设 $h=h_{i+l-1}$ 为最大的满足 $s[i+l-h:i+l-1]=s[i+l:i+l+h-1]$ 的 $h$（即回文半径），则在 $s[i:i+l-1]=s[i+l:i+2l-1]^R$ 也即 $h\ge l$ 的情况下，$s'[i:]<s'[i'_l:]$ 等价于 $s[i+l+h]<s[i+l-1-h]$。那么我们要算的就是满足 $h_{i+l-1}\ge l$ 且 $s[i+l+h_{i+l-1}]<s[i+l-1-h_{i+l-1}]$ 的 $l$ 的数量。第二个条件只与 $i+l-1$ 有关，可以记作 $P_{i+l-1}$。设 $x=i+l-1$，那么就是要算 $h_{x}\ge x-i+1$、$i\le x\le i+r-1$ 的 $P_{x}$ 的和，二维数点即可。
+\end{solution}
+
+
+\section{回文树}
+
+$s$ 的回文树（Palindromic Tree，亦称回文自动机（Palindromic Automaton，PAM）、EERTREE\graffiti{我看到很多资料写成 EER Tree，这看起来不知所云}）是一个接受 $s$ 所有回文子串的\textbf{后一半}（上取整）的树形 DFA。$s$ 的本质不同回文子串和回文树的非根结点一一对应，因此后面我们将混用结点与其对应的字符串。$\delta(u,c)$ 指向 $u$ \textbf{双侧}添加 $c$ 后得到的回文串。不难发现这样转移时得到的回文串的奇偶性都是相同的，因此我们使用两个根——偶根和奇根，分别能够转移到对应偶数和奇数长度的回文串。由于只有 $S$ 能转移到 $cSc$，每个非根结点都恰好有一条入边，故 $\delta$ 构成了两棵树。
+
+% 首先，我们需要说明回文树的结点数不多。
+% \begin{lemma}
+%     $s$ 的本质不同回文子串数量不超过 $|s|$。
+% \end{lemma}
+% \begin{proof}
+%     考虑每个前缀 $s[:i]$ 的所有回文后缀，它们都是最长的那一个的 border。因此，除了最长的那一个以外，一定都在某个更短的前缀 $s[:i']$ 中出现过了。于是每个 $s[:i]$ 至多增加一个本质不同回文子串。
+% \end{proof}
+
+回文树同样配备后缀链接 \texttt{link}，$\mathtt{link}[u]$ 指向 $u$ 的最长回文真后缀，偶根的 $\mathtt{link}$ 指向奇根。我们不难根据 Blumer SAM 构建算法的经验写出支持向后添加字符并维护回文树的算法。
+
+\begin{descbox}{算法}[回文树构建算法]
+    记 $\mathrm{len}(u)$ 表示 $u$ 对应的回文串的长度。特别地，偶根和奇根的长度分别为 $0$ 和 $-1$。
+    
+    设当前字符串 $s$ 最长回文后缀对应的状态为 $u$，考虑在末尾加入 $c$ 之后发生的变化。由于 $s+c$ 的回文后缀一定是 $s$ 的回文后缀在头尾添加 $c$ 得到的（注意反过来未必），故我们可以让 $u$ 沿着 $\mathtt{link}$ 链向上跳，直到找到一个满足 $s[|s|-\mathrm{len}(u)]=c$ 的 $u$。此时，$\delta(u,c)$ 应为 $s+c$ 的最长回文后缀。如果 $\delta(u,c)$ 已经存在，那么无需处理；否则，我们需要新建结点 $v$ 并让 $\delta(u,c)=v$，还需要计算 $\mathtt{link}[v]$，这可以用同样的方法完成。
+\end{descbox}
+\begin{lstlisting}[language=C++, caption=回文树构建算法]
+void clear()
+{
+	node_cnt=cur=1;
+	a[1].len=-1,a[0].len=0;a[0].fa=1;
+}
+void ins(int c,int pos)
+{
+	int u=cur;
+	for(;st[pos]!=st[pos-a[u].len-1];u=a[u].fa);
+	if(a[u].ch[c]){cur=a[u].ch[c];return;}
+	cur=++node_cnt;
+	a[node_cnt].len=a[u].len+2;
+	int v=a[u].fa;
+	for(;st[pos]!=st[pos-a[v].len-1];v=a[v].fa);
+	a[cur].fa=a[v].ch[c];
+	a[u].ch[c]=cur;
+}
+\end{lstlisting}
+
+\begin{theorem}
+    回文树的构建算法的时间复杂度为 $O(|s|)$。这也说明了本质不同回文子串的数量不超过 $|s|$。
+\end{theorem}
+\begin{proof}
+    算法可以视为维护了两个指针 $u,v$，其中 $u$ 为当前 $s$ 的最长回文后缀，$v$ 为 $u$ 的最长回文真后缀。每次添加字符时，$u,v$ 的长度都至多增加 $2$，每次上跳都会减少长度，于是总复杂度不超过 $O(|s|)$。
+\end{proof}
+
+\begin{exercise}
+    设计一个支持双向加字符的回文树构建算法。
+\end{exercise}
+
+\begin{exercise}
+    支持向后加字符，查询
+    \begin{itemize}
+        \item 以某个点为结尾的最长回文子串/回文子串数量
+        \item 本质不同回文子串数量
+        \item $s[l,r]$ 的最长回文后缀
+        \item 判断 $s[l,r]$ 是否是回文子串，如果是则查询出现次数
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}
+    设计一个 $O(n|\Sigma|)$ 对 Trie 构建回文树的算法。
+\end{exercise}
+
+\section{回文与 Border}
+
+\begin{fact}
+    对于回文串 $s$，$s[:i]$ 是一个回文前缀当且仅当它是 $s$ 的一个 border。后缀同理。
+\end{fact}
+
+因此，回文前/后缀与 border 具有相同的性质。
+
+\begin{lemma}
+    如果 $i\ge |s|/2$ 且 $s[1:i]$ 是一个 border，那么 $s$ 是回文串当且仅当 $s[1:i]$ 是回文串。
+\end{lemma}
+
+\begin{lemma}
+    回文串的回文后缀长度构成至多 $\lceil\log_2 |s|\rceil$ 段等差数列。
+\end{lemma}
+
+因此，回文树的 $\mathtt{link}$ 链具有与 KMP 中的 $\mathtt{fail}$ 链类似的性质。
+
+\begin{exercise}[{[SHOI2011] 双倍回文}]
+    给定字符串 $s$，对每个 $i$ 求出最长的满足 $u$ 和 $uu$ 都是 $s[1:i]$ 回文后缀的 $u$。
+\end{exercise}
+
+\begin{exercise}
+    支持在末尾添加一个字符，查询所有回文后缀中心位置的权值和。
+\end{exercise}
+\begin{solution}
+    所有回文后缀即为 $\mathtt{link}$ 链上的结点。维护所有回文后缀的中心位置 $S$。考虑添加字符 $c$ 后回文后缀发生的变化，之前的链上有一些可以转移 $c$，有一些则不能，而前者即对应着所有新的回文后缀，这些新回文后缀的中心位置不会发生变化。我们可以找到所有不能转移 $c$ 的结点，将他们从 $S$ 中删除。由于每次扩展至多增加一个新的回文后缀，这个过程的总复杂度是 $O(|s|)$ 的。
+
+    如何找到所有不能转移 $c$ 的结点？注意到每条 $\mathtt{link}$ 边实际上都代表了一个字符：$\mathtt{link}[u]$ 作为 $u$ 的后缀时左边的字符。$\mathtt{link}$ 链上的一个结点能转移 $c$ 当且仅当它下面那条 $\mathtt{link}$ 边代表的字符是 $c$。于是我们可以维护每条边上方第一条与它代表的字符不同的边，这样就可以 $O(\text{个数})$ 找到所有需要删除的结点。 
+\end{solution}
+
+\begin{exercise}
+    设计一个添加字符复杂度为均摊 $O(1)$ 且严格 $O(\log n)$ 的回文树构建算法。
+\end{exercise}
+\begin{solution}
+    $\mathtt{link}$ 链对应着最下方结点的 border 链，$p_u=\mathrm{len}(u)-\mathrm{len}(\mathtt{link}[u])$ 对应着 $u$ 的最小周期。可以根据 $p_u$ 将 $\mathtt{link}$ 链划分成若干段，一段内 $\mathtt{link}$ 边代表的字符都是相同的。根据\cref{cor:characterization of short periods}，所有长度 $\ge |u|/2$ 的 border 都在同一段内，且再向上走一条边后长度必然 $<|u|/2$。因此，可以维护每个点所在段的顶部，每次失配后直接跳到段顶。
+\end{solution}
+
+\begin{example}
+    支持在末尾添加一个字符，查询所有回文后缀开头位置的权值和。
+\end{example}
+\begin{solution}
+    对回文树的每个结点维护其最后一次作为一个 $p_u$ 段的最下方结点时，这个段（不含最上方结点）对应的回文后缀开头位置的权值和 $f_u$。每次添加字符后暴力更新所有 $O(\log n)$ 段的最下方结点。
+
+    设一个段的最下方结点为 $u$，段的长度定义为包含的边数。如果段的长度为 $1$，那么 $f_u$ 只包含 $u$ 本身的贡献；如果长度 $\ge 2$，我们说明 $f_u$ 可以由 $v=\mathtt{link}[u]$ 的 $f$ 添加一个位置的贡献得到。
+    \begin{claim}
+        假设目前整个串为 $s$，则 $v$ 最后一次出现的结尾为 $|s|-p_u$，且在那次出现时作为段底被更新过 $f$。
+    \end{claim}
+    \begin{proof}
+        由于段长度至少为 $2$，$|v|\ge |u|/2$。由于 $v$ 是 $u$ 的 border，故 $v$ 出现在 $u[:|v|]$ 和 $u[p_u+1:]$。根据\cref{lem:overlapping occurrences}，$v$ 在 $u[d+1:d+|v|]$ 出现当且仅当 $\gcd(d,p_u)$ 是 $v$ 的周期，而 $p_u$ 已经是 $v$ 的最小周期，故 $v$ 在 $u$ 中没有其它出现，即 $v$ 的最后一次出现的结尾为 $|s|-p_u$。
+        
+        $v$ 在 $|s|-p_u$ 出现时作为段底当且仅当那时不存在一个长为 $|v|+p_u$ 的回文后缀，而这样的回文后缀只能是 $u$。如果 $u$ 在那时是一个回文后缀，那么 $s[-p_u-|u|:]$ 将是一个回文串，从而 $u$ 不是目前的一个段底，矛盾。因此 $v$ 在 $|s|-p_u$ 出现时作为段底被更新过 $f$。  
+    \end{proof}
+    $|s|-p_u$ 时刻 $v$ 到段顶对应的那些开头位置为 $\{|s|-p_u-|v|+kp_u:0\le k< L_v\}$，其中 $L_v$ 为 $v$ 到段顶的边数，而 $|s|$ 时刻 $u$ 到段顶对应的那些开头位置为 $\{|s|-|u|+kp_u:0\le k<L_u\}$。注意 $|u|=|v|+p_u$，$L_u=L_v+1$，故这两个集合的差别只有一个元素——段顶下面的结点对应的开头位置。
+\end{solution}
+
+\begin{exercise}
+    给定字符串 $s$，计算其最少能划分成多少段回文串，并计算方案数。
+\end{exercise}
+
+\begin{exercise}[CF932G Palindrome Partition]
+    将 $s$ 划分为尽量少的子串 $s=s_1\cdots s_k$，使得 $k$ 是偶数且 $s_i=s_{k-i+1}$。
+\end{exercise}
+\begin{solution}
+    首先需要 $|s|$ 是偶数。令 $s'=s[1]s[-1]s[2]s[-2]\cdots s[|s|/2]s[-|s|/2]$，则 $s$ 的合法划分等价于 $s'$ 的偶回文串划分。
+\end{solution}
+

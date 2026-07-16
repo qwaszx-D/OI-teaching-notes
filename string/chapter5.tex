@@ -1,0 +1,330 @@
+\chapter{后缀结构}
+
+\section{后缀树}
+
+对于字符串 $s$，由 $s$ 的所有后缀构建出的压缩 Trie 称为 $s$ 的隐式后缀树。如果额外保留每个后缀的结尾结点，则得到 $s$ 的后缀树。由于任何子串都是一个后缀的前缀，后缀树可以处理相当多的子串问题。
+
+\subsection{构建}
+在本节中，我们讨论支持向后加字符并维护隐式后缀树的 Ukkonen 算法。
+
+首先，如果直接使用压缩 Trie 的构建算法，我们可以得到下面这样一个暴力：
+\begin{descbox}{算法}[暴力构建后缀树]
+    压缩 Trie 的每条边上维护这条边对应的字符串在 $s$ 中的位置。考虑在右边加一个字符后发生的变化。这对应于所有的后缀都延伸一步，在压缩 Trie 上有三种情况：
+    \begin{itemize}
+        \item 如果一个后缀处于叶子结点上，那么只需要隐式地把父边伸长
+        \item 如果一个后缀处于非叶结点上，那么可能需要新建子结点表示延伸后的该后缀
+        \item 如果一个后缀处于一条边上，那么还可能需要分裂这条边，然后再进行上一条
+    \end{itemize}
+    我们把后两种情况统称为“不处于叶子结点上”。根据后缀的性质，如果后缀 $s[i:]$ 不处于叶子结点上，那么它是某个 $s[i':]$ 的真前缀。那么对任何 $j\ge i$，后缀 $s[j:]$ 将是 $j'=i'+(j-i)$ 对应的后缀 $s[j':]$ 的真前缀，从而 $s[j:]$ 也处于非叶结点上。也就是说任意时刻可以把所有后缀 $s[i:]$ 按照 $i$ 分成两部分，前半部分都处于叶子结点上，后半部分都不处于叶子结点上。我们维护后半部分的开始位置 $k$，每次判断一下 $s[k:]$ 在末尾添加字符后需不需要发生变化，如果需要那么就做相应的修改，然后令 $k\gets k+1$ 并重复此过程；如果不需要做那么就终止。
+\end{descbox}
+
+上述过程的瓶颈在于找到 $s[k:]$ 在压缩 Trie 上的位置，或者更具体地说，根据 $s[k:]$ 的位置找到 $s[k+1:]$ 的位置。这可以通过后缀链接来实现：对压缩 Trie 上的每个非叶结点 $u$，我们维护 \texttt{fail[u]} 使得 \texttt{fail[u]} 指向的结点对应的字符串恰好为 $u$ 对应的字符串去掉首字母。由于 $u$ 是分叉点，根据后缀的性质，$u$ 去掉首字母后仍然是分叉点，故这样的结点存在。假设 $s[k:]$ 对应的位置为 $u$ 沿着 $s[|s|-l+1]$ 对应的出边走 $l$ 长度，那么 $s[k+1:]$ 对应的位置可以从 \texttt{fail[u]} 出发走 $l$ 长度得到（注意可能经过多条压缩 Trie 上的边）。 
+
+只有分裂边的情况下需要计算对 $k$ 新建的结点的后缀链接，这即是 $\mathtt{fail[u]}$ 出发走 $l$ 长度到达的位置。不过具体实现的时候还有很多 trick 让代码很短。
+
+\begin{lstlisting}[language=C++, caption=Ukkonen 算法构建后缀树]
+// source: oi wiki
+struct SuffixTree {
+  // (start,len): 结点父边对应字符串的 [start,start+len) 区间
+  // link: 后缀链接
+  int ch[M + 5][RNG + 1], start[M + 5], len[M + 5], link[M + 5];
+  int s[N + 5];
+
+  // root = 1
+  // (cur, rem) 表示当前 s[k:] 的位置为 cur 沿着 s[|s|-rem+1] 对应的边走 rem 长度到达的结点 
+  int cur{1}, rem{0}, n{0}, tot{1};
+
+  SuffixTree() {
+    len[0] = inf; // 0 是空节点，防止不存在的边被 while 走进去
+  }
+
+  int new_node(int start, int le) {
+    ++tot;
+    start[tot] = start;
+    len[tot] = le;
+    return tot;
+  }
+
+  void extend(int x) {
+    s[++n] = x;
+    ++rem;
+
+    // lst 是上一轮添加的叶子的父结点。
+    // 实际上只有 lst 由分裂产生时才需要更新 link，这里为了代码简单写成这样
+    for (int lst{1}; rem;) {
+        // 从 cur 出发走 rem 长度到达的位置
+      while (rem > len[ch[cur][s[n - rem + 1]]])
+        rem -= len[cur = ch[cur][s[n - rem + 1]]];
+
+      int &v{ch[cur][s[n - rem + 1]]};
+      // 所在位置为 (cur,v] 边上
+
+      int c{s[start[v] + rem - 1]};
+
+      if (!v || x == c) {
+        lst = link[lst] = cur;
+        if (!v)
+          v = new_node(n, inf); // 落在点上，加叶子
+        else
+          break;                // 已经存在，结束
+      } else {
+        // 分裂当前边并加叶子
+        int u{new_node(start[v], rem - 1)};
+        ch[u][c] = v;                 
+        ch[u][x] = new_node(n, inf);  
+        start[v] += rem - 1;
+        len[v] -= rem - 1;
+
+        // link[lst] = u，同时把 cur 的儿子改成 u
+        lst = link[lst] = v = u;  
+      }
+
+      // 下一个后缀
+      if (cur == 1)
+        --rem;
+      else
+        cur = link[cur];
+    }
+  }
+} Tree;
+\end{lstlisting}
+\begin{remark}
+    如果想要后缀树而不是隐式后缀树的话还得在末尾加一个特殊字符，或者基于相同的道理再写一遍差不多的代码。
+    
+    这个算法又慢又难写，如无必要不如直接写 SAM。
+\end{remark}
+
+\subsection{应用}
+
+由于后缀树是压缩 Trie，我们在 Trie 上思考问题，然后将其应用到压缩 Trie 上即可。
+
+\begin{exercise}
+\begin{itemize}
+    \item 计算字符串 $s$ 的本质不同子串个数、总长度等信息
+    \item 多次询问：给定字符串 $t$，求 $t$ 在 $s$ 中的出现次数/第一次出现位置/$[l,r]$ 中的第一次出现位置和出现次数
+    \item {[TJOI2015] 弦论} 求字典序第 $k$ 小的本质不同子串和子串。也可以多次询问一些可简单表示的信息（如长度）
+    \item 求所有循环表示中字典序最小的一个
+    \item 快速计算两个后缀的 LCP，快速计算两个子串的 LCP
+\end{itemize}
+\end{exercise}
+
+\subsection{广义后缀树}
+
+给定多个串，对所有串的所有后缀建立的压缩 Trie 称为广义后缀树。容易发现 Ukkonen 算法的原理天然支持多串，只不过要在每个串构建完成后额外做一些处理来将所有叶子“封闭”。广义后缀树可以处理多个串的一些子串问题。
+
+\begin{example}
+    给定若干字符串，求它们的最长公共子串。
+\end{example}
+
+\section{后缀数组}
+
+后缀数组是对 $s$ 的所有后缀按字典序排序后得到的数组，也就是 $\mathtt{sa}[i]$ 表示字典序第 $i$ 小的后缀。其逆排列 $\mathtt{rk}[i]$ 表示后缀 $i$ 的排名。
+
+根据定义，这就是所有后缀在后缀树上的 DFS 序，因此可以根据后缀树来构建。也可以直接使用倍增配合双关键字计数排序来得到。还有一些 $O(n)$ 的常数更好的算法，不过 OI 中不必要。
+
+记 $\mathtt{height}[i]=\mathrm{LCP}(\mathtt{sa}[i],\mathtt{sa}[i-1])$，则 $\mathrm{LCP}(\mathtt{sa}[i],\mathtt{sa}[j]) = \min_{i<k\le j}\mathtt{height}[k]$。可以据此快速计算 LCP。由于 $\mathtt{height}[rk[i]]\ge \mathtt{height}[rk[i-1]]-1$，可以简单 $O(n)$ 计算。
+
+通常认为后缀数组在功能上不强于后缀树。
+
+\section{后缀自动机}
+
+$s$ 的后缀自动机（Suffix Automaton, SAM）是接受 $s$ 的所有后缀的\textbf{最小} DFA。另一方面，由于后缀 Trie 也是一个接受 $s$ 所有后缀的 DFA，故后缀自动机是后缀 Trie 的最小化。
+
+由 Myhill-Nerode 定理，最小 DFA 可以由向右加字符形成的等价类刻画。对于所有子串，这个等价类可以由以下断言刻画：
+
+\begin{claim}
+    定义 $\mathrm{endpos}(t)$ 为字符串 $t$ 在 $s$ 中所有出现的结尾位置构成的集合。两个字符串等价当且仅当其 $\mathrm{endpos}$ 相同。令等价类的代表元为其中最长的串，等价类内的所有元素即为代表元的长度不低于某个值的所有后缀。
+\end{claim}
+
+对照后缀树的性质，我们还可以得到
+\begin{claim}
+    两个字符串等价当且仅当其在\textbf{反串}的后缀树上处于同一条边上。因此，后缀自动机的结点个数与反串后缀树的结点个数相同，不超过 $2n-1$。
+\end{claim}
+\begin{remark}
+    很快我们会看到可以在构建后缀自动机的同时构建反串后缀树。
+\end{remark}
+
+\subsection{构建}
+
+本节讨论支持向后加字符的 Blumer 算法，它同时构造出反串的后缀树（也称为 parent 树）。于是我们也得到了一个支持向前加字符的后缀树构建算法。
+\begin{remark}
+    存在支持双向加字符并维护隐式后缀树的算法。
+\end{remark}
+
+记 $\delta(u,c)$ 为状态 $u$ 在末尾添加 $c$ 后转移到的状态，后缀链接 $\mathtt{link}[u]$ 指向 $u$ 在反串后缀树上的父亲（也即 $u$ 对应的字符串不断去掉首字母到达的首个非 $u$ 状态）。考虑新增字符的影响。由于 $s+c$ 的所有后缀即为 $s$ 的所有后缀在末尾添加 $c$ 得到的，故受影响的状态应该为 $s$ 所在状态在 $\mathtt{link}$ 树上到根的链上每个状态 $u$ 转移 $c$ 得到的状态，这些状态也处在一条 $\mathtt{link}$ 链上。根据受影响的情况，可以分为以下三类：
+
+\begin{itemize}
+    \item 在链的下端，$\delta(u,c)$ 不存在。此时，这些 $u$ 添加 $c$ 后都对应着同一个 endpos。于是应该新建一个结点，然后让这些 $u$ 的 $\delta(u,c)$ 都指向新结点。
+    \item 在链的上端，$\delta(u,c)$ 已经存在。链会分为若干段，除了最下方的一段外，每一段内 $\delta(u,c)$ 都指向同一个 $v$，且 $v$ 等价类即是这些 $u$ 等价类的并在末尾加入 $c$ 得到的。对于这些段来说，什么都不需要做
+    \item 对于最下方的一段，$v$ 所在等价类的最长串可能比 $u$ 添加 $c$ 得到的串还要长，而这些过长的串的 endpos 不会更新。在此情况下，应该将这些过长的串\textbf{分裂}出去。
+\end{itemize}
+
+据此直接实现即可。
+
+\begin{lstlisting}[language=C++, caption=Blumer 算法构建 SAM]
+void ins(int c)
+{
+    // a[u].ch[c] 为 delta(u,c), a[u].fa 为 link[u]
+    // cur 为先前的 s 所在的状态
+
+    // 为链的下端创建新结点
+    int u=cur;
+    cur=++node_cnt;
+    a[cur].len=a[u].len+1;
+    // 将 delta(u,c) 不存在的 u 的 delta(u,c) 都指向 cur
+    for(;u&&!a[u].ch[c];u=a[u].fa)a[u].ch[c]=cur;
+    if(!u){a[cur].fa=1;return;}
+    int v=a[u].ch[c];
+    // 判断是否有过长的串
+    if(a[v].len==a[u].len+1){a[cur].fa=v;return;}
+    // 分裂结点，v 变成过长的串对应的等价类，用新结点 t 替换原来的 v
+    int t=++node_cnt;
+    a[t]=a[v];
+    a[t].len=a[u].len+1;
+    a[v].fa=t,a[cur].fa=t;
+    // 让最下方的一段指向新结点 t
+    for(;u&&a[u].ch[c]==v;u=a[u].fa)a[u].ch[c]=t;
+}
+\end{lstlisting}
+
+\begin{theorem}
+    SAM 的转移边数量不超过 $3n-2$
+\end{theorem}
+\begin{proof}
+    把结点分为出度为 $1$ 的和出度大于 $1$ 的。如果一个状态的出度大于 $1$，那么其代表元在\textbf{正串}后缀 Trie 上对应一个分叉点，且分叉数量至少为出度。所以总出度不超过点数加上后缀树的叶结点数量减一，也就不超过 $3n-2$。
+\end{proof}
+\begin{remark}
+    紧上界是 $3n-4$，但是这个看起来好理解很多。
+\end{remark}
+
+\subsection{广义后缀自动机}
+
+可以用同样的定义将 SAM 扩展到多串甚至 Trie 上（Trie 的每个结点代表从根到它的路径形成的字符串）。Blumer 构造算法也可以扩展到多串和 Trie 的情况，仅有的区别在于 $\delta(cur,c)$ 可能已经存在，此时无需创建新结点。
+
+\begin{lstlisting}[language=C++, caption=Blumer 算法构建广义 SAM]
+// 在某个串/Trie 结点后添加字符 c
+// cur 为添加前该串/Trie 结点对应的状态
+// 例如，多串情况下，在开始处理一个串之前应将 cur 设为根结点
+void ins(int c)
+{
+	int u=cur;
+	if(a[u].ch[c])
+	{
+		int v=a[u].ch[c];
+		if(a[v].len==a[u].len+1){cur=v;return;}
+		int t=++node_cnt;a[t]=a[v];a[t].len=a[u].len+1;
+		cur=a[v].fa=t;
+		for(;u&&a[u].ch[c]==v;u=a[u].fa)a[u].ch[c]=t;
+		return;
+	}
+	cur=++node_cnt;a[cur].len=a[u].len+1;
+	for(;u&&!a[u].ch[c];u=a[u].fa)a[u].ch[c]=cur;
+	if(!u){a[cur].fa=1;return;}
+	int v=a[u].ch[c];
+	if(a[v].len==a[u].len+1){a[cur].fa=v;return;}
+	int t=++node_cnt;a[t]=a[v];a[t].len=a[u].len+1;
+	a[cur].fa=a[v].fa=t;
+	for(;u&&a[u].ch[c]==v;u=a[u].fa)a[u].ch[c]=t;
+}
+\end{lstlisting}
+
+先前的复杂度分析同样适用。广义 SAM 的后缀链接树是反串的广义后缀树。
+
+与 AC 自动机类似，在广义 SAM 上也有以下结论成立：
+\begin{property}
+    设 $\sum_i |s_i|=L$，则 $\sum_i \text{在 }s_i\text{ 中出现的结点个数}=O(L^{1.5})$。
+\end{property}
+
+\subsection{应用}
+
+SAM 是最常用的构建后缀树的方式\graffiti{拜此所赐，绝大多数 OIer 想象后缀树的时候都是反的……？}。绝大多数时候我们都没有使用自动机结构，而是只使用后缀树。不过，自动机结构也提供了解决问题的另一个视角：DAG 的路径与字符串的子串一一对应。
+
+\begin{exercise}
+    给定串 $s$，维护串 $t$，支持在串 $t$ 的开头插入/删除字符，结尾加入字符，维护 $t$ 所在的 SAM 状态（保证 $t$ 永远是 $s$ 的子串）。$O(1)$。
+\end{exercise}
+
+
+
+\begin{exercise}[{[NOI2018] 你的名字}]
+    固定串 $s$。每次询问给定字符串 $t$ 和 $s$ 的子串 $s[l,r]$，求 $t$ 的本质不同子串中有多少个不是 $s[l,r]$ 的子串。
+\end{exercise}
+\begin{solution}
+    容斥成是 $s[l,r]$ 的子串。枚举 $t$ 的前缀 $i$，双指针计算最小的 $j_i$ 使得 $t[j_i,i]$ 是 $s[l,r]$ 的子串，这可以通过在 $s$ 的 SAM 上走并配合 parent 树来判断是否合法。在 parent 树上找到 $t[j_i,i]$ 对应的结点，最后算一下链并即可。也可以在 $t$ 的 SAM 上一起走，这样可以在 $t$ 的 SAM 上暴力算这个链并。
+\end{solution}
+
+
+\section{练习}
+
+\begin{exercise}[CF1276F]
+    给定字符串 $s$，令 $s^{(i)}$ 为把 $s[i]$ 替换为特殊字符 $*$ 得到的字符串，求 $s,s^{(1)},s^{(2)},\ldots,s^{(n)}$ 的本质不同子串个数，也就是求有多少个字符串至少作为其中一个的子串出现。
+\end{exercise}
+
+\begin{exercise}[{P5576 [CmdOI2019] 口头禅}]
+    给定 $n$ 个字符串 $s_1,\ldots,s_n$，多次询问编号在 $[l,r]$ 内的字符串的最长公共子串。
+\end{exercise}
+\begin{solution}
+    构建广义后缀树，然后需要在树上找到一个对应字符串最长的结点，满足其子树内包含了 $[l,r]$ 所有颜色。维护一个可能贡献答案的集合 $S$，在树上合并计算每个结点包含的所有颜色连续段的时候，如果连续段发生了合并，那么就在 $S$ 中加入新的连续段，对应权值为此结点的字符串长度。
+
+    查询时需要在 $S$ 中寻找包含 $[l,r]$ 的区间的最大权值，二维数点即可。
+\end{solution}
+
+
+
+
+
+
+\begin{exercise}[{[NOI2016] 优秀的拆分}]
+    计算字符串 $s$ 有多少个形如 AABB 的子串。
+\end{exercise}
+\begin{solution}[聪明的做法]
+    只需要对每个 $i$ 计算出以 $i$ 为开头/结尾的 AA 数量。
+
+    枚举 A 的长度 $l$，将序列按 $l$ 分块。假设 $i$ 所在块的左端点为 $p$， 有一个以 $i$ 为结尾的 AA 当且仅当 $\mathrm{LCP}(s[p-l:],s[p:])\ge i-p+1$ 且 $\mathrm{LCS}(s[:p-l],s[:p])\ge p+l-i$。那么只要我们算出 $x=\mathrm{LCP}(s[p-l:],s[p:])$ 和 $y=\mathrm{LCS}(s[:p-l],s[:p])$ 就能知道有贡献的 $i$ 的范围了。总共需要 $O(n\log n)$ 次求 LCP 和 LCS。
+\end{solution}
+\begin{solution}[不太聪明的做法]
+    还是对每个 $i$ 计算以 $i$ 为开头/结尾的 AA 的数量。以结尾为例，只要对每个 $i$ 计算有多少个 $j<i$ 满足 $\mathrm{LCP}(s[j:],s[i:])\ge i-j$ 即可。这可以在后缀树上 dsu on tree 完成。$O(n\log^2 n)$。
+\end{solution}
+\begin{remark}
+    还有一个做法是用 runs。
+\end{remark}
+
+
+\begin{exercise}[P5115 Check,Check,Check one two!]
+    给定函数 $f$ 和 $g$，计算
+    $$
+    \sum_{1\le i<j\le n}f(\mathrm{LCP}(s[i:],s[j:]))\cdot g(\mathrm{LCS}(s[:i],s[:j]))
+    $$
+\end{exercise}
+\begin{solution}
+    不妨设 $f(0)=g(0)=0$。差分，设 $\hat f(i)=f(i)-f(i-1)$，$\hat g(i)=g(i)-g(i-1)$，则原式变为
+    $$
+    \begin{aligned}
+    &\sum_{1\le i<j\le n}\left(\sum_{k\ge 1}\hat f(k)[\mathrm{LCP}(s[i:],s[j:])\ge k]\right)\left(\sum_{l\ge 1}\hat g(l)[\mathrm{LCS}(s[:i],s[:j])\ge l]\right)\\
+    &=\sum_{k,l\ge 1}\hat f(k)\hat g(l)\sum_{1\le i<j\le n}[\mathrm{LCP}(s[i:],s[j:])\ge k][\mathrm{LCS}(s[:i],s[:j])\ge l]\\
+    &=\sum_{k,l\ge 1}\hat f(k)\hat g(l)\sum_{l\le i<j\le n-k+1}[s[i-l+1:i+k-1]=s[j-l+1:j+k-1]]\\
+    &=\sum_{1\le i<j\le n}\sum_{d\ge 0}[s[i:i+d]=s[j:j+d]]\sum_{k+l-2=d}\hat f(k)\hat g(l)\\
+    &=\sum_{t}\binom{t\text{ 在 }s\text{ 中的出现次数}}{2}\cdot h(|t|-1)
+    \end{aligned}
+    $$
+    预处理出 $h$ 及其前缀和后在后缀树上简单计算即可。
+\end{solution}
+
+\section{基本子串结构}
+
+暂时不会。但是应该是非常强大的工具，有待 OI 进一步开发。
+
+\subsection{压缩后缀自动机} 
+
+
+
+% \begin{summary}
+%     \begin{itemize}
+%         \item 半平面与二维数点；对偶二维数点
+%         \item 维度的概念：序列下标、权值、时间等等
+%         \item 区间问题的常用做法：扫描 $r$ 的过程中维护每个 $l$ 的答案；或者把 $l,r$ 视为两个维度在平面上表示问题
+%         \item 数颜色类问题的常用做法：前驱
+%         \item mex 类问题的常用做法：极小 mex 区间
+%         \item 子区间问题的常用做法：历史和
+%         \item 数据结构维护时间维
+%     \end{itemize}
+% \end{summary}

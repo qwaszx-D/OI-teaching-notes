@@ -1,0 +1,294 @@
+\chapter{有限状态自动机}
+
+\section{基本概念}
+
+\begin{definition}[语言]
+    语言是一个字符串的集合。
+\end{definition}
+\begin{example}
+    以下是一些语言的例子：
+    \begin{itemize}
+        \item $\{a^n : n \ge 0\}$：所有由 $a$ 组成的字符串组成的集合
+        \item $\{a^n b^n : n \ge 0\}$：所有形如 $a^n b^n$ 的字符串组成的集合
+        \item $\{ww^R:w\in \Sigma^*\}$
+        \item $\{a^nb^nc^n : n\ge 0\}$
+        \item $\{\langle M,x\rangle : \text{ C++ 程序 }M\text{ 在输入 x 上运行时会停机}\}$
+    \end{itemize}
+\end{example}
+
+有限状态自动机是描述状态关于输入变化的数学模型。它的一个应用是识别语言：对于一个语言 $L$，我们希望设计一个自动机 $M$，使得对于任意字符串 $s$，$M$ 能够判断是否 $s\in L$。
+
+\begin{definition}[确定性有限状态自动机（DFA）]
+    有限状态自动机是一个五元组 $(Q,\Sigma,\delta,q_0,F)$，其中：
+    \begin{itemize}
+        \item $Q$ 是有限的状态集合；
+        \item $\Sigma$ 是有限的输入符号集合（字符集）；
+        \item $\delta: Q\times \Sigma\to Q$ 是状态转移函数。$\delta(q,a)$ 表示在状态 $q$ 下读入符号 $a$ 时转移到的新状态；
+        \item $q_0\in Q$ 是初始状态；
+        \item $F\subseteq Q$ 是接受状态集合。
+    \end{itemize}
+    以下是字符串 $s$ 在 DFA $M$ 上的处理过程：
+    \begin{lstlisting}[language=C++]
+        int state = q0;
+        for (char c : s) {
+            state = delta(state, c);
+        }
+        if (state in F) {
+            // s 被接受
+        } else {
+            // s 被拒绝
+        }
+    \end{lstlisting}
+    记 $L(M)$ 为自动机 $M$ 接受的语言，即所有被 $M$ 接受的字符串组成的集合。
+\end{definition}
+本章中提到的自动机都指\textbf{有限状态自动机}。DFA 可以用有向图表示。
+% TODO：加张图
+
+容易发现在 DFA 上识别字符串的复杂度是 $O(|s|)$ 的。
+\begin{exercise}
+    设计 DFA，识别以下语言：
+    \begin{itemize}
+        \item $\{(ab)^n : n\ge 0\}$。
+        \item 出现过偶数次 01 的字符串组成的集合。
+        \item 出现过 00，但没有出现过 111 的字符串组成的集合。
+    \end{itemize}
+\end{exercise}
+\begin{exercise}[KMP 自动机]
+    给定字符串 $s$， 设计 DFA，识别：
+    \begin{itemize}
+        \item 以 $s$ 为前缀的字符串组成的集合
+        \item 以 $s$ 为后缀的字符串组成的集合
+        \item 包含 $s$ 作为子串的字符串组成的集合
+    \end{itemize}
+\end{exercise}
+
+可以被 DFA 识别的语言称为\textbf{正则语言}。
+
+如果允许一次转移到多个不同的状态，则称为\textbf{非确定性有限状态自动机（NFA）}。
+\begin{definition}[非确定性有限状态自动机（NFA）]
+    非确定性有限状态自动机是一个五元组 $(Q,\Sigma,\delta,q_0,F)$，其中：
+    \begin{itemize}
+        \item $Q$ 是有限的状态集合；
+        \item $\Sigma$ 是有限的输入符号集合（字符集）；
+        \item $\delta: Q\times \Sigma\to 2^Q$ 是状态转移函数。$\delta(q,a)$ 表示在状态 $q$ 下读入符号 $a$ 时可以转移到的新状态集合；
+        \item $q_0\in Q$ 是初始状态；
+        \item $F\subseteq Q$ 是接受状态集合。
+    \end{itemize}
+    如果存在一列状态 $q_1,\ldots,q_n$，使得 $q_n\in F$，且对于每个 $i=1,\ldots,n$ 都有 $q_{i}\in \delta(q_{i-1},s_{i})$，则称字符串 $s$ 被 NFA 接受。换句话说，NFA 可以“猜”出一条路径，使得读入字符串 $s$ 后到达接受状态。
+\end{definition}
+\begin{remark}
+    一些定义使用字符集 $\Sigma_\epsilon=\Sigma\cup\{\epsilon\}$，其中 $\epsilon$ 为空字符。换句话说，允许在不输入字符的情况下转移。不难将这样定义的 NFA 转为不使用 $\epsilon$ 转移的 NFA。 
+\end{remark}
+
+在 NFA 上识别字符串可以简单地做到 $O(|s||Q|^2/w)$ 或者 $O(\sum_i s_i\text{ 涉及的转移边数})$。
+
+\begin{theorem}
+    NFA 和 DFA 的能力相同，即对于任意 NFA $M$，存在一个 DFA $M'$，使得 $L(M)=L(M')$，反之亦然。换句话说，$L$ 是正则语言当且仅当它能被一个 NFA 识别。
+\end{theorem}
+\begin{proof}
+    显然 DFA 是一个 NFA。
+
+    对于一个 NFA $M=(Q,\Sigma,\delta,q_0,F)$，可以构造一个状态集合为 $Q'=2^Q$ 的 DFA，表示目前可以到达哪些状态。
+\end{proof}
+
+另一种描述正则语言的方式是\textbf{正则表达式}。
+\begin{definition}[正则表达式]
+    正则表达式是由以下规则确定的语言：
+    \begin{itemize}
+        \item 空表达式是正则表达式，表示语言 $\varnothing$；
+        \item 任意字符 $c\in \Sigma\cup \{\epsilon\}$ 都是一个正则表达式，表示语言 $\{c\}$；
+        \item 如果 $R_1,R_2$ 是正则表达式，则 $R_1|R_2$（也记作 $R_1\cup R_2$）也是正则表达式，表示语言 $L(R_1)\cup L(R_2)$；
+        \item 如果 $R_1,R_2$ 是正则表达式，则 $R_1R_2$ 也是正则表达式，表示语言 $\{w_1w_2 : w_1\in L(R_1), w_2\in L(R_2)\}$；
+        \item 如果 $R_1$ 是正则表达式，则 $R_1^*$ 也是正则表达式，表示语言 $\{w_1w_2\cdots w_n : n\ge 0, w_i\in L(R_1)\}$。
+    \end{itemize}
+\end{definition}
+\begin{remark}
+    在工程实践中，正则表达式通常还包括一些扩展的语法，例如：
+    \begin{itemize}
+        \item $R+$ 表示 $RR^*$，即至少出现一次 $R$；
+        \item $R?$ 表示 $R|\epsilon$，即出现 0 次或 1 次 $R$；
+        \item $R\{n,m\}$ 表示 $R$ 出现 $n$ 到 $m$ 次；
+        \item $[abc]$ 表示 $a|b|c$，即出现一个字符 $a,b,c$ 中的任意一个；
+        \item \verb|[^abc]| 表示出现非 $a,b,c$ 的任意一个字符；
+        \item $[a-z]$ 表示出现 $a$ 到 $z$ 之间的任意一个字母；
+        \item $.$ 表示任意字符。
+    \end{itemize}
+\end{remark}
+\begin{theorem}
+    $L$ 是正则语言当且仅当它可以由一个正则表达式描述。
+\end{theorem}
+\begin{proof}
+    给定一个正则表达式，容易将其转为一个 NFA。
+
+    反过来，给定一个 DFA，我们需要将其转为正则表达式。我们考虑使用正则表达式增强的 DFA：每个转移增强为 $\delta(q,R)$，接收一段被正则表达式 $R$ 匹配的字符串来转移。然后考虑逐个去除每个状态 $q$，这可以通过将所有 $u\to q\to^* q\to v$ 的转移直接利用正则表达式缩成 $u\to v$ 来完成。
+\end{proof}
+
+正则表达式转成的 NFA 具有 $O(|R|)$ 的边数，因此用正则表达式识别字符串可以做到 $O(|s||R|)$。
+
+利用这些描述正则语言的工具，我们可以给出一些正则语言封闭性的结论：
+\begin{theorem}
+    \begin{itemize}
+        \item 正则语言的交、差、并、补都是正则语言
+        \item 正则语言的反转也是正则语言
+        \item 正则语言的同态像 $h(L)=\{h(w):w\in L\}$ 也是正则语言（同态是满足 $h(s_1s_2)=h(s_1)h(s_2)$ 的函数）
+        \item 正则语言的逆同态像 $h^{-1}(L)=\{w:h(w)\in L\}$ 也是正则语言
+    \end{itemize}
+\end{theorem}
+
+\section{等价类}
+
+\begin{definition}
+    对于一个语言 $L$，如果字符串 $x,y$ 满足对任何字符串 $z$ 都有 $xz\in L\Longleftrightarrow yz\in L$，则称 $x,y$ 在 $L$ 下等价，记作 $x\equiv_L y$。
+\end{definition}
+
+一个等价类可以视为自动机上的同一个结点，这就给出了如下定理。
+
+\begin{theorem}[Myhill-Nerode 定理]
+    语言 $L$ 是正则语言当且仅当 $L$ 在 $\equiv_L$ 下的等价类数量有限，且该数量是最小 DFA 的状态数。
+\end{theorem}
+\begin{proof}
+    首先假设 $L$ 是正则语言，按照字符串在 DFA 上移动到的状态来划分等价类，此等价类划分必然是 $\equiv_L$ 等价类划分的一个加细。
+
+    反过来，可以根据 $\equiv_L$ 的等价类构造 DFA。每个等价类都是 DFA 的一个状态。每个等价类选择其中最短的任意一个字符串作为代表元。记 $\bar x$ 为字符串 $x$ 所在的等价类。对于代表元为 $s$ 的等价类 $\bar s$，其转移为 $\delta(\bar s,c)=\overline{sc}$。一个等价类为终止状态当且仅当其代表元在 $L$ 中。我们说明这个 DFA 可以正确识别 $L$。只需要归纳证明串 $s$ 的任何前缀 $s[1,i]$ 在 DFA 上走到的等价类都是 $\overline{s[1,i]}$。$i=0$ 时显然成立；假设对 $i$ 成立，则由于 $s[1,i]\equiv_L \overline{s[1,i]}$，有 $s[1,i+1]\equiv_L \overline{s[1,i]}s[i+1]$，而后者所在的等价类依定义即为 $s[1,i+1]$ 走到的结点，于是对 $i+1$ 也成立。
+\end{proof}
+
+可以利用这个想法来\textbf{最小化 DFA}，即找到一个状态数最小的识别相同语言的 DFA。我们先定义限制长度的等价关系：
+
+\begin{definition}
+    对于一个语言 $L$，如果字符串 $x,y$ 满足对任何长度不超过 $k$ 的字符串 $z$ 都有 $xz\in L\Longleftrightarrow yz\in L$，则称 $x,y$ 关于 $(L,k)$ 等价，记作 $x\equiv_L^k y$。
+\end{definition}
+
+下面给出了关于此等价关系的一些基本事实。
+\begin{fact}
+    \begin{itemize}
+        \item 关于 $(L,0)$ 的等价类为 $\{L,\bar L\}$，在自动机上体现为 $\{F,Q\backslash F\}$。
+        \item 如果 $x\equiv_L^{k+1} y$，那么有 $x\equiv_L^k y$。因此，随着 $k$ 的增加，等价类会不断加细。
+        \item $x\equiv_L^{k+1} y$ 当且仅当对任何 $c\in \Sigma\cup\{\epsilon\}$ 都有 $xc\equiv_L^k yc$。
+        \item $\equiv_L^k$ 导出的 DFA 可以正确判定长度不超过 $k$ 的串是否属于 $L$。
+    \end{itemize}
+\end{fact}
+
+\begin{lemma}
+    如果 $(L,k)$ 的等价类数量和 $(L,k+1)$ 的等价类数量相同，那么这就是关于 $L$ 的等价类。
+\end{lemma}
+\begin{proof}
+    我们先说明这就是关于 $(L,k+2)$ 的等价类，从而递推说明对任何 $K\ge k$ 都是关于任何 $(L,K)$ 的等价类。我们有 $x\equiv_L^{k+2} y$ 当且仅当对任何 $c\in \Sigma\cup\{\epsilon\}$ 都有 $xc\equiv_L^{k+1} yc$。由于 $(L,k)$ 和 $(L,k+1)$ 的等价类相同，这等价于 $\forall c\in \Sigma\cup\{\epsilon\}, xc\equiv_L^k yc$，进而等价于 $x\equiv_L^{k+1} y$。
+    
+    现在，考虑同一个等价类内的两个字符串 $x,y$。对任何字符串 $z$，都有 $x\equiv_L^{|z|} y$，从而 $xz\in L\Longleftrightarrow yz\in L$。这就说明 $x\equiv_L y$。
+\end{proof}
+
+这就给出了 DFA 最小化的一个直接算法。
+\begin{descbox}{算法}[DFA 最小化]
+    初始令等价类划分为 $\{F,Q\backslash F\}$。重复以下过程：
+    \begin{lstlisting}[language=C++]
+        for (c in Sigma)
+            for (等价类 C) 
+            {
+                for (状态 q in C) 
+                    记录 delta(q, c) 所在的等价类;
+                根据记录加细 C    
+            }
+        如果没有发生加细，停止。
+    \end{lstlisting}
+    设 $|Q|=n$。由于加细至多进行 $n$ 次，故以上过程至多执行 $n$ 轮；每轮中每个结点和字符会被枚举一次，故每轮的复杂度为 $O(|\Sigma|n)$。因此总复杂度为 $O(|\Sigma|n^2)$。
+\end{descbox}
+
+
+Hopcroft 算法可以在 $O(|\Sigma|n\log n)$ 的时间内计算 DFA 最小化。相比枚举等价类进行加细，该算法的想法则是枚举等价类然后加细所有\textbf{能被此等价类加细}的等价类。
+
+\begin{descbox}{算法}[Hopcroft 算法]
+    维护一个等价类集合 $\mathcal C$ 和待用于加细的等价类集合 $\mathcal A\subseteq \mathcal C$（称为“证据”集合）。使用证据 $A$ 和字符 $c$ 加细 $\mathcal C$ 的过程为：对每个 $C\in \mathcal C$，将其划分为 $U,V$，使得 $\delta(U,c)\subseteq A$，$\delta(V,c)\subseteq \bar A$，并丢弃空的那个（如果有）。
+    
+    
+    % 使得每个等价类 $A\in \mathcal C\backslash \mathcal A$ 都满足：对任何 $C\in\mathcal C$，要么 $\delta(C,c)\subseteq A$，要么 $\delta(C,c)\subseteq \bar A$。那么当 $\mathcal A=\varnothing$ 时，$\mathcal C$ 就是关于 $L$ 的等价类。
+
+    每次从 $\mathcal A$ 中取出一个等价类 $A$ 并删除。枚举字符 $c$，用 $A,c$ 加细 $\mathcal C$。加细完成后，$A$ 将不再可能加细未来产生的等价类。在加细过程中对 $\mathcal A$ 进行维护。假设某个等价类 $C$ 分裂为非空的两部分 $U,V$，如果 $C\in \mathcal A$，那么可以将 $C$ 替换为 $U$ 和 $V$；否则，说明 $C$ 已经永远无法加细未来的 $\mathcal C$，此时只需要向 $\mathcal A$ 中加入 $U,V$ 中的\textbf{任意一个}，我们加入其中较小的那个。这是因为 $\delta(q,c')$ 只可能转移到 $\bar C$、$U$、$V$ 中的其中一个，我们使用其中两个就能完成正确的划分。
+    \begin{lstlisting}[language=C++]
+        按照 {F,Q-F} 划分等价类;
+        sA={F};
+        while (sA not empty) 
+        {
+            取出一个 A in sA 并删除之;
+            for (c in Sigma)
+            {
+                S = {q : delta(q, c) in A};
+                for (和 S 有交的等价类 C) 
+                {
+                    令 U = S cap C，如果 U=C 则跳过
+                    将 U 从 C 中分裂出去
+                    如果 |U|>|C| 则交换 U 和 C
+                    将 U 加入 sA
+                }
+            }
+        }
+    \end{lstlisting}
+    注意分裂需要 $O(|U|)$ 的实现，这可以惰性完成。用不同的编号标记不同等价类，并记录每个状态 $q$ 所属的等价类，在遍历某个等价类中的元素时据此确认其是否真的属于此等价类。
+    
+    总共的代价不超过过程中向 $sA$ 中加入的所有等价类的入度之和的常数倍。对于每个状态 $q\in Q$，整个过程中包含它且被加入到 $sA$ 中的集合只有 $\log n$ 个。每条边 $\delta(q,c)$ 只会被访问 $\log n$ 次，总复杂度 $O(|\Sigma|n\log n)$。
+\end{descbox}
+\begin{remark}
+    \href{https://arxiv.org/pdf/0802.2826}{这里}是一个 $O(m\log n)$ 复杂度的算法。
+\end{remark}
+
+对于某些问题，我们可以由较短的串诱导的等价类逐步得到实际的等价类。
+\begin{example}
+    给定一个 $\{0,1\}^3\to \{0,1\}$ 的函数 $f$ 和一个 01 串 $s$，每次可以把 $s$ 中连续的三个字符替换为 $f$ 的输出。问是否可以把 $s$ 变为 1。
+\end{example}
+\begin{solution}
+    令 $L$ 为所有可以变成 $1$ 的 $s$ 构成的语言。考虑 $\equiv_L$ 在所有长度不超过 $k$ 的串上给出的等价类划分，这个划分对应的 DFA $M_k$ 可以正确判定长度不超过 $k$ 的串是否属于 $L$。另一方面，我们容易通过枚举第一次替换的位置来将其改造为一个正确判定长度不超过 $k+2$ 的串的 NFA，再将其转为 DFA，且这个过程与 $k$ 无关。因此，如果这样转换后得到的 DFA 与 $M_k$ 等价，我们就有 $L(M_k)=L$。
+    
+    但是我们无法真的判断两个字符串是否在 $\equiv_L$ 下等价，我们可以将其用某个 $\equiv_{L,l}$ 替代。只要 $l\ge k$，$\equiv_{L,l}$ 导出的 DFA 就能正确判定长度不超过 $k$ 的串。也就是说，我们可以这样枚举：从小到大枚举 $k$，在 $\equiv_{L,k}$ 下计算长度不超过 $k$ 的串的等价类划分，并导出 DFA $M_k$，判定 $M_k$ 转换出的能够判定长度不超过 $k+2$ 的串的 DFA 是否与 $M_k$ 等价，若等价则此 DFA 即为所求。
+\end{solution}
+\begin{exercise}
+    证明如果 $L$ 是正则语言，那么此算法必会终止。
+\end{exercise}
+\begin{remark}
+    这个问题稍微变化一些就无法用这个方法解决了。例如，如果字符集增大到 $4$，那么存在一个 $f$ 使得 $L$ 不是正则语言，而是\textbf{上下文无关语言}（CFL），此时只能用区间 dp 来做。
+    
+    实际上，这个问题相当于给出了一组替换规则 $0\to s,1\to t$，这是一种\textbf{上下文无关文法（CFG）}。一般来说，CFG 的正则性是\textbf{不可判定}的。
+\end{remark}
+
+\section{在自动机上 DP}
+
+自动机给出了一个判定字符串的方法，我们可以利用自动机做一些计数或者最优化问题。比如说，计算语言 $L$ 中有多少个长度不超过 $n$ 的字符串 $t$，这个相当于在自动机上走不超过 $n$ 步后到达一个接受状态的方案数；计算 $L$ 中最短的字符串，这个相当于在自动机上跑最短路。
+
+\begin{example}[禁止子串计数]
+    给定字符串 $s$，求有多少个长为 $n$ 的字符串 $t$ 不包含 $s$ 作为子串。
+\end{example}
+
+\begin{example}[P15650 [省选联考 2026] 摩卡串]
+    给定字符串 $s$，求一个长度最短的字符串 $t$，使得
+    \begin{itemize}
+        \item $s$ 是 $t$ 的子串；
+        \item $t$ 恰好有 $k$ 个子串的字典序小于 $s$。
+    \end{itemize}
+\end{example}
+\begin{solution}
+    先考虑判断一个字符串的字典序是否小于 $s$ 的自动机。显然，这个自动机是这样设计的：首先有状态 $0,1,\ldots,|s|$，其中状态 $i$ 表示已经匹配了 $s[1,i]$。初始状态为 $0$，对于每个状态 $i$，如果读入的字符小于 $s[i+1]$，则转移到一个“已经小于”的状态；如果读入的字符等于 $s[i+1]$，则转移到状态 $i+1$；如果读入的字符大于 $s[i+1]$，则转移到一个“已经大于”的状态。那么容易发现，在这个自动机上处于悬而未决的状态当且仅当当前的串是 $s$ 的一个前缀。
+
+    我们可以利用这一点来设计计数字典序小于 $s$ 的子串的自动机。假如我们对 $t$ 的每一个位置 $i$ 都维护 $t[i,|t|]$ 在上面的自动机上的状态，那么状态可以分为三类：
+    \begin{itemize}
+        \item 已经小于 $s$ 的状态，以后也永远小于 $s$
+        \item 已经大于 $s$ 的状态，以后也永远大于 $s$
+        \item 处于未决定状态的那些 $i$，即满足 $t[i,|t|]$ 是 $s$ 的一个前缀的 $i$
+    \end{itemize}
+    关键在于未决定状态的那些 $i$。根据 border 的道理，如果我们知道最长的一个这样的 $t[i,|t|]$（也就是 $i$ 最小的那个），那么其他的 $t[i',|t|]$ 就是它的所有 border。因此，我们只需要记录 $t$ 在 KMP 自动机上的状态就能知道哪些 $i$ 处于未决定状态了。
+    
+    为了计数，我们只需要知道以下这些量：
+    \begin{itemize}
+        \item 目前已经有多少个子串小于 $s$
+        \item 有多少个 $i$ 已经处于小于 $s$ 的状态
+        \item 当前在 KMP 自动机上的状态
+    \end{itemize}
+    将这些作为自动机的状态即可。实际上不需要显式构造，在状态中记录一下这几个量即可，新加入字符导致的转移容易通过预处理 KMP 自动机的一些信息完成。另外，如果第二个量已经达到了 $j$，那么之前必然已经产生过 $1+2+\cdots+j$ 个小于 $s$ 的子串，因此这一维可以限制到 $O(\sqrt{k})$。
+
+    由于还有 $s$ 是 $t$ 的子串的限制，可以再加一维 0/1 表示是否已经出现过 $s$。在自动机上跑最短路即可，总复杂度 $O(nk\sqrt{k})$
+\end{solution}
+
+\section{DAG 链剖分}
+
+\begin{example}
+    给一个序列，多次询问字典序第 $k$ 小的子序列的长度。 
+\end{example}
+
+完整的 DAG 剖分还需要使得每个点只作为一条重边的终点，这可以通过额外计算以每个点为结尾的路径数量实现，一条边是重边当且仅当双向的“重儿子”关系成立。这样剖分可以保证每条路径上至多有 $\log S$ 条轻边，其中 $S$ 是 DAG 上的路径数量。DAG 剖分在 SAM 或者是树套树结构中有一些应用。

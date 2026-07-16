@@ -1,0 +1,328 @@
+\chapter{常见特殊性质}
+
+\section{均摊}
+
+有时候，虽然某些操作的单次复杂度可能很高，但这种操作做完之后会使得数据结构的状态变得更好，从而所有操作总共的复杂度并不会很高。我们首先回顾单调栈的例子：
+\begin{example}[单调栈]
+    虽然一次插入可能需要删除多个元素，但这也会导致栈中的元素减少。而栈中总共只插入了 $n$ 次，所以删除的总次数不会超过 $n$，也就是说每次操作的平均复杂度是 $O(1)$。
+\end{example}
+
+这种想法可以发展为\textbf{势能分析}。我们寻找一个关于当前\textbf{数据结构状态}的势能函数 $\Phi(S)$，表示当前状态的“坏的程度”。假设执行完前 $i$ 次操作后，数据结构的状态为 $S_i$。当我们执行第 $i$ 次操作时，会产生一个实际代价 $T_i$；同时，这个操作会导致数据结构的势能从 $\Phi(S_{i-1})$ 变成 $\Phi(S_i)$。我们定义 $\hat T_i = T_i + \Phi(S_i) - \Phi(S_{i-1})$ 为第 $i$ 次操作的\textbf{均摊代价}，则
+$$
+\begin{aligned}
+\sum_{i=1}^n T_i &= \sum_{i=1}^n \hat T_i-\sum_{i=1}^n \Phi(S_i)-\Phi(S_{i-1})\\
+&=\Phi(S_0)-\Phi(S_n)+\sum_{i=1}^n \hat T_i
+&\le \Phi(S_0)+\sum_{i=1}^n \hat T_i.
+\end{aligned}
+$$
+也就是说，只要我们能够说明数据结构的均摊代价之和不高，且数据结构的初始势能不高，就能说明实际代价之和也不高，即总复杂度不高。
+
+\begin{exercise}[单调栈]
+    定义 $\Phi(S)$ 为当前栈中元素的个数。
+\end{exercise}
+
+\begin{exercise}[双端队列]
+    定义 $\Phi(S)$ 为当前双栈两侧元素个数的差的绝对值。
+\end{exercise}
+
+\begin{example}[开方、除法]
+    支持：区间加、区间开方（下取整）、区间除法（下取整），查询区间和与区间 $\max$。
+\end{example}
+\begin{solution}
+    对于在线段树分解出的一个终止区间，如果极差足够小，那么区间除法和开方可以变成区间减法；否则暴力递归。
+
+    除法/开方至少会使得极差减半/开方。定义每个结点的势能为 $\log\text{极差}$ 即可。
+\end{solution}
+\begin{example}[取模]
+    支持：单点修改、区间对某个数取模，查询区间和与区间 $\max$。
+\end{example}
+\begin{solution}
+    如果 $\max\ge x$ 那么递归，否则取模后无变化。
+
+    注意如果取模后发生变化，那么这个数至少会减半。因此每个数在两次单点修改之间只会被有效修改 $O(\log V)$ 次。
+\end{solution}
+\begin{remark}
+    这个问题加上区间加的话就不能 polylog 了，可以用区间加区间 $<x$ 的数的个数归约：根据 $a$ 是否 $<x$，$(a+M)\bmod (M+x)$ 的取值分别为 $a+M$ 和 $a-x$。
+\end{remark}
+
+\begin{exercise}[P3747]
+\end{exercise}
+% \begin{solution}
+%     % 典型做法是把反复作用的函数放到欧拉函数链上分析。设模数链为 $p,\varphi(p),\varphi(\varphi(p)),\ldots$，其长度为 $O(\log p)$。对每个位置维护它已经下降到链上的哪一层；当这一层足够深时，再继续修改不会影响原模数下的值。
+
+%     % 线段树维护区间内尚未稳定的位置数量。区间修改时，只递归到尚未稳定的位置；每个位置最多被有效处理 $O(\log p)$ 次。查询区间和正常在线段树上完成即可。
+% \end{solution}
+
+\begin{example}[Segtree Beats]
+    单点修改，区间和 $x$ 取 $\min$，查询区间和。
+\end{example}
+\begin{solution}
+    维护每个区间的最大值和严格次大值。对于线段树上分解出的一个终止区间，如果修改不会影响严格次大值，那么只需要将所有最大值都减去一个数；否则，递归处理。
+
+    定义一个结点的势能为区间内不同的数的个数。
+\end{solution}
+\begin{exercise}
+    额外支持区间和 $x$ 取 $\min$。
+\end{exercise}
+% \begin{solution}
+%     % 如果这里指同时支持取 $\max$，则对称地维护区间最小值和严格次小值；一次取 $\max$ 只会影响最小值，且不会越过严格次小值时可以整块打标记。势能改为同时统计最大侧和最小侧的不同值数量即可。
+
+%     % 如果仍然只是取 $\min$，则与上一题完全相同，区别只在于需要把单点修改替换为会重建路径信息的普通修改。
+% \end{solution}
+
+\begin{example}[Segtree Beats 2]
+    用相同的方法额外支持区间加。
+\end{example}
+\begin{solution}
+    定义一个结点的势能为 $[\max\text{ 与父亲不同}]\cdot \mathrm{depth}$。
+\end{solution}
+
+\begin{example}[连续段均摊/颜色段均摊/珂朵莉树/ODT\graffiti{这里放不下这么多算法。}]
+    如果序列可以被分成若干连续段，满足：
+    \begin{itemize}
+        \item 每次操作只会导致连续段数量增加 $O(1)$
+        \item 一个需要访问多个连续段的操作会保证在此次操作结束后把这些连续段合并成一个
+    \end{itemize}
+    那么整个过程中访问的连续段总数是 $O(n+m)$。
+\end{example}
+% \begin{solution}
+%     定义势能为当前连续段数量。一次操作若访问 $k$ 个连续段，操作结束后这些段会被合并成一个，同时至多新切出 $O(1)$ 个边界，因此势能变化为 $O(1)-\Theta(k)$。实际访问代价 $k$ 可以由势能下降支付，总访问次数为 $O(n+m)$。
+% \end{solution}
+\begin{remark}
+    最常见的情况是区间赋值，此时可以把每个极长等值段视为一个连续段。
+\end{remark}
+\begin{example}[CF444C]
+    区间染色，每次染色后会给对应位置的权值加上新旧颜色差的绝对值；查询区间权值和。
+\end{example}
+\begin{solution}
+    用 \texttt{set} 之类的东西维护极长同色段，另一个数据结构维护每个位置的权值。区间染色时，先在 \texttt{set} 上提取出 $[l,r]$ 对应的那些段（可能需要分裂 $l,r$ 所在的段），每个段在维护权值的数据结构上修改，然后把这些段合并成一个。
+\end{solution}
+\begin{example}[P8512]
+    区间赋值，查询只考虑一段时间内的修改时某个区间的和。
+\end{example}
+\begin{solution}
+    使用连续段均摊把区间赋值变成区间加。
+    
+    % 把一次赋值看作在“位置 $\times$ 时间”平面上产生若干矩形贡献：某个位置在一段时间内最后一次被赋成 $x$，就对这段时间中的询问贡献 $x$。用 ODT 维护当前位置轴上的极长等值段；当新的区间赋值覆盖若干旧段时，旧段的生命期结束，可以把它们对应的矩形贡献离线加入。
+
+    % 这样每个被访问的连续段都会在本次操作后被合并掉，段数均摊为线性；最后把矩形加、询问点或矩形和交给扫描线/二维数点处理。
+\end{solution}
+
+\section{特殊函数}
+
+像区间内所有数的按位或、按位与、$\gcd$ 这样的函数具有特殊的性质：当左/右端点固定时，$f(l,r)$ 至多变化 $\log V$ 次。因此，可以像单调栈一样在扫描 $r$ 的过程中维护所有的 $f(l,r)$。
+
+\begin{lstlisting}[language=C++]
+// O(n log V)
+for(int i=1;i<=n;i++)
+{
+    f[i]=a[i];
+    for(int j=i-1;j>=1;j--)
+    {
+        if((f[j]&a[i])!=f[j])
+            f[j]=f[j]&a[i];
+        else break;
+    }
+}
+\end{lstlisting}
+
+\begin{example}
+    查询最短的按位或和 $\ge x$ 的区间长度，$x$ 每次不同。
+\end{example}
+\begin{solution}
+    对每个 $l$，$f(l,r)$ 关于右端点 $r$ 形成至多 $\log V$ 个等值连续段，每个连续段只有第一个位置可能是最短的。所以只需要计算出所有这样的 $O(n\log V)$ 个区间，然后简单查询即可。
+
+    不难发现这样的区间就是上面的暴力中 if 条件成立的那些 $[j,i]$。
+\end{solution}
+\begin{exercise}[P5065]
+    额外支持单点修改。
+\end{exercise}
+% \begin{solution}
+%     % 用线段树维护每个区间的不同前缀按位或、不同后缀按位或，以及区间内部的答案。合并两个儿子时，跨过中点的区间只需要枚举左儿子的后缀或和右儿子的前缀或，二者长度都是 $O(\log V)$。单点修改后沿根路径重算，复杂度为 $O(\log n\log^2 V)$。
+% \end{solution}
+
+\begin{example}[P9335]
+    查询区间内所有子区间的按位或、按位与、$\gcd$ 的乘积的和。
+\end{example}
+\begin{solution}
+    类似扫描线维护历史和，对每个 $l$ 维护 $f_l$ 表示子区间左端点固定为 $l$ 时乘积的历史和，扫到 $r$ 时查询 $f$ 的后缀和即可。由于大部分时候乘积不发生变化，可以将 $f_l$ 设为一次函数 $k_l r+b_l$，当乘积变化时更新 $k_l$ 和 $b_l$ 即可。由于每次只会修改 $f$ 的一个后缀，可以顺便维护 $f$ 的前缀和来回答询问。
+\end{solution}
+
+
+
+\section{按阈值分类讨论/阈值分治}
+
+在很多问题中，会有这样的情况出现：代价大的东西个数很少，而大部分东西代价很小。这时候可以将这两部分分开处理。
+
+\subsection{约数、倍数、取模}
+
+注意 $x$ 的倍数不超过 $V/x$ 个，$x$ 的约数不超过 $d(n) = o(\sqrt x)$ 个\graffiti{实际上有 $d(n) = n^{O(1/\log\log n)}$。}。所以，在处理约数、倍数和取模相关的问题时，经常把 $\le \sqrt{V}$ 和 $>\sqrt{V}$ 的除数分开处理。
+
+\begin{example}
+    等差数列位置加，查询单点。
+\end{example}
+\begin{solution}
+    如果 $d\ge \sqrt{n}$，那么暴力加就是 $O(\sqrt{n})$。否则，按照 $d$ 分类。对于一个 $d$，按照 $i\bmod d$ 分类可以形成 $d$ 个长为 $n/d$ 的数列。一次修改相当于在某个 $d$ 的某个数列上区间加，查询相当于询问每个 $d$ 上的某个序列的单点。这样是 $O(q)$ 次修改和 $O(q\sqrt{n})$ 次询问，平衡一下即可。
+\end{solution}
+\begin{example}[P5309 强化版]
+    等差数列位置加，区间和
+\end{example}
+\begin{solution}
+    对于 $d>\sqrt{n}$ 的修改，相当于 $O(q\sqrt{n})$ 个单点加和 $O(q)$ 个区间和。
+    
+    考虑 $d\le \sqrt{n}$ 的修改。对于每个 $d$，把序列按照 $d$ 分块，那么询问在一个 $d$ 上体现为若干整块询问和最多两个散块询问。一个修改在整块询问上的影响相当于区间加，在散块上相当于在 $(\text{块间坐标，块内坐标})$ 这些点上取出 $x\le r,y=b$ 的部分做加法。一个整块询问查询区间和，散块询问则查询 $x=i,y\le b$ 的点的权值和。所以整块的部分就是 $O(q)$ 个区间加和 $O(q\sqrt{n})$ 个区间和，散块的部分可以变成 $O(q)$ 个点和 $O(q\sqrt{n})$ 次二维数点。
+\end{solution}
+\begin{remark}
+    等差数列位置加、等差数列位置求和暂时不知道是否有 $\tilde O(\sqrt{n})$ 的做法，但是 $\tilde O(n^{2/3})$ 是比较容易的。此外，如果是没有左右端点限制的等差数列位置修改查询，那么存在使用多项式乘法的 $\tilde O(\sqrt{n})$ 做法。
+\end{remark}
+
+\begin{example}[P3591]
+    树链上等差数列位置求和
+\end{example}
+% \begin{solution}
+%     重链剖分后，一条树链被拆成 $O(\log n)$ 段连续的 dfs 序区间。对每条重链使用上一类“等差位置”的阈值分治：小公差按余数类维护标记和区间和，大公差枚举实际落点。树链拆分只额外带来 $O(\log n)$ 个片段。
+% \end{solution}
+
+\begin{example}[P9809]
+    插入一个数，查询 $\bmod x$ 的最小值 
+\end{example}
+% \begin{solution}
+%     % 设值域为 $V$，阈值为 $B$。对所有 $x\le B$ 维护当前集合中 $a\bmod x$ 的最小值，插入 $a$ 时枚举这些 $x$ 更新。若 $x>B$，则只需枚举 $k$，在区间 $[kx,(k+1)x)$ 中找最小的已插入数 $a$，用 $a-kx$ 更新答案；这样的区间只有 $O(V/x)$ 个。用值域线段树或有序集合找区间最小值即可。
+% \end{solution}
+
+\begin{example}[P5071]
+    查询区间乘积的约数个数
+\end{example}
+% \begin{solution}
+%     将每个数分解质因数。小质数的指数可以做前缀和，查询时直接得到乘积中该质数的总指数；大质数在一个数中出现的次数很少，可以把出现位置单独存下，查询时用二分统计。最后答案为
+%     $$
+%         \prod_p (e_p+1),
+%     $$
+%     其中只有在区间内出现过的质数需要参与计算。阈值用于平衡“小质数数量”和“大质数出现次数”。
+% \end{solution}
+
+\subsection{度数}
+
+在一张图中，由于所有的点的总度数为 $2m$，所以度数 $>\sqrt{2m}$ 的点的个数不超过 $\sqrt{2m}$，而其他的点的度数都不超过 $\sqrt{2m}$。
+
+\begin{example}[单点加一圈和]
+    给一张图，支持：把一个点的点权加一个数，查询一个点的邻居的点权之和。
+\end{example}
+\begin{solution}
+    查询点 $u$ 时，如果 $\deg_u\le \sqrt{2m}$，那么暴力就是 $O(\sqrt{m})$ 的。对于 $\deg>\sqrt{2m}$ 的 $O(\sqrt{m})$ 个点，可以单独维护。那么在修改 $u$ 时，需要更新 $u$ 的那些 $\deg>\sqrt{2m}$ 的邻居的答案，这可以通过在建图时就计算出这些邻居的列表来完成。
+\end{solution}
+
+\begin{example}[三元环计数]
+    给一张无向图，计算三元环的数量。
+\end{example}
+\begin{solution}
+    首先我们有一个 $\sum_u\sum_{v\in N(u)}\deg_v=\sum_v \deg_v^2$ 的做法：枚举一个点 $u$，标记其所有邻居；然后枚举 $u$ 的邻居 $v$，再枚举 $v$ 的邻居 $w$，如果 $w$ 被标记了，那么 $u,v,w$ 就构成一个三元环。此外，每个三元环在这个算法中都会被枚举到三次。
+    
+    不过我们可以做得更聪明一点：如果可以把枚举 $v$ 的邻居的代价从 $\deg_v$ 降低至 $\min(\deg_v,\sqrt{2m})$，那么总复杂度就可以降到 $O(m\sqrt{m})$。这可以通过强制 $\deg_u\le \deg_v\le \deg_w$ 完成。或者说，我们把所有点按照度数排序，然后把每条无向边定向，使得每条边都是靠前的点连向靠后的点。这样，当 $\deg_v>\sqrt{2m}$ 时，对应的 $w$ 必须满足 $\deg_w>\sqrt{2m}$，而这样的点数不超过 $\sqrt{2m}$。在这个算法中，每个三元环恰好被枚举到一次。
+\end{solution}
+\begin{remark}
+    可以用矩阵乘法做到 $O(n^\omega)$。
+\end{remark}
+\begin{exercise}
+    计算有向图三元环数量。
+\end{exercise}
+
+\subsection{出现次数}
+
+在一个序列中，出现次数 $> \sqrt{n}$ 的数的个数不超过 $\sqrt{n}$，而其他数的出现次数都不超过 $\sqrt{n}$。这也可以说明：不同的出现次数只有 $\le 2\sqrt{n}$ 种。
+
+\begin{example}
+    多次询问值为 $x$ 的位置集合和值为 $y$ 的位置集合之间的最小距离。    
+\end{example}
+\begin{solution}
+    按照每个值的出现次数是否 $>\sqrt{n}$ 分成两类。如果 $x,y$ 出现次数都不超过 $\sqrt{n}$，那么可以归并计算。否则，通过预处理完成。
+
+    对每个出现次数 $>\sqrt{n}$ 的值 $x$，对所有 $y$ 计算 $ans_{x,y}$。这可以对每个 $x$ 正反扫两遍序列得到。
+
+    可以离线逐 $x$ 计算来做到线性空间。
+\end{solution}
+\begin{remark}
+    另一个做法是只预处理出现次数 $>\sqrt{n}$ 的 $y$。当 $x,y$ 有一个出现次数不超过 $\sqrt{n}$ 时，暴力枚举那个值的所有出现，在另一个值的出现数组中二分即可。这样空间是线性的，但是时间带 $\log$。可以使用 $B$ 叉树将二分变成 $O(1)$，但是空间会增大。不知道在线能否做到 $n\mathrm{polylog}(n)$ 的空间。
+
+    此外，这个问题似乎被称为 color-distance oracle。
+\end{remark}
+\begin{exercise}
+    额外把位置集合限制到区间 $[l,r]$ 内。
+\end{exercise}
+
+\subsection{字符串}
+
+有的问题给很多字符串，而它们的总长不超过 $S$。那么长度 $>\sqrt{S}$ 的字符串的个数不超过 $\sqrt{S}$，而其他字符串的长度都不超过 $\sqrt{S}$。
+
+\section{位运算}
+
+可以使用 word RAM 的特性—— $O(1)$ 操作 $w=64$ 个 bit 来做到很多奇妙的事情。
+
+\begin{example}[常见操作]
+    \begin{itemize}
+        \item clz：查询前导零数量
+        \item ctz：查询末尾有几个零
+        \item popcount：查询 $1$ 的数量
+        \item lg：查询 $\lfloor \log_2 x \rfloor$
+    \end{itemize}
+    通常来说我们可以在 $V^{O(1)}$ 预处理一些东西之后 $O(1)$ 回答询问。
+\end{example}
+\begin{remark}
+    \href{https://www.zhihu.com/people/hqztrue/posts}{这里}有一些更好的复杂度和其他讨论。不过，虽然常见的函数都是能快速计算的，但是绝大多数函数都需要至少 $\Omega(2^w/w)$ 大小的电路才能计算，这是\textbf{电路复杂性}的一个经典结论。
+\end{remark}
+
+\begin{example}[bitset]
+    在 $O(n/w)$ 时间内支持
+    \begin{itemize}
+        \item 计算两个集合的交/差/并
+        \item 查询某个数的前驱后继
+        \item 计算上面的几种常见操作
+    \end{itemize}
+\end{example}
+
+
+\begin{example}[维护 01 序列]
+    维护一个 01 序列，支持单点修改，查询区间与、或、异或和。做到 $O(\log n/\log\log n)$。
+\end{example}
+\begin{solution}
+    $w$ 叉树。
+\end{solution}
+
+\begin{example}
+    维护数列，支持单点修改，查询区间和 $\bmod 2^k$。需要做到 $O(\frac{\log n}{\log (w/k)})$。此外，这个界是紧的。
+\end{example}
+\begin{solution}
+    $w/k$ 叉树。
+\end{solution}
+\begin{example}
+    $O(\log n/\log\log n)$ 支持：单点加一，查询区间和。
+\end{example}
+\begin{solution}
+    高低位分开，低位变成上一个题，高位变成修改次数只有 $m/2^b$ 的子问题。
+\end{solution}
+
+\begin{example}[加法电路]
+    只使用位运算实现加法。
+\end{example}
+\begin{solution}
+    模拟二进制竖式加法。从低位到高位依次计算每一位的结果和进位。每一位的结果可以通过异或计算得到，进位可以通过与和或计算得到。
+\end{solution}
+\begin{example}[并行加法器]
+    有 $n$ 个数，需要统计每一位上总共有多少个 $1$。
+\end{example}
+\begin{solution}
+    分治计算每一位的答案。那么合并的时候需要做 $w$ 个 $\log n$ bit 的加法，可以将加法电路并行来做到 $O(\log n)$ 而不是 $O(w)$。具体来说，常规的每位加法维护了 $w\times \log n$ 的 01 数组，这里则是维护转置后 $\log n\times w$ 的 01 数组。
+\end{solution}
+\begin{exercise}[并行乘法器]
+    在 $O(b^2)$ 的时间内计算 $w$ 个 $b$ 位数乘法
+\end{exercise}
+
+\begin{example}[第七学区]
+    求所有子区间按位或的和。
+\end{example}
+\begin{solution}
+    首先考虑一个拆位的 $O(n\log V)$ 做法。对于每一位，相当于有多少个区间包含 $1$，反过来就是求全 $0$ 区间的个数。可以通过合并分治信息的方式计算。
+
+    合并分治信息可以通过并行加法/乘法器来实现。
+\end{solution}
+

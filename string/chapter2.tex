@@ -1,0 +1,269 @@
+\chapter{Border，周期与字符串匹配}
+
+\section{Border 与周期}
+
+如果 $0\le i<|s|$ 满足 $s[1,i]=s[|s|-i+1,|s|]$，则称 $s[1,i]$ 是 $s$ 的一个 \textbf{border}。我们把 $i$ 也称为 $s$ 的一个 border。如果 $s[i+p]=s[i]$ 对所有 $1\le i\le |s|-p$ 成立，则称 $p$ 是 $s$ 的一个 \textbf{周期}。如果周期 $p$ 还满足 $|s|\bmod p=0$，则称 $p$ 是 $s$ 的一个\textbf{整周期}。
+
+下面的事实说明了 border 与周期之间的对应关系：
+\begin{fact}
+    $p$ 是周期当且仅当 $s[1,|s|-p]$ 是 border。
+\end{fact}
+因此，研究 border 与研究周期都能得到\textbf{两者}的性质。
+
+Border 具有以下的性质：
+
+\begin{lemma}
+    如果 $s[1,i]$ 和 $s[1,j]$ 都是 $s$ 的 border 且 $i<j$，那么 $s[1,i]$ 也是 $s[1,j]$ 的 border。
+\end{lemma}
+
+因此，我们通常关注 $s$ 的最长 border。设 $f(i)$ 为 $s[1,i]$ 的最长 border 长度，则 $s$ 的所有 border 即为 $f(n),f(f(n)),f(f(f(n))),\ldots$（$n=|s|$）。
+
+KMP 算法可以线性求出一个字符串所有前缀的最长 border。注意到如果 $s[1,j]$ 是 $s[1,i]$ 的 border，那么 $s[1,j-1]$ 一定是 $s[1,i-1]$ 的 border。因此，我们可以从长到短逐个遍历 $s[1,i-1]$ 的所有 border，并判断其添加一个字符后是否能变成 $s[1,i]$ 的 border。首次成功的那一个就是 $s[1,i]$ 的最长 border。
+\begin{lstlisting}[language=C++]
+f[1]=0;
+for (int i=2, j=0; i<=n; i++) {
+    while (j>0 && s[j+1]!=s[i]) j=f[j];
+    if (s[j+1]==s[i]) j++;
+    f[i]=j;
+}
+\end{lstlisting}
+由于 $j$ 总共只会增加 $n$ 次，这个过程的总复杂度为 $O(n)$。
+
+连边所有的 $f(i)\to i$ 可以形成一棵以 $0$ 为根的有根树，一个前缀 $s[1,i]$ 的所有 border 即为 $i$ 在这棵树上的所有祖先。
+\begin{remark}
+    在其他资料中，$f$ 数组也被称为 fail 数组/next 数组/失配数组。这棵树也称为 fail 树/失配树。
+\end{remark}
+\begin{exercise}[P5829]
+    求两个前缀的最长公共 border。
+\end{exercise}
+
+\begin{exercise}[P2375]
+    求出每个前缀 $s[1,i]$ 最长的长度不超过 $i/2$ 的 border。
+\end{exercise}
+\begin{exercise}
+    求出每个前缀 $s[1,i]$ 最长的长度不超过 $l_i$ 的 border。
+\end{exercise}
+
+除了计算每个前缀的最长 border 以外，也可以计算每个前缀的\textbf{所有} border。注意到 $s[1,j]$ 是 $s[1,i]$ 的 border 当且仅当 $s[1,j-1]$ 是 $s[1,i-1]$ 的 border 且 $s[j]=s[i]$。也就是说，我们只要在 $s[1,i-1]$ 的 border 中删去下一个字符不等于 $s[i]$ 的，然后让所有 border 的长度加一即可。删除可以这样完成：对每个 $j$，我们维护 $\texttt{next[j]}$ 表示 $s[1,j]$ 的 border 中最长的满足 $s[b+1]\ne s[j+1]$ 的 border $b$。这样，我们就可以每次 $O(1)$ 地找到一个需要删除的 border。
+\begin{exercise}[CF1286E]
+    维护字符串 $S$ 和序列 $a$，定义 $i$ 的权值为 $a$ 的后缀 $\min$ 在 $i+1$ 处的值。支持在 $S$ 末尾添加一个字符同时在 $a$ 末尾添加一个数，然后查询 $S$ 的所有周期的权值之和。强制在线。
+\end{exercise}
+
+
+周期可以诱导更长的周期：
+\begin{fact}
+    如果 $p,q$ 都是 $s$ 的周期，那么 $p+q$ 也是 $s$ 的周期。
+\end{fact}
+\begin{corollary}
+    如果 $p$ 是 $s$ 的周期，那么 $kp$ 也是 $s$ 的周期。
+\end{corollary}
+
+
+下面的两个引理则说明了周期如何诱导更短的周期：
+\begin{lemma}[弱周期引理]
+    如果 $p,q$ 都是 $s$ 的周期且 $p+q\le |s|$，那么 $\gcd(p,q)$ 也是 $s$ 的周期。
+\end{lemma}
+\begin{proof}
+    不妨假设 $q>p$，我们只需证明 $q-p$ 也是 $s$ 的周期。对任何 $i\in (p,n-(q-p)]$，都有 $s_{i+q-p}=s_{i-p}=s_i$；对任何 $i\le p$，都有 $s_{i+q-p}=s_{i+q}=s_i$。这就完成了证明。
+\end{proof}
+\begin{lemma}[周期引理]
+    如果 $p,q$ 都是 $s$ 的周期且 $p+q-\gcd(p,q)\le|s|$，那么 $\gcd(p,q)$ 也是 $s$ 的周期。
+\end{lemma}
+\begin{proof}
+    先考虑 $p,q$ 互质的情况，此时我们需要说明当 $p+q-1\le |s|$ 时 $s$ 只由一种字符构成。令字符串下标从 $0$ 开始，则对于任何 $0\le i<p-1$，都有 $s_i=s_{(i+q)\bmod p}$。考虑连边所有的 $(i,(i+q)\bmod p)$，则一个连通块内的点 $i$ 对应的 $s_i$ 都是相同的。如果允许 $i=p-1$，那么这就构成 $0,1,\ldots,p-1$ 的一个环，而删掉 $i=p-1$ 这条边后图仍然连通。于是 $s$ 只由一种字符构成。
+
+    对于 $p,q$ 不互质的情况，只需要把字符串下标按照模 $\gcd(p,q)$ 分类即可。
+\end{proof}
+
+
+
+周期引理直接刻画了所有的短周期。
+\begin{corollary}\label{cor:characterization of short periods}
+    设 $p$ 是 $s$ 的最短周期。则对于所有满足 $x+p\le |s|$ 的周期 $x$，都有 $x\bmod p=0$。反过来，任何满足 $x+p\le |s|$ 且 $x\bmod p=0$ 的正整数 $x$ 都是 $s$ 的周期。
+\end{corollary}
+\begin{corollary}
+    $s$ 的不超过 $|s|/2$ 的所有周期构成一个等差数列，$s$ 的长度 $\ge |s|/2$ 的所有 border 构成一个等差数列，且公差均为 $s$ 的最短周期。
+\end{corollary}
+\begin{corollary}
+    $s$ 的非空 border 可以划分为至多 $\lfloor\log_2 |s|\rfloor$ 个等差数列，因此周期也对应划分为至多 $\lfloor\log_2 |s|\rfloor$ 个等差数列。
+\end{corollary}
+\begin{remark}
+    可以这样构造一个达到 $\frac{\log_2 |s|}{2}$ 的字符串：设 $c_i$ 是两两不同的字符，令 $s_1=c_1$，$s_i=s_{i-1}c_is_{i-1}$ 即可。
+\end{remark}
+
+\begin{exercise}
+    在预处理出 $f$ 后，$O(\log n)$ 地计算某个前缀 $s[1,i]$ 的所有 border 的等差数列表示。    
+\end{exercise}
+
+\begin{exercise}
+    设计一个严格 $O(\log n)$ 在末尾添加字符并计算 $f$ 的算法，从而支持在 Trie 上计算 $f$。
+\end{exercise}
+
+\begin{exercise}[P5287]
+    支持在字符串末尾添加若干个相同字符、恢复到某个版本、查询所有 $f(i)$ 的和。
+\end{exercise}
+\begin{solution}
+    考虑所有的极长同色段。一个 border 除了开头结尾两段以外，中间的段必须满足字符和数量都相同。因此，考虑将每个极长同色段缩成一个字符 $(c,l)$，然后维护这个字符串上的 border，其中首段的判定条件需要稍加修改。 
+    
+    容易验证弱周期引理仍然成立，因此使用严格 $O(\log n)$ 添加字符的算法。不完整结尾段的 $f$ 可以在计算完整结尾段的 $f$ 的过程中顺便计算。
+\end{solution}
+\begin{solution}[另解]
+    使用可持久化线段树直接维护 KMP 自动机。
+\end{solution}
+
+\begin{exercise}[P4156]
+    令 $P$ 为字符串 $s$ 的所有周期构成的集合，询问 $[1,w]$ 内有多少个数可以被 $P$ 中元素线性表示，即询问 $[1,w]$ 内有多少个数可以表示为 $\sum_{p\in P} k_p p$，其中 $k_p\ge 0$。
+\end{exercise}
+\begin{solution}
+    假设最短周期为 $p$，考虑同余背包（或者说同余最短路）。由于周期可以被划分为 $O(\log n)$ 个等差数列，可以逐个等差数列考虑。
+    
+    对于一个等差数列 $\{x+id:0\le i<l\}$，在 $\bmod\ x$ 下做同余背包，则 $t$ 可以转移到所有 $(t+id)\bmod x\ (0\le i<l)$，这会形成 $\gcd(x,d)$ 个环，一个环上每个点可以转移到其后 $l-1$ 个点。每个环可以在答案最小的元素处断开变成在序列上转移，单调队列即可。
+
+    接下来需要在不同等差数列的模数之间切换。假设之前的模数是 $x_1$，需要切换到模数 $x_2$ 上。对每个 $0\le t<x_1$，其可以转移到所有的 $(t+ix_1)\bmod x_2$，和前面类似地做即可。
+\end{solution}
+
+相比周期，整周期要求的整除性质使它更容易计算。
+\begin{lemma}
+    如果 $s$ 存在整周期 $d\ne |s|$，则所有整周期都是最短周期的倍数。这也说明此时最短周期也是整周期。
+\end{lemma}
+这种特征允许我们使用\textbf{试除法}快速计算最小整周期。
+\begin{lemma}
+    假设关于正整数 $x\le M$ 的命题 $P(x)$ 具有如下性质：
+    \begin{itemize}
+        \item 如果 $P(x)$ 成立，则 $P(kx)$ 对所有 $k\ge 1$ 都成立。
+        \item 如果 $P(a),P(b)$ 都成立，则 $P(\gcd(a,b))$ 也成立。
+    \end{itemize}
+    那么如果存在 $x_0$ 使得 $P(x_0)$ 成立，则存在唯一的整数 $d$ 使得 $P(x)$ 成立当且仅当 $x$ 是 $d$ 的倍数，且以下算法可以求出 $d$：初始令 $x=x_0$，逐个枚举 $x_0$ 的质因子 $p$，若 $P(x/p)$ 成立则令 $x=x/p$，并重复此过程。最终得到的 $x$ 即为所求的 $d$。此算法只需要 $O(\log x_0)$ 次判定 $P(x)$。
+\end{lemma}
+\begin{remark}
+    这也给出了在已知某个长度不超过 $|s|/2$ 的周期的情况下计算最短周期的一种方法。除了整周期和短周期以外，阶也是常见的满足此性质的量。
+\end{remark}
+令 $P(x)$ 表示 $x$ 是一个整周期，则只需要 $O(\log |s|)$ 次判断 $|s|-x$ 是否是 border，这容易通过各种方式完成。
+\begin{exercise}[P3538]
+    多次询问子串最短整周期。
+\end{exercise}
+
+
+
+
+\section{字符串匹配}
+
+字符串匹配指的是在字符串 $t$（文本串）中寻找另一个字符串 $s$（模式串）的出现位置。
+
+KMP 算法利用 $s$ 的所有 border 计算下列形式的匹配：对每个 $1\le i\le |t|$，计算 $l(i)=\max\{l:s[1,l]=t[i-l+1,i]\}$。注意到如果使用一个特殊字符 $\#$ 将 $s$ 和 $t$ 连接起来，则 $l(i)$ 就是 $s\#t[1,i]$ 的最长 border 长度。于是我们可以直接使用 KMP 算法计算出所有的 $l(i)$。不过，我们实际上并不需要真的做这样的连接。
+\begin{lstlisting}[language=C++]
+// |s|=n, |t|=m
+for (int i=1, j=0; i<=m; i++) {
+    while (j>0 && s[j+1]!=t[i]) j=f[j];
+    if (s[j+1]==t[i]) j++;
+    l[i]=j;
+    if(j==n) {
+        // 找到一次出现
+        j=f[j];
+    }
+}
+\end{lstlisting}
+
+我们还可以利用 $l$ 数组表示出 $s$ 的\textbf{所有前缀}在 $t$ 中的出现情况。
+\begin{lemma}
+    $s[1,j]$ 出现在了 $t[i-j+1,i]$ 当且仅当 $s[1,j]$ 是 $s[1,l[i]]$ 的一个 border（这里允许等于自身）。
+\end{lemma}
+% \begin{proof}
+%     假设 $s[1,j]$ 出现在了 $t[i-j+1,i]$，而我们知道 $s[1,l[i]]=t[i-l[i]+1,l[i]]$，这就说明 $s[l[i]-j+1,l[i]]=s[1,j]$，也就是 $s[1,j]$ 是 $s[1,l[i]]$ 的一个 border。反过来，如果 $s[1,j]$ 是 $s[1,l[i]]$ 的一个 border，那么 $s[1,j]=t[i-j+1,i]$。
+% \end{proof}
+
+因此，在 $t$ 中以 $i$ 为结尾的所有 $s$ 的前缀即为 $l[i]$ 在 fail 树上到根的链。反过来，如果对每个 $i$ 都在 $l[i]$ 处放置一个标记 $i$，则 $s[1,j]$ 的所有出现位置即为 fail 树上 $j$ 的子树内的所有标记。
+
+\begin{exercise}[P3426]
+    给定字符串 $t$，求一个最短的字符串 $s$，使得对于每一个 $1\le i\le |t|$，都存在一次 $s$ 在 $t$ 中的出现 $[l,r]$ 使得 $i\in [l,r]$。
+\end{exercise}
+
+如果一个串 $s$ 的两次出现 $[i,i+|s|)$ 和 $[i+d,i+d+|s|)$ 之间的距离 $d\le |s|$，那么这两次出现对应的子串 $[i,i+d+|s|)$ 具有一些良好的性质。
+
+\begin{fact}
+    这两次出现的重叠部分必然是 $s$ 的一个 border。$d$ 是 $[i,i+d+|s|)$ 的一个周期。
+\end{fact}
+
+\begin{lemma}\label{lem:overlapping occurrences}
+    假设 $t[i,i+|s|)=t[i+d,i+d+|s|)=s$ 且 $p\le d\le |s|$。以下三条等价：
+    \begin{enumerate}
+        \item $t[i,i+d+|s|)$ 有周期 $p$
+        \item $t[i+p,i+p+|s|)$ 是 $s$ 的一次出现
+        \item $\gcd(p,d)$ 是 $s$ 的周期。
+    \end{enumerate}
+\end{lemma}
+\begin{proof}
+    (a)$\Rightarrow$(b)：由于 $p$ 是周期，将 $[i,i+|s|)$ 右移 $p$ 得到的还是相同的字符串，即 $t[i+p,i+p+|s|)=t[i,i+|s|)=s$。 
+
+    (b)$\Rightarrow$(c)：$p$ 是子串 $[i,i+p+|s|)$ 的一个周期。另一方面，$d$ 也是这个子串的一个周期，从而周期引理说明 $\gcd(p,d)$ 也是它的一个周期，进而是 $s$ 的一个周期。
+
+    (c)$\Rightarrow$(a)：只需说明 $g=\gcd(p,d)$ 是 $[i,i+d+|s|)$ 的周期。考虑模 $g$ 同余的两个位置 $x,y$。如果 $x,y$ 均位于 $[i,i+|s|)$ 或均位于 $[i+d,i+d+|s|)$ 内，那么 $g$ 是 $s$ 的周期即可说明 $t[x]=t[y]$。因此只需考虑 $x\in [i,i+d),y\in [i+|s|,i+d+|s|)$ 的情况。由于 $d$ 是周期，故 $t[y]=t[y-d]$，而 $y-d\le i+|s|$ 且 $y-d\equiv x\pmod g$，故 $t[x]=t[y-d]=t[y]$。
+\end{proof}
+
+
+\begin{corollary}
+    若 $2|s|\ge |t|$，则 $s$ 在 $t$ 中的所有出现位置构成一个等差数列。如果出现了至少三次，那么这个等差数列的公差为 $s$ 的最短周期。
+\end{corollary}
+\begin{proof}
+    只需要考虑 $s$ 至少出现三次的情况。考虑 $s$ 的任意三次相邻出现位置 $i,i+d_1,i+d_1+d_2$，那么 $d_1$ 和 $d_2$ 均为 $s$ 的周期，且 $s$ 的这三次出现在 $t$ 中形成了一个长度为 $d_1+d_2+|s|$ 的子串，故 $d_1+d_2+|s|\le |t|$。由于 $|t|\le 2|s|$，就有 $d_1+d_2\le |s|$。设 $p$ 是 $s$ 的最小周期，则 $p+d_1\le |s|,p+d_2\le |s|$，故\cref{cor:characterization of short periods} 说明 $d_1,d_2$ 均为 $p$ 的倍数。于是\cref{lem:overlapping occurrences} 说明 $[i+p,i+p+|s|)$ 和 $[i+d_1+p,i+d_1+p+|s|)$ 均为 $s$ 的出现。而 $i,i+d_1,i+d_1+d_2$ 是相邻的出现，故必有 $d_1=d_2=p$。
+\end{proof}
+
+% TODO
+
+\begin{example}[基本子串字典]
+    多次询问子串的最长 border。
+\end{example}
+% \begin{solution}
+%     将所有 border 按照长度划分到区间 $[2^i,2^{i+1})$ 内，则每个区间内构成一个等差数列。考虑一个 $b\in [2^i,2^{i+1})$ 如何才能成为 $s[l,r]$ 的 border。这等价于 $s[l,l+2^i)$ 在 $s(r-2^{i+1},r]$ 中出现过且 $s(r-2^i,r]$ 在 $s[l,l+2^{i+1})$ 中出现过，并且对应。
+% \end{solution}
+
+
+\section{Z 函数}
+
+KMP 算法计算了每个前缀的最长 border 长度。我们也可以计算一个“对称”的量 $z(i)=\mathrm{LCP}(s[i,|s|],s)=\max\{l:s[i,i+l-1]=s[1,l]\}$，这就是 Z 函数。以下算法可以在线性时间内计算 Z 函数：
+\begin{descbox}{算法}[Z 算法/扩展 KMP]
+    从左往右扫描 $i\ge 2$ 并维护最大的 $i+z(i)$。假设目前的最值在 $j$ 处取到。当 $i-1$ 移动到 $i$ 时，由于 $s[j,j+z(j)-1]=s[1,z(j)]$，就有 $s[i,j+z(j)-1]=s[1+i-j,z(j)]$，从而 $z(i)\ge \min(j+z(j)-i,z(1+i-j))$。从这个下界开始暴力尝试扩展即可。 
+
+    注意到只有 $z(1+i-j)\ge j+z(j)-i$ 时才有可能发生扩展，此时 $z(i)$ 的初值为 $j+z(j)-i$，于是每次扩展都会增大 $i+z(i)$ 的最大值。而 $i+z(i)\le n+1$，于是这个过程中总共至多扩展 $n$ 次。 
+\end{descbox}
+\begin{lstlisting}[language=C++]
+// n>=2
+z[1]=n; z[2]=0;
+for (int i=2, j=2; i<=n; i++) 
+{
+    z[i]=max(0, min(j+z[j]-i, z[1+i-j]));
+    while (i+z[i]<=n && s[z[i]+1]==s[i+z[i]]) z[i]++;
+    if (i+z[i]>j+z[j]) j=i;
+}
+\end{lstlisting} 
+
+可以使用 $z$ 数组计算 $f$ 数组：对于 $j\in [i,i+z(i)-1]$，有 $f(j)\ge j-i+1$。而随着 $i$ 的增加，$j-i+1$ 只会越来越小。因此可以从小到大枚举 $i$，然后从大到小枚举 $j\in [i,i+z(i)-1]$，将对应位置的 $f(j)$ 设为 $j-i+1$，直到遇见一个以前被赋值过的位置为止。
+
+\begin{exercise}[{[NOIP2020] 字符串匹配}]
+    给定字符串 $s$，计算有多少种方案可以将其拆成 $(AB)^iC$ 的形式，要求 $A,B,C$ 非空、$i\ge 1$ 且 $F(A)<F(C)$，其中 $F(S)$ 表示 $S$ 中出现奇数次的字符数量。
+\end{exercise}
+\begin{solution}
+    枚举 $AB$ 的长度 $l$，容易用 Z 函数计算出可行的最大 $i$。这些 $C$ 对应的 $F(C)$ 只有至多两种，其中一种为 $F(s[l+1:])$，另一种为 $F(s)$。对于前者，每次 $l$ 移动时 $F(s[l+1:])$ 只会变化 $1$，而后者始终保持不变，这样可以直接 $O(1)$ 维护合法的 $A$ 的数量。
+\end{solution}
+
+% \begin{summary}
+% \begin{itemize}
+%     \item 分治信息的概念与设计原则：首先将复杂的信息分解为相对简洁的信息，再从简洁的信息开始逐步添加合并信息所需的辅助信息，直到信息能够合并。
+%     \item 静态区间数据结构的设计方法：倍增（ST 表）与分治（二区间合并、线段树、多叉分治、一般的分治结构）
+%     \item 线段树的结构与区间分解过程
+% \end{itemize}
+% \end{summary}
+
+
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{@{}llll@{}}
+% \toprule
+% 数据结构 & 预处理 & 查询 & 适用范围 \\ \midrule
+% 前缀和 & $O(n)$ & $O(1)$ & 具有逆元 (群) \\
+% ST 表 & $O(n \log n)$ & $O(1)$ & 可重复贡献 (半格) \\
+% 线段树 & $O(n)$ & $O(\log n)$ & 一般半群 \\
+% Disjoint ST & $O(n \log n)$ & $O(1)$ & 一般半群 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}

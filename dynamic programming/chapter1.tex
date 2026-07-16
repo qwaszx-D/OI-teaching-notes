@@ -1,0 +1,438 @@
+\chapter{常见组合结构上的 DP}
+
+% \begin{overview}
+% \begin{itemize}
+%     \item \texttt{vector}、栈、队列、链表、堆支持的操作，及其实现
+%     \item 常见的可以使用这些数据结构解决的问题
+% \end{itemize}
+% \end{overview}
+
+问题的组合结构往往提示了我们应该按照何种方式逐步生成对象。在根据组合对象确定子结构后，还需要考虑扫描的顺序。
+
+\section{序列前缀/线性 DP}
+
+序列的一个自然子结构是前缀。许多情况下，在序列上 DP 时考虑的一个维度都是前 $i$ 个元素，然后通过向后扩展一个或者一段元素来转移。
+
+\begin{example}[经典问题]
+    \begin{itemize}
+        \item 最长上升/不降子序列的长度/个数
+        \item 最大子段和
+        \item 最长公共子序列
+    \end{itemize}
+\end{example}
+
+\begin{exercise}[P2679]
+\end{exercise}
+
+\begin{example}
+    给定一个序列 $a$，需要对其进行一些修改来得到一个单调不降的序列 $b$。分别最小化
+    \begin{itemize}
+        \item $\sum_i [b_i\ne a_i]$
+        \item $\sum_i |b_i-a_i|$
+    \end{itemize}
+\end{example}
+\begin{solution}
+    对于第一问，答案为 $n$ 减去最长不降子序列的长度。
+
+    对于第二问，首先可以说明存在一种最优方案，其所有 $b_i$ 都来自 $a$ 中的某个元素。否则，考虑所有最优方案中来自 $a$ 中的元素最多的那个方案，其中必然存在某个 $b_i$ 不属于 $a$。考虑 $b_i$ 所在的极长等值段，我们必然可以让这个等值段 $+1$ 或者 $-1$，同时代价不变。我们可以不断地做这个操作，直到 $b_i$ 变得属于 $a$，这就得到了一个来自 $a$ 中元素更多的方案，矛盾。
+
+    那么我们就得到一个直接的 dp：设 $f_{i,j}$ 表示已经构造了 $b$ 的前 $i$ 个元素，最后一个元素是 $j$ 的最小代价，其中 $j$ 只需要考虑 $a$ 中的元素。
+\end{solution}
+\begin{solution}[更进一步]
+    第二问有一个贪心做法：初始每个元素都视为单独的一段，每段内 $b$ 都取该段内 $a$ 的中位数（如有多个就取最小的那个）。如果存在相邻两段不满足单调性条件，就将其合并。重写系统的 Newman 引理可以说明任意合并顺序得到的结果都是相同的，因此可以从左到右合并，使用可并堆维护即可。
+    
+    该算法的正确性可以这样证明：算法执行的任意时刻，都存在一个全局最优解 $b'$，使得当前的每个段内 $b'$ 都相同。考虑合并两个段之前的某个这样的最优解 $b'$，考虑 $b'$ 在被合并的两个段上的值，我们总可以调整这两个值使它们相等，同时不增加代价，这就得到了合并后也符合要求的最优解。
+\end{solution}
+\begin{remark}
+    这两个问题都是\textbf{保序回归}问题的一个特例。
+\end{remark}
+\begin{exercise}
+    要求变成 $b$ 单调递增。
+    \begin{hint}
+        考虑序列 $b'_i=b_i-i$，则 $b$ 单调递增等价于 $b'$ 单调不降。
+    \end{hint}
+\end{exercise}
+
+\begin{example}[{[CEOI 2005] Mobile Service}]
+    
+\end{example}
+
+\section{序列区间}
+
+序列的另一个自然子结构是区间。相比前缀，区间允许更复杂的嵌套结构。括号序列、合并类问题、从序列构造树等类型的问题常常会使用区间 DP 来处理。
+
+\begin{example}[{[NOI1995] 石子合并}]
+    
+\end{example}
+
+\section{括号序列}
+
+在学习组合数学时，我们知道以下组合对象的结构都是类似的：
+\begin{itemize}
+    \item 括号序列
+    \item $\pm 1$ 序列
+    \item 折线图
+    \item 儿子有顺序的二叉树/多叉树
+    \item 三角剖分
+\end{itemize}
+
+这几种组合对象的结构可以帮助我们进行 DP。
+
+\begin{example}
+    给定一个由 $+1$，$-1$，$?$ 组成的序列，对每个 $k$，询问有多少种把 $?$ 替换成 $+1$ 或 $-1$ 的方法，使得最大前缀和恰好为 $k$。
+\end{example}
+
+\section{排列}
+
+根据排列的生成方式，往往会考虑以下几种方式：
+
+\begin{itemize}
+    \item 按照下标逐个放置元素
+    \item 按照下标逐个\textbf{插入}元素，即考虑最后插入的值的排名，如 $1324$ 变成 $14253$
+    \item 逐个放置每个值
+    \item 逐个\textbf{插入}每个值
+\end{itemize}
+
+按值生成也可以视为在逐下标确定 $\pi^{-1}$。在问题具有特殊结构的情况下，有时可以一次扩展多个元素，用数学方法确定这部分元素的方案数。
+
+\begin{example}[经典问题]
+    给一个序列 $a_i$，问有多少个排列 $\pi$ 满足 $\forall i,\ \pi_i\le a_i$.
+\end{example}
+\begin{remark}
+    一种直观化排列的方式是匹配。
+\end{remark}
+
+\begin{example}[{[AtCoder DP Contest] Permutation}]
+    给定一个由 $<$ 和 $>$ 组成的长度为 $n-1$ 的序列，问有多少个长为 $n$ 的排列 $\pi$ 满足这个关系。
+\end{example}
+\begin{solution}
+    按照下标逐个插入元素。在状态中记录结尾元素的排名即可。
+\end{solution}
+
+\begin{example}[{[CSP-S 2025] 员工招聘}]
+    
+\end{example}
+\begin{solution}
+    按下标逐个放置元素。状态中还需要记录前面未录用的人数 $j$ 以及 $c>j$ 的人中还没放的人数 $k$。然而，这样不能直接转移，因为无法知道下一个位置不录用时再下一个位置的候选人数会如何变化：假设目前不录用人数是 $j$，而之前可能已经录用了一些 $c=j+1$ 的人，但这个人数没有在状态中记录。
+    
+    解决方法是所谓的“贡献延后计算”：我们不具体放置元素，而是只标记放置的元素是否 $>j$。等到 $j$ 变化到 $j+1$ 时，再确定 $c=j+1$ 的人在前面具体是如何放置的。
+\end{solution}
+\begin{solution}[另一个视角]
+        假设我们先钦定了所有位置的录取情况，那么如何计算方案数？对于一个录取的位置，必须有 $s_i=1$ 且 $c_{\pi_i}>f_i$，其中 $f_i$ 为 $i$ 前面的未录取人数；对于一个未录取的位置，需要 $s_i=0$ 或者 $c_{\pi_i}\le f_i$。那么相当于每个位置有限制 $c_{\pi_i}>f_i$ 或者 $c_{\pi_i}\le f_i$ 或者无限制。
+
+现在来考虑子问题：(i) 如果只有某一种限制怎么做？(ii) 如果只有某两种限制怎么做？(iii) 怎么把某一种限制用另外两种限制表示？
+
+如果把无限制表示成 $[c_{\pi_i}>f_i]+[c_{\pi_i}\le f_i]$，那就能得到前面的做法。如果把 $[c_{\pi_i}>f_i]$ 表示成 $1-[c_{\pi_i}\le f_i]$，那么就得到另一种做法，也就是容斥。
+
+最后，可以在 dp 中枚举所有位置的录取情况。    
+\end{solution}
+
+\begin{example}[{[JOI Open 2016] 摩天大楼}]
+    求有多少个 $a$ 的排列满足相邻位置差的绝对值之和 $S$ 不超过 $L$。
+\end{example}
+\begin{solution}
+    逐个放置每个值与逐个插入每个值的结合。具体来说，在逐个插入每个值的过程中，还需要钦定哪些相邻元素在最终的排列中也是相邻的。换句话说，在插入的过程中维护若干连续段，每一段都代表最终排列中的一个连续段。
+    
+    从小到大考虑每个值。转移分为三种：添加一个单点作为新段、将一个点添加到某个段的一端、添加一个点并粘合两个段。注意连续段分为两种：贴着边界的（只有一个端点）和不贴着边界的（有两个端点），因此还需要记录目前有 $0/1/2$ 个段已经贴着边界了。
+
+    这样插入每个值时，其对 $S$ 的贡献是确定的。但是对这个题而言还需要一个拆分贡献的技巧：把 $a_j-a_i$ 拆成 $\sum_{k=i+1}^j a_k-a_{k-1}$，也就是把两个数造成的贡献拆到它们之间每个数插入的时候计算。
+\end{solution}
+
+\begin{example}[{[ARC148E] ≥ K}]
+    求有多少种 $a$ 的排列使得相邻位置总满足 $a_i+a_{i+1}\ge K$。
+\end{example}
+\begin{solution}
+    构造一个插入顺序，使得每个数都满足以下二者之一：
+    \begin{itemize}
+        \item 后面所有的数都可以和它相邻
+        \item 后面所有的数都不能和它相邻
+    \end{itemize}
+    这样在逐个插入每个数的过程中维护可用的空位数即可，一个数的任何合法插入方式都会得出相同的空位数。
+
+    顺序可以这样构造：先排序，令 $l=1$，$r=n$。每次检查是否 $a_l+a_r\ge K$，如果是则将写下 $a_r$ 并让 $r\gets r-1$，否则写下 $a_l$ 并让 $l\gets l+1$。 
+\end{solution}
+\begin{remark}
+    略微加强版 P5606 小 K 与毕业旅行
+\end{remark}
+
+\begin{example}[CF1437F Emotional Fishermen]
+    
+\end{example}
+\begin{solution}
+    如果序列的前缀 $\max$ 已经确定，那么我们可以直接算出将剩余的值插入进排列的方案数。对前缀 $\max$ DP 的过程中计算其他数的贡献即可。
+\end{solution}
+
+在只关心排列的“区间最值”结构时，通常会用笛卡尔树来刻画排列。这时，往往会使用区间 DP 来处理。
+
+\begin{example}[ARC183C Not Argmax]
+    
+\end{example}
+
+\begin{example}[CF1580B Mathematics Curriculum]
+    
+\end{example}
+
+\section{背包/卷积}
+
+许多问题的组合结构是卷积的形式：体积 $a$ 和体积 $b$ 的对象组合起来得到体积 $a+b$ 的对象。由于“体积”是额外的结构，它常常会与其他结构结合起来。
+
+背包的常见技巧包括
+\begin{itemize}
+    \item 生成函数
+    \item 换维
+\end{itemize}
+
+
+
+\begin{example}[{[SCOI2009] 粉刷匠}]
+    
+\end{example}
+
+\begin{example}[CF1425B Blue and Red of Our Faculty!]
+    
+\end{example}
+
+    
+\begin{example}[CF1442D Sum]
+    
+\end{example}
+
+\begin{example}[{[十二省联考 2019] 皮配}]
+    
+\end{example}
+
+\begin{example}[同余背包]
+    给定若干个数 $a_i$，求 $[1,M]$ 内有多少个数可以被这些数完全背包得到。
+\end{example}
+
+对于最优化问题，还有一些特殊的结果成立。以下都只考虑重量为整数的背包，体积（或者说重量）用 $w$ 表示，价值用 $v$ 表示。
+
+\begin{lemma}\label{lemma:knapsack-greedy}
+    对于任意要求总体积不超过 $W$ 的背包问题，考虑按照性价比贪心选择直到第一次放不下得到的方案 $G$，则存在一个最优方案与 $G$ 的差别（异或意义）不超过 $2w_{\max}$ 个物品。
+\end{lemma}
+\begin{proof}
+    不妨认为是 01 背包，不是 01 背包可以展开成 01 背包。任取一种最优方案 $O$，假设它与 $G$ 的差别超过 $2w_{\max}$ 个物品。可以通过从 $G$ 中删除 $G\backslash O$ 中的物品并添加 $O\backslash G$ 中的物品来得到 $O$。按照“小了就加大了就删”的原则进行这个过程，可以使得过程中的体积总落在 $[W-w_{\max}, W+w_{\max}]$ 之间。那么由于这个过程的长度超过 $2w_{\max}$，必然存在两个时刻的体积相同。也就是说这两个时刻之间加入和删除的物品总体积相同，而 $G\backslash O$ 在性价比排序中处在 $O\backslash G$ 的前面，从而将这两个时刻之间的过程删除后不会更劣。如此反复可以调整出一个差别不超过 $w_{\max}$ 的最优方案。
+\end{proof}
+\begin{exercise}
+    对于完全背包，证明这个界可以为 $w_{\max}-1$。
+\end{exercise}
+\begin{exercise}
+    说明也存在一种最优方案与 $G$ 的差别不超过 $2v_{\max}$ 个物品。
+\end{exercise}
+\begin{corollary}
+    背包问题可以做到 $O(n\min(V^2,W^2))$。
+\end{corollary}
+
+
+\begin{lemma}\label{lemma:knapsack-split}
+    对于完全背包，总体积为 $W$ 的一种最优方案一定可以由某对 $x,y$ 的最优方案加起来得到，其中 $|x-y|\le w_{\max}$。
+\end{lemma}
+\begin{proof}
+    考察任何一种总体积为 $W$ 的最优方案，可以将其分成两部分，使得两部分的体积差不超过 $w_{\max}$。这可以排序后按奇数位置和偶数位置分块得到。也就是说 $\mathrm{ans}_W\le \max_{x+y=W,|x-y|\le w_{\max}} (\mathrm{ans}_x + \mathrm{ans}_y)$。
+
+    反过来，$x$ 的一种方案和 $y$ 的一种方案可以拼成 $x+y$ 的一种方案，于是 $\mathrm{ans}_{x+y} \ge \mathrm{ans}_x + \mathrm{ans}_y$。这就完成了证明。
+\end{proof}
+
+\begin{corollary}
+    存在 $O(w_{\max}^2\log w_{\max})$ 的完全背包算法。
+\end{corollary}
+\begin{proof}
+    由\cref{lemma:knapsack-greedy}，可以先将 $W$ 降低至 $w^*\cdot w_{\max}$ 级别。
+
+    由\cref{lemma:knapsack-split}，可以倍增出答案：维护 $[W-w_{\max}, W+w_{\max}]$ 范围内的答案即可 $O(w_{\max}^2)$ 计算出 $[2W-w_{\max},2W+w_{\max}]$ 的答案。
+
+    所以可以做到 $O(w_{\max}^2\log w_{\max})$ 的复杂度。
+\end{proof}
+
+\begin{example}
+   体积和价值相同的 $01$ 背包。$O(nw_{\max})$ 
+\end{example}
+\begin{solution}
+    首先按照\cref{lemma:knapsack-greedy}随便选出一个方案 $G$，而存在体积为 $T$ 的方案当且仅当存在一种选择 $U\subseteq G$ 和 $V\subseteq \overline G$ 的方案，使得按照“小了就加大了就删”原则从 $G$ 中按顺序删除 $U$ 并加入 $V$ 时体积总在 $[T-W,T+W]$ 范围内，且最终体积为 $T$。
+
+    考虑对这种东西 DP。设 $f_{i,j,k}$ 表示考虑了 $G$ 中前 $i$ 个物品和 $\bar G$ 中前 $j$ 个物品时，是否存在一个 $U\subset G_{1,\ldots,i}$ 和 $V\subseteq (\bar G)_{1,\ldots,j}$ 按前述原则执行后能够得到体积 $k$。这样是 $O(n^2w_{\max})$ 的，可以用 bitset 进一步加速。
+    
+    注意到在 $k$ 固定时，$f_{\cdot,\cdot,k}$ 为 $1$ 的部分是一条轮廓线。也就是说存在一个不增的序列 $b_k(i)$ 使得 $f_{i,j,k}$ 为 $1$ 当且仅当 $j\ge b_k(i)$。我们转而计算这些 $b_k$。将 $f$ 上的转移对应到 $b$ 上：
+    \begin{enumerate}
+        \item $f_{i,j,k}\to f_{i+1,j,k}$ 对应 $b_k(i)\to b_k(i+1)$
+        \item $f_{i,j,k}\to f_{i,j+1,k}$ 在 $b$ 中无意义
+        \item $f_{i,j,k}\to f_{i+1,j,k-G_{i+1}}(k\ge T)$ 对应 $b_k(i)\to b_{k-G_{i+1}}(i+1)$
+        \item $f_{i,j,k}\to f_{i,j+1,k+(\bar G)_{j+1}}(k<T)$ 对应 $j\to b_{k+(\bar G)_{j+1}}(i)(j\ge b_k(i))$
+    \end{enumerate}
+    显然只有最后一条的转移不是 $O(1)$ 的。但是注意到第四条实际上只需要对 $b_k(i)\le j<b_k(i-1)$ 的那些 $j$ 执行，因为 $j\ge b_k(i-1)$ 的部分可以由 $i-1$ 的第四条转移再加上 $i-1$ 的第一条转移得到。这样每个 $k$ 在整个过程中执行的转移数量就不超过 $O(n)$。
+\end{solution}
+
+\begin{exercise}[{[THUPC 2023 初赛] 背包}]
+\end{exercise}
+
+\section{树}
+
+树上的常见子结构是子树与从根出发的链。
+
+\begin{example}[经典问题]
+    求树上最大权独立集/最小权点覆盖/直径。
+\end{example}
+
+\begin{example}[{CF1146F Leaf Partition}]
+    
+\end{example}
+
+\subsection{树上背包}
+
+首先我们说明如果每个点的体积都是 $O(1)$，那么在只枚举必要范围转移时，树上背包的复杂度和序列背包相同。
+
+\begin{theorem}
+    如果每个点的体积都是 $O(1)$，那么无体积限制的树上背包复杂度是 $O(n^2)$ 的。
+\end{theorem}
+\begin{proof}
+    每个点对只在 LCA 处贡献一次复杂度。
+\end{proof}
+
+\begin{theorem}
+    如果每个点的体积都是 $O(1)$，体积上限为 $V$，那么树上背包复杂度是 $O(nV)$ 的。
+\end{theorem}
+\begin{proof}
+    首先将树变成二叉树以简化分析，算法中不需要真的这么做。将点按照是否满足 $\mathrm{size}_u\le V$ 分开。
+    
+    $\mathrm{size}_u\le V$ 的结点构成若干不交子树，这部分贡献的复杂度为每棵子树根的 $\mathrm{size}_u^2$，总共不超过 $nV$。
+
+    把 $\mathrm{size}_u>V$ 的结点称为重结点。对于重结点，考虑几种情况：
+    \begin{itemize}
+        \item 至多一个儿子满足 $\mathrm{size}_v\le V$。此时这里贡献至多 $\mathrm{size}_v\cdot V$ 的复杂度，且不同重结点对应的 $v$ 的子树不交，从而总共不超过 $O(nV)$。
+        \item 两个儿子都满足 $\mathrm{size}_v> V$。这样的点是重结点虚树中的点，由于重结点构成的连通块的叶子数量不超过 $n/V$，虚树中的点数不会超过 $2n/V$，每个点贡献 $O(V^2)$，总共 $O(nV)$。
+    \end{itemize}
+\end{proof}
+
+\begin{example}[{[HAOI2015] 树上染色}]
+    选择 $k$ 个点染黑，其他点染白，最大化同色点对距离和。
+\end{example}
+
+\begin{example}[{[USACO02FEB] 重建道路}]
+    删掉尽量少的边，使得分离出来的森林中存在一个大小为 $k$ 的连通块。
+\end{example}
+
+\begin{exercise}[{[JSOI2016] 最佳团体}]
+    找到性价比最高的恰有 $k$ 个点的连通块，点集 $S$ 的性价比定义为 $\frac{\sum_{i\in S} a_i}{\sum_{i\in S} b_i}$。
+\end{exercise}
+
+\begin{exercise}[P1270 “访问”美术馆]
+    寻找一个最大的权值不超过 $V$ 的连通块，连通块的权值定义为点权之和加上二倍的边权之和。
+\end{exercise}
+
+\begin{exercise}[{[JSOI2018] 潜入行动}]
+    
+\end{exercise}
+\begin{remark}
+    这个可以链分治 FFT 做到 $O(n\log^2 n)$。
+\end{remark}
+
+\begin{example}[{[IOI 2005] Riv 河流}]
+    
+\end{example}
+\begin{exercise}
+   选一个 $k$ 个点的点集 $S$，最小化 $\sum_i w_i d(i,S)$，其中 $d(i,S)=\min_{u\in S}d(i,u)$。树有非负边权。
+\end{exercise}
+\begin{exercise}
+    在上一题中把 $\sum$ 换成 $\max$。这样会有一个贪心做法。
+\end{exercise}
+
+\begin{example}[{[HEOI2013] SAO}]
+    给一棵树，每条边有一个 $<$ 或者 $>$ 表示顺序要求，求合法排列的数量。
+\end{example}
+
+\subsection{换根}
+
+树形 DP 通常可以算出有根树的每个子树的答案。之后，可以通过“换根”技巧计算出每个子树补的答案，以及以每个点为根时整棵树的答案。
+
+\begin{example}[子树补]
+    设 $S_u$ 为 $u$ 的子树，$\overline{S_u}$ 为 $u$ 的子树补（或者说以 $u$ 为根时，原 $\mathrm{fa}_u$ 对应子树），$v$ 为 $u$ 的任一儿子，则 $\overline{S_v}=\overline{S_u}+(S_u\backslash  S_v)$。因此，可以通过 $\overline{S_u}$ 的信息和 $S_u\backslash S_v$ 的信息组合出 $\overline{S_v}$ 的信息。
+
+    $S_u\backslash S_v$ 的信息通常有以下几种计算方法：
+    \begin{itemize}
+        \item 直接减掉（加和类信息）、利用次小/次大值（最值类信息）
+        \item 通过前后缀信息拼合
+        \item 线段树分治
+    \end{itemize}
+\end{example}
+
+\begin{exercise}
+    利用子树补信息计算以每个点为根时整棵树的信息。
+\end{exercise}
+
+\begin{exercise}[{[POI 2008] STA-Station}]
+   对每个点计算所有点到它的距离和。 
+\end{exercise}
+
+\begin{exercise}[CF543D Road Improvement]
+    
+\end{exercise}
+
+\begin{exercise}[CF512D Fox And Travelling]
+    
+\end{exercise}
+
+\subsection{树路径问题}
+
+在状态中记录子树内端点个数即可拼接出路径。
+
+\begin{example}[{[SCOI2015] 小凸玩密室}]
+    
+\end{example}
+
+\begin{exercise}[{[COCI 2014/2015 \#1] Kamp}]
+    
+\end{exercise}
+
+\begin{exercise}[{[COCI 2020/2021 \#2] Svjetlo}]
+    
+\end{exercise}
+
+\section{数位}
+
+数位 DP 的基本模式是在状态中假设高位的一些情况（如目前是否贴着上界、是否还没有出现首位等），计算低位有多少种方案。
+
+有时也可以直接枚举和上界的 LCP（最长公共前缀）与下一位，然后计算低位任取的所有方案中有多少个合法。这种方式也可以视为在 Trie 上 DP。
+
+\begin{exercise}[P4317 花神的数论题]
+    计算 $\prod_{i=1}^n \mathrm{popcount}(i)$（对质数取模）。
+\end{exercise}
+
+\begin{exercise}[CF855E Salazar Slytherin's Locket]
+    多次询问：$[l,r]$ 中有多少个数在 $b$ 进制下满足 $0,1,\cdots,b-1$ 的出现次数都是偶数。
+
+    尽量让复杂度与 $b$ 无关。
+\end{exercise}
+
+\begin{exercise}[{P13085 [SCOI2009] windy 数}]
+    计算 $[l,r]$ 中有多少个数满足相邻数位上的数字之差都至少为 $2$。
+\end{exercise}
+
+\begin{example}[{P2481 [SDOI2010] 代码拍卖会}]
+    计算有多少个数位上的数字不降的 $n$ 位数模 $P$ 为 $0$。
+\end{example}
+
+\begin{example}[{P3303 [SDOI2013] 淘金}]
+    求 $[l,r]$ 内的所有数的代价和，一个数的代价定义为其各个数位的带权中点。
+\end{example}
+
+\begin{example}[U117267 特]
+    
+\end{example}
+
+\begin{example}[{P7961 [NOIP2021] 数列}]
+    
+\end{example}
+
+\begin{example}[{P7156 [USACO20DEC] Cowmistry P}]
+    
+\end{example}
+
+\section{集合}
+
+\section{网格/轮廓线}
+
+
+
+\begin{summary}
+
+\end{summary}

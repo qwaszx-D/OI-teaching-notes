@@ -1,0 +1,257 @@
+\chapter{Trie 和 AC 自动机}
+
+\section{Trie}
+
+Trie（也称字典树）是一棵有根树，其每条边上有一个字符，且每个点的出边上的字符互不相同。Trie 上的每个结点都对应着一个字符串，即将从根到这个结点的路径上的字符顺次写下得到的字符串。反过来，一个字符串在 Trie 中对应着至多一个结点。
+
+给定若干字符串，可以构造一棵表示所有这些字符串的 Trie。从一个空的根节点开始，依定义逐个插入字符串到 Trie 中即可。
+
+% TODO：加张图
+
+不难发现 Trie 的祖先关系对应着字符串的前缀关系。也就是说，Trie 的每个结点对应的字符串是其所有后代结点对应的字符串的前缀。
+
+\begin{exercise}[Trie 上查询]
+    给定若干字符串组成的语言 $L$ 和一个字符串 $s$。利用 Trie 完成以下任务：
+    \begin{itemize}
+        \item 判断 $s$ 是否在 $L$ 中
+        \item 计算 $s$ 是 $L$ 中多少个字符串的前缀
+        \item 计算 $L$ 中有多少个字符串是 $s$ 的前缀
+    \end{itemize}
+\end{exercise}
+
+\subsection{压缩 Trie}
+
+将 Trie 中除了根节点以外的只有一个孩子的结点收缩即可得到压缩 Trie。压缩 Trie 的每条边存储着一个字符串，且每个点的各个出边的字符串的\textbf{首字符}互不相同。普通 Trie 的结点数量上界为 $\sum_{S\in L} |S|$，而压缩 Trie 的结点数量不超过 $2|L|$。
+
+\begin{exercise}[压缩 Trie 的实现]
+    实现压缩 Trie 上的插入和查询操作。
+\end{exercise}
+
+由于每条边依然需要存储字符串，直接实现的空间复杂度与普通 Trie 相同。不过，可以利用压位技巧将空间复杂度除掉一个 $w/\log|\Sigma|$。
+
+\subsection{01 Trie}
+
+给定若干个非负整数，可以将其视为固定位数的 01 字符串考虑，这样得到的 Trie 称为 01 Trie。01 Trie 和值域为 $[0,2^v)$ 的线段树同构。它常常被用于处理异或相关的问题。
+
+\begin{exercise}
+   实现压缩 01 Trie。每条边存储子树内任意一个叶子的值以及分叉位。 
+\end{exercise}
+
+\begin{exercise}
+    维护一个非负整数集合 $S$，支持
+    \begin{itemize}
+        \item 插入/删除一个数
+        \item 给定 $x$，查询 $\{x\oplus y:y\in S\}$ 的最大和最小值
+        \item 给定 $x,y$，查询 $\#\{z : z \in S, x \oplus z \le  y\}$
+        \item 给定 $x,k$，查询 $\{z\oplus x : z \in S\}$ 的第 $k$ 大/小值
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}[P11872]
+    支持单点修改、全局加一、查询全局异或和。
+    \begin{hint}
+        将整数视为从低位到高位的字符串。
+    \end{hint}
+\end{exercise}
+\begin{solution}
+    将整数视为从低位到高位的字符串，维护 01 Trie。此时，全局加一可以这样完成：
+    \begin{enumerate}
+        \item 初始令 $i=0$，$u$ 为根结点
+        \item $u$ 子树内的值异或 $2^i$，这体现为交换 $u$ 的左右儿子，同时更新一些信息
+        \item 令 $i\gets i+1$，$u\gets \mathtt{son[u][0]}$
+        \item 如果 $u$ 为空，则停止；否则回到第二步
+    \end{enumerate}
+\end{solution}
+
+由于 01 Trie 和线段树同构，也可以像线段树一样支持分裂、合并、可持久化等等。
+\begin{exercise}[{[Ynoi2013] Ynoi}]
+    支持区间异或一个数、区间排序、查询区间异或和。
+\end{exercise}
+
+\section{AC 自动机}
+
+AC（Aho-Corasick）自动机是 KMP 自动机与 Trie 的结合。具体来说，AC 自动机在 Trie 的基础上增加了以下两个数组：
+\begin{itemize}
+    \item \texttt{fail} 数组（后缀链接）：设 Trie 上的结点 $u$ 表示的字符串为 $s[u]$，则 \texttt{fail[u]} 指向的结点 $v$ 满足：$s[v]$ 是 $s[u]$ 的一个\textbf{真}后缀，且 $v$ 是这样的结点中 $s[v]$ 最长的一个。
+    \item 转移 $\delta(u,c)$：$\delta(u,c)$ 指向的结点 $v$ 满足 $s[v]$ 是 $s[u]+c$ 的一个后缀（可以相等），且 $v$ 是这样的结点中 $s[v]$ 最长的一个。
+\end{itemize}
+\begin{remark}
+    需要注意 \texttt{fail} 和 $\delta$ 未必指向 Trie 上的祖先结点。
+\end{remark}
+
+\texttt{fail} 会形成一棵树。与 border 类似，有以下性质成立：
+\begin{property}
+    如果 $s[v]$ 是 $s[u]$ 的一个真后缀，那么 $s[v]$ 也是 $s[\mathtt{fail[u]}]$ 的一个后缀。因此，$s[u]$ 的所有在 Trie 上存在的后缀即为其在 fail 树上到根的链。
+\end{property}
+
+可以 BFS 遍历 Trie 来计算这两个数组以构建 AC 自动机。
+\begin{exercise}[AC 自动机的实现]
+    给定若干个字符串，构建其对应的 AC 自动机。
+\end{exercise}
+\begin{remark}
+    尽管 Trie 是支持在线插入的，但是 AC 自动机无法直接支持在线插入。如果需要，可以考虑二进制分组。
+\end{remark}
+
+如果字符集很大，还可以使用可持久化数组来维护 $\delta$。此外，如果只需要 $\texttt{fail}$ 数组，那么除了建立 Trie 以外复杂度可以与 $|\Sigma|$ 无关。具体地，可以这样从 $\mathtt{fail}[u]$ 转移到 $\mathtt{fail}[\mathrm{son}_{u,c}]$：初始设 $v=\mathtt{fail}[u]$，暴力跳 fail 找到第一个存在 $\mathrm{son}_{v,c}$ 的结点，令 $\mathtt{fail}[\mathrm{son}_{u,c}]=\mathrm{son}_{v,c}$ 即可。在 Trie 的每条从根到叶子的链上，由于 $\mathrm{dep}_v$ 的总变化量不超过链长，故总复杂度不会超过 $O(\sum_i |s_i|)$。这个过程也说明了 $\delta(u,c)$ 的实质即为 $\mathrm{son}_{u,c}$ 或者 $u$ 在 fail 树的祖先中最下面的一个存在 $\mathrm{son}_{v,c}$ 的结点。
+
+\subsection{字符串匹配}
+
+
+
+与 KMP 类似，给定字符串 $t$，AC 自动机可以对每个 $i$ 计算 $u(i)$，满足 $s[u(i)]$ 是 $t[1,i]$ 的一个后缀，且 $u(i)$ 是这样的结点中 $s[u(i)]$ 最长的一个。这样，我们就可以在 $O(|t|)$ 的时间内在 fail 树上标记所有在 $t$ 中出现过的字符串。然后，问题通常就会变成树上的数据结构问题。
+
+\begin{exercise}[模板题]
+    给定若干个不同的模式串 $P_1,P_2,\ldots,P_k$ 和一个文本串 $T$，对每个 $P_i$ 计算它在 $T$ 中的出现次数。
+\end{exercise}
+此外，由于字符串匹配的特殊性质，还有以下结论成立：
+\begin{property}
+    设 $\sum_i |P_i|=L$ 且 $P_i$ 互不相同。
+    \begin{itemize}
+        \item 这些模式串在 $T$ 中的总出现次数不超过 $2|T|\sqrt{L}$。可以据此设计一种同复杂度找出所有这些出现的算法。
+        \item $\sum_i \text{在 }P_i\text{ 中出现的结点个数}=O(L^{1.5})$
+    \end{itemize}
+    \begin{hint}
+        根号分治。
+    \end{hint}
+\end{property}
+
+\begin{exercise}[CF547E Mike and Friends]
+    给定若干个字符串 $s_1,\ldots,s_n$，令 $f(i,j)$ 为 $s_j$ 在 $s_i$ 中出现的次数。多次询问
+    $$
+    \sum_{i=l}^r f(i,j)
+    $$
+\end{exercise}
+\begin{exercise}[P5840 [COCI 2014/2015 \#5] Divljak]
+    在上一题中将 $f(i,j)$ 改为 $[s_j\text{ 在 }s_i\text{ 中出现过}]$
+\end{exercise}
+\begin{exercise}[CF587F Duff is Mad]
+    在上一题中将 $f(i,j)$ 改为 $s_i$ 在 $s_j$ 中出现的次数
+\end{exercise}
+\begin{solution}
+    设 $s_i$ 在 Trie 上对应 $u_i$，$s_j[1,k]$ 在 AC 自动机上对应 $v_{k}^{(j)}$，那么相当于在计算
+    $$
+    \sum_{i=l}^r \sum_{k=1}^{|s_j|} [u_i\text{ 是 }v_{k}^{(j)}\text{ 的祖先}].
+    $$
+    直观上这个东西难度和区间逆序对差不多，所以考虑一些根号的做法。
+
+    设 $L=\sum_i |s_i|$。如果 $|s_j|\le B$，那么我们暴力枚举 $k$ 去询问。这样问题变成 $qB$ 次询问
+    $$
+    \sum_{i=l}^r [u_i\text{ 是 }x\text{ 的祖先}].
+    $$
+    离线后容易分块做到 $O(nL^{\epsilon}+qB)$。
+
+    对于 $|s_j|>B$ 的至多 $L/B$ 个 $j$，我们可以对每个 $j$ 在 $O(n+L)$ 时间内预处理 $f(i,j)$ 关于 $i$ 的所有前缀和，然后 $O(1)$ 回答询问。这部分是 $O(L^2/B)$。
+
+    取 $B=L/\sqrt{q}$ 即得复杂度 $O(nL^{\epsilon}+L\sqrt{q})$。
+\end{solution}
+\begin{exercise}[{[JRKSJ R6] Dedicatus545}]
+    在上一题中将求和换成 $\max$。
+\end{exercise}
+\begin{exercise}[CF710F String Set Queries]
+    支持对模式串集合插入删除一个串，查询所有模式串在某个文本串 $t$ 中出现次数的和。
+\end{exercise}
+
+\begin{exercise}[CF1483F Exam]
+    给定若干字符串 $s_i$，定义偏序关系 $s_i\preceq s_j$ 当且仅当 $s_i$ 是 $s_j$ 的子串。求有多少对 $i\ne j$ 满足 $s_i\preceq s_j$ 但是不存在其他任何 $k\ne i,j$ 使得 $s_i\preceq s_k\prec s_j$。
+\end{exercise}
+\begin{solution}
+    扫描每个 $s_i$ 的每个前缀 $s_i[1,p]$， 设它在 AC 自动机上对应 $u_{i,p}$，那么 $u_{i,p}$ 到根的所有结点都在 $s_i$ 中出现，但是显然只有其中最长的那个 $s_j$ 有可能贡献答案。对每个 $p$ 都计算出这样的一个 $s_j$ 以及对应的出现区间 $s_i[p-|s_j|+1,p]$，把这些称为候选字符串集合和候选区间集合。
+    
+    当且仅当以下两种情况之一出现的时候，候选字符串集合中的一个 $s_j$ 会不合法：
+    \begin{itemize}
+        \item $s_j$ 是另一个候选字符串集合中的元素 $s_{j'}$ 的后缀
+        \item $s_j$ 对应的某一个候选区间是另一个候选区间的子区间
+    \end{itemize}
+
+    对于前者，我们在这些 $s_j$ 对应的结点在 fail 树的虚树上简单判断即可；对于后者，我们从右往左扫一遍所有区间就能知道每个区间合不合法。可以做到线性。
+\end{solution}
+
+\begin{exercise}[{[HAOI2017] 字符串}]
+    给定若干个模式串 $p_i$、一个文本串 $s$ 和整数 $K$。对每个 $p_i$，计算有多少个区间 $[l,r]$ 对应的子串 $t=s[l,r]$ 满足：$|t|=|p_i|$ 且集合 $\{k:t[k]\ne p_i[k]\}$ 的极差小于 $K$。
+\end{exercise}
+\begin{solution}
+    条件相当于 $\mathrm{LCP}(t,p_i)+\mathrm{LCS}(t,p_i)+K\ge |p_i|$。枚举 $\mathrm{LCP}$ 的大小 $x$，则 $[l,r]$ 满足条件等价于：
+    \begin{itemize}
+        \item $p_i[:x]$ 以 $l+x-1$ 为结尾出现，在 AC 自动机的 fail 树上对应一个祖孙关系
+        \item $p_i[x+K+1:]$ 以 $l+x+K$ 为开头出现，在反串的 AC 自动机的 fail 树上对应一个祖孙关系
+        \item $p_i[:x+1]$ 不以 $l+x$ 为结尾出现
+    \end{itemize}
+    把第三条容斥掉，那么就变成若干二维数点，简单计算即可。
+\end{solution}
+
+
+\begin{exercise}[禁止子串]
+    给定若干个总长为 $m$ 的字符串 $s_i$，求有多少个长为 $n$ 的字符串 $t$ 满足任何 $s_i$ 都不在 $t$ 中出现。
+    
+    分别需要做到 $O(nm)$（注意不带 $|\Sigma|$）和 $O(m^2+m\log m\log n)$。
+\end{exercise}
+\begin{solution}[做法一]
+    首先考虑一个 $O(nm|\Sigma|)$ 做法，这就是在 AC 自动机上直接 DP，每次转移为 $f_u\to f_{\delta(u,c)}$，忽略所有包含某个 $s_i$ 作为后缀的结点 $\delta(u,c)$。
+    
+    可以将其改进至 $O(nm)$。考虑 $\delta(u,c)$ 的几种情况：
+    \begin{itemize}
+        \item $\mathrm{son}_{u,c}$ 存在，则 $\delta(u,c)=\mathrm{son}_{u,c}$
+        \item $\mathrm{son}_{u,c}$ 不存在，则 $\delta(u,c)$ 为其 fail 树祖先中最下面的一个存在 $\mathrm{son}_{v,c}$ 的结点。
+    \end{itemize}
+
+    令 $S_c$ 为 $\mathrm{son}_{v,c}$ 存在的结点集合。如果我们用填表的角度考虑 $f_u$，就有
+    $$
+    f_u'=f_{\mathrm{fa}_u}+\sum_{c\in \Sigma}\sum_{v} f_v[\text{fail 树上 }u,v\text{ 之间不存在其他 }S_c\text{ 中的结点}]
+    $$
+    如果令 $g_u$ 为 $f_u$ 在 fail 树中的子树和，$\mathrm{child}_{u,c}$ 为 $S_c$ 在 fail 树上的虚树中 $u$ 的所有儿子，那么
+    $$
+    f_u'=f_{\mathrm{fa}_u}+\sum_{c\in \Sigma:\mathrm{son}_{u,c}\text{ 存在}}\left(g_u-\sum_{v\in \mathrm{child}_{u,c}}g_v\right).
+    $$
+    （对于根，$c$ 的枚举范围则为整个 $\Sigma$）
+    
+    据此转移即可得到一个 $O(nm)$ 的做法。
+\end{solution}
+\begin{solution}[做法二]
+    首先由矩阵快速幂可以得到一个 $O(m^3\log n)$ 的做法。设转移矩阵为 $\mathbf A$，初始 DP 状态为 $\mathbf f_0$，则答案即为 $a_n=\mathbf 1^T\mathbf A^n \mathbf f_0$。
+
+    由 Cayley-Hamilton 定理，$\mathbf A$ 的特征多项式 $p(\lambda)=\sum_{i=0}^m c_i\lambda^i$ 满足 $p(\mathbf A)=\mathbf 0$。乘以 $\mathbf A^{n-m}$，再乘上 $\mathbf 1^T$ 和 $\mathbf f_0$ 就得到
+    $$
+    \sum_{i=0}^m c_i a_{n-m+i}=0.
+    $$    
+    也就是说 $a$ 满足一个 $m$ 阶线性递推。
+
+    我们可以用做法一 $O(m^2)$ 计算出前 $2m$ 项，然后用 BM 算法求出线性递推系数，然后使用线性递推即可得到一个 $O(m^2+m\log m\log n)$ 的做法。
+\end{solution}
+\begin{solution}[做法三]
+    我们知道单串情况下有一个使用生成函数的做法可以做到 $O(m\log m\log n)$。对于多串情况，我们可以做一些类似的事情。
+
+    不妨假设串之间都没有包含关系。令 $F(x)$ 为所有合法串的生成函数，$G(x)$ 为在末尾首次出现了某个 $s\in L$ 的字符串的生成函数，$G_i(x)$ 为在末尾首次出现了某个 $s\in L$ 且 $s=s_i$ 的字符串生成函数。记 $\sigma=|\Sigma|$，则有
+    $$
+    \begin{aligned}
+        1+F(x)\cdot \sigma x&=F(x)+G(x)\\
+        G(x)&=\sum_i G_i(x)\\
+        F(x)x^{|s_i|}&=\sum_j G_j(x)\cdot C_{i,j}(x)\\
+        C_{i,j}(x)&=\sum_{k=1}^{\min(|s_i|,|s_j|)} [s_j[|s_j|-k+1,|s_j|]=s_i[1,k]]x^{|s_i|-k}.
+    \end{aligned}
+    $$
+    解一下这个方程可以得到
+    $$
+    F(x)=\frac{1}{1-\sigma x+\mathbf l(x)^T\mathbf C^{-1}(x)\mathbf 1},
+    $$
+    其中 $\mathbf l(x)=(x^{|s_i|})_i$。
+
+    在字符串个数 $k$ 比较小的时候，计算 $C^{-1}(x)$ 可以做到 $\tilde O(k^3m)$，这会比上一种做法更好。
+    % 如何计算 $\mathbf C^{-1}(x)\mathbf 1$？这相当于解方程 $\mathbf C(x)\mathbf y(x)=\mathbf 1$。在字符串个数比较小 
+    
+    % 注意到 $C(x)$ 的特殊结构：设 $S(u)$ 为 fail 树中 $u$ 的子树内的代表 $s_j$ 的结点集合，$u_j$ 为 $s_j$ 对应的结点，$u_{i,k}$ 为 $s_i[1,k]$ 对应的结点，则
+    % $$
+    % C_{i,j}(x)=\sum_{k=1}^{|s_i|}x^{|s_i|-k}[u_j\in S(u_{i,k})].
+    % $$
+    % 于是
+    % $$
+    % \mathbf C_i\mathbf y(x)=\sum_{k=1}^{|s_i|}x^{|s_i|-k}\sum_{j:u_j\in S(u_{i,k})}y_j(x).
+    % $$
+    % 令 $z_u(x)=\sum_{j:u_j\in S(u)}y_j(x)$，则
+    % $$
+    % 1=\mathbf C_i\mathbf y(x)=y_i(x)+\sum_{k=1}^{|s_i|-1}x^{|s_i|-k}z_{u_{i,k}}(x),
+    % $$
+    % 可以按次数从小到大递推所有的 $y$ 和 $z$！
+\end{solution}
+
+% \begin{summary}
+% \end{summary}
