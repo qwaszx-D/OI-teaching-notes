@@ -1,0 +1,62 @@
+\chapter{图论基础}
+
+% \begin{overview}
+% \begin{itemize}
+%     \item \texttt{vector}、栈、队列、链表、堆支持的操作，及其实现
+%     \item 常见的可以使用这些数据结构解决的问题
+% \end{itemize}
+% \end{overview}
+
+\section{基本概念}
+
+\section{图的存储}
+
+\section{图的遍历}
+
+\subsection{DFS 树}
+
+
+\begin{theorem}
+    在无向图中，边可以根据 DFS 树分成两类：树边、回边（连接祖先和后代，亦称非树边）。
+\end{theorem}
+
+\begin{definition}[基本环]
+    每条非树边 $(u,v)$ 与 $(u,v)$ 在 DFS 树上的路径构成的环称为基本环。
+\end{definition}
+\begin{remark}
+    实际上可以对任何一个生成森林定义。
+\end{remark}
+\begin{theorem}
+    如果一个子图的每个点度数都是偶数，则称这个子图是一个欧拉子图（注意没有要求连通）。任何欧拉子图都可以唯一地表为若干基本环的异或。
+\end{theorem}
+\begin{proof}
+    考虑任何欧拉子图 $H$，对其包含的每条非树边 $e$，将 $H$ 异或上 $e$ 对应的基本环。最终会得到一个只由树边构成的欧拉子图，树边构成的欧拉子图只能是空图。
+
+    由于每个基本环只能控制一条非树边，这种表示是唯一的。
+\end{proof}
+\begin{exercise}
+    给定一张无向图，计算其欧拉子图数量。
+\end{exercise}
+\begin{exercise}[P3907 环的异或]
+    
+\end{exercise}
+
+
+
+\begin{theorem}
+    在有向图中，边可以根据 DFS 树分成四类：树边、回边（从后代指向祖先）、前向边（从祖先指向后代）、横叉边（指向非祖先后代的先前结点）。
+\end{theorem}
+
+
+\subsection{BFS 树}
+
+
+
+
+% \begin{summary}
+% \begin{itemize}
+%     \item 熟知讲过的几种线性数据结构的功能，能够把问题与数据结构进行对应
+%     \item 扩展类问题的思路
+% \end{itemize}
+% \end{summary}
+

@@ -1,0 +1,433 @@
+\chapter{最短路问题}
+
+\section{基本概念}
+
+\begin{definition}[最短路]
+    在所有从 $u$ 到 $v$ 的路径（未必简单）中，权值和最小的路径称为 $u,v$ 的最短路，其权值和记作 $d(u,v)$。特别地，如果不存在 $u$ 到 $v$ 的路径，则令 $d(u,v)=+\infty$。需要注意可能存在 $d(u,v)=-\infty$ 的情况。
+    
+    我们规定以下加法规则：对任何实数 $x$，
+    \begin{itemize}
+        \item $-\infty+(-\infty)=-\infty$
+        \item $-\infty+x=-\infty$
+        \item $-\infty+\infty=\infty$
+        \item $\infty+x=\infty$
+        \item $\infty+\infty=\infty$
+    \end{itemize}
+
+    有向图和无向图的最短路在许多情况下性质都是相同的。如无特殊说明，本章中提到的图既可以是有向图，也可以是无向图。
+\end{definition}
+\begin{lemma}
+    $|d(u,v)|<\infty$ 当且仅当存在一条 $u$ 到 $v$ 的简单路径的权值和等于 $d(u,v)$，也即存在一条最短路为简单路径。
+\end{lemma}
+\begin{remark}
+    反过来说，$|d(u,v)|=\infty$ 当且仅当 $u$ 不可达 $v$ 或者存在一条从 $u$ 到 $v$ 的路径经过了一个负环。因此，在无负环的图上，只要 $u,v$ 之间的路径存在，最短路就总可以是简单路径，于是此时 $d(u,v)$ 有限。
+\end{remark}
+\begin{remark}
+    在有负环的图上，需要区分“最短路”和“最短简单路径”。前者可能经过一个点无数次，而后者只能经过一个点至多一次。注意计算最短简单路径在有负权的图上不弱于判定 Hamilton 路径的存在性，而这是一个 NPC 问题。这可以解释为什么我们会听到“最长路是 NP 难的”和“最长路就是边权取负后的最短路”这两种看似互相矛盾的说法，因为前者指的是最长简单路径，而后者指的是最长路。
+\end{remark}
+
+\begin{property}[三角不等式]
+    最短路长度满足 $d(u,v)\le d(u,w)+d(w,v)$。当 $d(u,v)<+\infty$ 时，等号成立当且仅当 $w$ 在某条 $u\to v$ 的最短路上。
+\end{property}
+
+
+
+在有负环的情况下，许多问题将会失去意义。在本章中，除非特殊说明，我们默认图无负环。
+
+
+
+\section{全点对最短路}
+
+计算全点对最短路（All-Pairs Shortest Path, APSP）的一个简单有效的算法是 Floyd 算法。
+
+\begin{descbox}{算法}[Floyd 算法]
+    令 $d_i(u,v)$ 为从 $u$ 到 $v$ 且经过的中间点编号都不超过 $i$ 的点的最短路长度。则有转移方程：
+    \[
+        d_i(u,v)=\min(d_{i-1}(u,v),d_{i-1}(u,i)+d_{i-1}(i,v))
+    \]
+    其中 $d_0(u,v)$ 为初始的边权，即 $d_0(u,v)=w(u,v)$。最终答案为 $d_n(u,v)$。可以滚动数组省去 $i$ 一维。时间 $O(n^3)$，空间 $O(n^2)$。  
+\end{descbox}
+\begin{lstlisting}[language=c++, caption=Floyd 算法]
+// 没有边则 w=+inf
+d=w;
+for(int k=1;k<=n;k++)
+    for(int i=1;i<=n;i++)
+        for(int j=1;j<=n;j++)
+            d[i][j]=min(d[i][j],d[i][k]+d[k][j]);
+\end{lstlisting}
+\begin{remark}
+    这是要求最短路至少包含一条边时的情况。如果可以不包含边，那么还需要补充初值 $d_0(u,u)=0$。
+\end{remark}
+\begin{remark}
+    目前，人们既不知道 APSP 是否有 $O(n^{3-\epsilon})$ 的算法，也不能证明 $\tilde \Omega(n^3)$ 的下界。因此，APSP 是精细复杂性（Fine-Grained Complexity）中的一个重要问题。有许多问题可以和 APSP 互相归约：
+    \begin{itemize}
+        \item 判断图中是否存在负权三角形
+        \item min+矩阵乘法
+        \item 求图中最小环
+    \end{itemize}
+\end{remark}
+
+\begin{exercise}
+    在无负环的图上证明 Floyd 算法的正确性。进一步修改 Floyd 算法使其能够在有负环的图上正确计算 $d_i(u,v)$。
+\end{exercise}
+\begin{solution}
+    在计算过程中的任何时刻，若更新后产生了 $d[u][u]<0$，则令 $d[u][u]=-\infty$。
+    % 归纳证明 $d_i(u,v)>-\infty$ 时，$d_i(u,v)$ 正确计算了所有不经过编号 $>i$ 的路径的最小权值和。$d_0$ 显然正确。考虑一条不经过编号 $>i$ 的最小权值和路径 $u\to v$，若其经过的最大编号 $<i$，则被 $d_{i-1}$ 正确计算； 考虑一条 $(u,v)$ 简单最短路径上编号最大的结点 $x$，则 $u\to x$ 和 $x\to v$ 都是简单路径，且它们分别是 $(u,x)$ 和 $(x,v)$ 的简单最短路径。于是由归纳假设，在转移 $x$ 时正确计算了 $$
+\end{solution}
+
+\begin{exercise}
+    计算图中权值和最小的简单环，或者报告存在负环。
+\end{exercise}
+\begin{remark}
+    在存在负环的情况下，计算权值和最小的简单环不弱于判定 Hamilton 回路的存在性，这也是一个 NPC 问题。
+\end{remark}
+\begin{solution}
+    对每个环，考虑其上编号最大的点 $x$，则 $d_{x-1}(u,x)+d_{x-1}(x,v)+d_{x-1}(v,u)$ 对应的环的权值不超过此环的权值。
+\end{solution}
+
+\begin{exercise}
+    对每个点 $x$，计算出删去 $x$ 后的两两最短路。$O(n^3\log n)$。
+\end{exercise}
+
+\section{单源最短路}
+
+计算单源最短路（Single-Source Shortest Path, SSSP）是一个更常见的问题，我们希望计算出从一个源点 $s$ 到所有点的最短路长度 $d_s(v)=d(s,v)$。上下文清楚时，我们也直接写作 $d(v)$。
+
+
+\begin{lemma}[Bellman 方程与松弛]
+    若 $\tilde d\ge d_s$，则 $\tilde d=d_s$ 当且仅当 $\tilde d(s)=0$，且每个点 $v\ne s$ 都满足 Bellman 方程：$\tilde d(v)=\min_{u}\tilde d(u)+w(u,v)$。
+
+    $\tilde d(v)\gets \min(\tilde d(v),\tilde d(u)+w(u,v))$ 称为对 $v$ 的\textbf{松弛}操作。若松弛操作后 $\tilde d(v)$ 发生了变化，则称 $v$ 可以被边 $(u,v)$ 松弛。若 $\tilde d\ge d$ 且 $\tilde d(s)=0$，则 $\tilde d=d$ 当且仅当 $\tilde d$ 无法被任何一条边松弛。
+\end{lemma}
+
+一大类最短路算法都可以理解为从 $\tilde d(u)=\begin{cases}0 & u=s \\ +\infty & u\ne s\end{cases}$ 开始，按照某种顺序进行松弛操作来逼近真实最短路长度 $d(u)$。
+
+\subsection{Dijkstra}
+
+在无负权的图上，Dijkstra\graffiti{Dijkstra 的发音是 \textipa{/"daIkstr@/}} 算法可以在 $O(m+n\log n)$ 的时间内计算出单源最短路，常规的算法竞赛实现则是 $O((n+m)\log m)$ 的。其想法是每次选择未确定最短路的点中 $\tilde d(u)$ 最小的点 $u$，将 $u$ 的最短路 $d(u)$ 确定为 $\tilde d(u)$，然后 $u$ 的所有出边进行松弛。
+\begin{lemma}
+    在无负权图上，选中 $u$ 时有 $\tilde d(u)=d(u)$。
+\end{lemma}
+\begin{proof}
+    设 $S$ 为已确定最短路的点集，$\tilde d$ 可以视为维护了从 $s$ 出发且中间只经过 $S$ 中的点时的最短路。对于选中的 $u$，考虑任何从 $s$ 到 $u$ 的路径。设该路径上第一个不在 $S$ 中的点为 $v$，则这部分路径长度至少是 $\tilde d(v)\ge \tilde d(u)$，且 $v\to u$ 这一段的总长度非负。于是 $\tilde d(u)$ 即为最短路的长度。
+\end{proof}
+\begin{descbox}{算法}[Dijkstra 算法]
+    令 $S$ 为最短路已经确定的点集，初始 $S=\varnothing$。初始化 $\tilde d(s)=0$，$\tilde d(v)=+\infty$（$v\ne s$）。
+    
+    每次从 $V\backslash S$ 中选择 $\tilde d(u)$ 最小的点 $u$ 加入 $S$，然后枚举所有出边 $(u,v)$ 进行松弛。
+
+    使用数据结构维护 $V\backslash S$ 的 $\tilde d$。暴力做是 $O(n^2)$，用优先队列是 $O((n+m)\log m)$，用支持 $O(1)$ 插入和 decrease-key、$O(\log n)$ 删除的堆（如斐波那契堆）是 $O(m+n\log n)$。
+\end{descbox}
+\begin{lstlisting}[language=c++, caption=Dijkstra 算法]
+for(int i=1;i<=n;i++) d[i]=inf;
+d[s]=0;
+// 优先队列
+priority_queue<pair<int,int>,vector<pair<int,int> >,greater<pair<int,int> > > pq;
+pq.push(make_pair(0,s));
+while(!pq.empty()){
+    int u=pq.top().second;
+    pq.pop();
+    if(vis[u]) continue;
+    vis[u]=1;
+    for(auto [v,w]:e[u]){
+        if(d[v]>d[u]+w){
+            // decrease-key，在优先队列中只能实现成插入
+            d[v]=d[u]+w;
+            pq.push(make_pair(d[v],v));
+        }
+    }
+}
+\end{lstlisting}
+\begin{remark}
+    由于大多数情况下图无负权，Dijkstra 算法是实践中最常用的最短路算法。
+
+    Dijkstra 算法直到 2025 年为止都是计算无负权有向图上单源最短路的复杂度最好的算法。目前，无负权图上的 SSSP 在理论上可以做到 $O(m\sqrt{\log n}+\sqrt{mn\log n\log\log n})$，参见\href{https://arxiv.org/abs/2602.07868}{此论文}。
+\end{remark}
+
+\begin{exercise}
+    在 $O(nk^2+m\log n)$ 复杂度内计算离每个点前 $k$ 近的点。
+\end{exercise}
+
+\subsection{Bellman-Ford}
+
+在有负权的图上，可以使用 Bellman-Ford 算法计算单源最短路，其想法在于递推计算经过至多 $i$ 条边的最短路。每轮用每条边松弛一次即可得到至多经过 $i+1$ 条边的最短路。若图中无负环，则 $n-1$ 轮后可以正确计算出最短路。反过来，若第 $n$ 轮仍能成功松弛，则说明存在负环。
+
+\begin{descbox}{算法}[Bellman-Ford 算法]
+    初始化 $\tilde d(s)=0$，$\tilde d(v)=+\infty$（$v\ne s$）。重复 $n-1$ 轮，每轮用每条边 $(u,v)$ 进行松弛。若第 $n$ 轮仍能成功松弛，则说明存在负环。
+
+    时间复杂度 $O(nm)$，空间 $O(n+m)$。
+\end{descbox}
+\begin{remark}
+    第 $n$ 轮仍能成功松弛当且仅当 $s$ 能到达一个负环。因此，如果需要判断整个图中是否存在负环，需要添加一个向每个点连 $0$ 边的超级源点 $ss$，然后从 $ss$ 出发运行 Bellman-Ford 算法。
+\end{remark}
+\begin{remark}
+    Bellman-Ford 算法直到 2022 年为止都是计算有负权图上单源最短路最快速的算法。目前，有负权图上的 SSSP 在理论上可以做到 $O(m\log^2 n\log(nW)\log\log n)$（参见\href{https://arxiv.org/abs/2304.05279}{此论文}）或 $m^{1+o(1)}$（参见\href{https://arxiv.org/abs/2607.19346}{此论文}）。
+\end{remark}
+
+\begin{exercise}
+    计算从 $s$ 出发经过至多/恰好 $k$ 条边的最短路。$O(km)$。
+\end{exercise}
+
+由于只有被成功松弛的结点才有可能进一步对其出边进行松弛，我们可以调整松弛结点的顺序。一种方式是像 BFS 一样进行松弛，这就是队列优化的 Bellman-Ford 算法。在国内也常被称为 SPFA 算法。
+\begin{descbox}{算法}[队列优化的 Bellman-Ford 算法/SPFA]
+    初始化 $\tilde d(s)=0$，$\tilde d(v)=+\infty$（$v\ne s$）。维护一个队列 $q$，初始将 $s$ 入队。每次从队列中取出一个点 $u$，用其所有出边 $(u,v)$ 进行松弛，若成功松弛且 $v$ 不在队列中，则将 $v$ 入队。若某个点入队次数达到了 $n$ 或者最短路边数达到了 $n$，则说明存在负环。
+
+    最坏时间复杂度为 $O(nm)$，空间 $O(n+m)$。
+\end{descbox}
+\begin{remark}
+    虽然 SPFA 的最坏时间复杂度与 Bellman-Ford 相同，但对于没有认真构造的数据，SPFA 常常有良好的表现。
+\end{remark}
+
+\section{预处理和后处理技巧}
+
+\subsection{超级源汇与反图}
+
+\begin{example}
+    给一个点集 $S$，对每个点 $u$ 计算 $\min_{x\in S}w_x+d(x,u)$。
+\end{example}
+
+\begin{example}
+    给一个点集 $S$，对每个点 $u$ 计算 $\min_{x\in S}d(u,x)+w_x$。
+\end{example}
+
+\begin{exercise}[{P5304 [GXOI/GZOI2019] 旅行者}]
+    正权图，给一个点集 $S$，计算 $\min_{x,y\in S,x\ne y}d(x,y)$
+\end{exercise}
+\begin{solution}
+    令 $U_{i,b}=\{x\in S:x_i=b\}$，其中 $x_i$ 代表 $x$ 在二进制下的第 $i$ 位。则
+    $$
+    \{(x,y):x,y\in S,x\ne y\}=\bigcup_i (U_{i,0}\times U_{i,1})\cup(U_{i,1}\times U_{i,0}).
+    $$ 
+
+    也可以随机划分，每次有至少 $1/2$ 的概率把最值对应的点对 $(x^*,y^*)$ 划分到不同的集合中，此时可以得到正确答案。
+\end{solution}
+\begin{solution}[做法二]
+    每个点保留来自两个源的最短路。
+\end{solution}
+\begin{solution}[做法三]
+    计算所有 $d(u,S)$ 和 $d(S,u)$ 以及取到最值的最小的 $x\in S$，则最优解路径中存在一条边 $u\to v$ 使得 $d(S,u)$ 的 $x$ 与 $d(v,S)$ 的 $y$ 不同。
+
+    证明待补。
+\end{solution}
+\begin{remark}
+    前两个做法可以用于非负权图和负权图。
+\end{remark}
+
+
+\subsection{重赋权}
+
+\begin{lemma}
+    对势函数 $\varphi(u)$，令 $w_{\varphi}(u,v)=w(u,v)+\varphi(u)-\varphi(v)$。则对于任何 $x$ 到 $y$ 的路径 $P$，都有 $w_{\varphi}(P)=w(P)+\varphi(x)-\varphi(y)$。
+\end{lemma}
+\begin{corollary}
+    $w(P_1)<w(P_2)$ 当且仅当 $w_{\varphi}(P_1)<w_{\varphi}(P_2)$；$d_{\varphi}(u,v)=d(u,v)+\varphi(u)-\varphi(v)$。
+\end{corollary}
+
+\begin{lemma}
+    添加一个向每个点连 $0$ 边的超级源点 $s$，令 $\varphi=d_s$，则 $w_{\varphi}$ 非负。
+\end{lemma}
+\begin{corollary}
+    对于有负权的最短路问题，可以运行一次有负权的 SSSP 后将图变为非负权的。
+\end{corollary}
+\begin{remark}
+    例如，可以在 $O(n(m+n\log n))$ 时间内计算 APSP，这就是 Johnson 全源最短路算法。目前的几个比 Bellman-Ford 更快的负权图最短路算法都依赖于这个技巧。
+\end{remark}
+
+\subsection{最短路树}
+
+\begin{definition}[最短路图与最短路树]
+    在无负环的图中，只保留从 $s$ 出发可达的点和它们之间满足 $d_s(v)=d_s(u)+w(u,v)$ 的边 $(u,v)$ 得到的图称为从 $s$ 出发的\textbf{最短路图}。最短路图中以 $s$ 为根的一个树形图称为从 $s$ 出发的一棵\textbf{最短路树}。
+\end{definition}
+\begin{lemma}
+    最短路图上任何 $s\to u$ 的路径都是最短路。反过来，任何 $s\to u$ 的最短路都在最短路图上。最短路图上所有的环都是 $0$ 环，最短路图无环当且仅当 $s$ 无法到达任何一个 $0$ 环。
+\end{lemma}
+
+在无非正环的情况下，构建出最短路图后往往可以把问题变为 DAG 上的问题。对于有 $0$ 环的情况，可以先将最短路图进行 SCC 缩点，这样也可以得到一个 DAG。
+
+\begin{exercise}
+    对每对点 $u,v$，计算有多少条边可以在 $u$ 到 $v$ 的最短路上。$O(n^3)$。
+\end{exercise}
+
+% \begin{exercise}
+%     固定起点 $s$。对每个点 $u$，计算有多少条边可以不在 $s$ 到 $u$ 的最短路上。$O(n^2)$。
+% \end{exercise}
+% \begin{remark}
+%     这是支配树问题，可以 $O(n+m)$。
+% \end{remark}
+
+\begin{exercise}[{P3953 [NOIP 2017 提高组] 逛公园}]
+    给定一张无负权图，计算有多少条 $1$ 到 $n$ 的路径的长度不超过 $d(1,n)+K$。
+\end{exercise}
+
+\section{特殊图上的最短路算法}
+
+本节中，我们都假设图无负权。对于边权特殊给定的图，可以用略微修改的 Dijkstra 配合数据结构来求出最短路。
+
+\begin{lemma}
+    Dijkstra 取出的 $\tilde d(u)$ 不降。
+\end{lemma}
+\begin{example}
+    假设边权只有 $K$ 种，用 $K$ 个队列维护 $\tilde d(u)$ 来做到 $O(K(m+n))$。
+\end{example}
+
+对于含有大量 $0$ 边的图，下面的推论可以帮助我们忽略这些 $0$ 边。
+\begin{corollary}
+    假设 Dijkstra 算法某一步中取出了 $\delta=\tilde d(u)$。则 $u$ 只走 $0$ 边能到达的所有 $V\backslash S$ 中的点的最短路都为 $\tilde d(u)$。
+\end{corollary}
+\begin{descbox}{算法}[快速处理 $0$ 边的 Dijkstra 算法]
+    在 Dijkstra 算法中，每次取出 $\tilde d(u)$ 后，通过某种方式以 $\tilde O(\text{个数})$ 的复杂度找到 $u$ 走 $0$ 边能到达的所有 $V\backslash S$ 中的点，将这些点加入 $S$ 并在稍后进行扩展。另外使用一个队列来维护这些加入 $S$ 但还未进行扩展的点。
+\end{descbox}
+
+
+\begin{example}
+    给一张图，再给出 $q$ 组特殊连边，每组连边都形如：每个编号在 $[a,b]$ 内的点都向编号在 $[c,d]$ 内的点连边权为 $W$ 的边。
+\end{example}
+\begin{solution}
+    对每组特殊边都构建两个特殊新点 $s_i,t_i$，添加以下的边：
+    \begin{itemize}
+        \item $s_i\overset{w_i}{\to}t_i$
+        \item $\forall u\in [a_i,b_i], u\overset{0}{\to} s_i$，这些边是“隐式”的
+        \item $\forall v\in [c_i,d_i], t_i\overset{0}{\to} v$，这些边是“隐式”的
+    \end{itemize}
+    运行快速处理 $0$ 边的 Dijkstra 算法，则需要支持以下两种操作：
+    \begin{itemize}
+        \item 对于一个特殊点 $t_i$，找到 $[c_i,d_i]$ 中所有 $V\backslash S$ 中的点并加入 $S$。可以使用线段树维护。
+        \item 对于一个普通点 $x$，找到所有满足 $x\in [a_i,b_i]$ 且 $s_i\notin S$ 的特殊点 $s_i$ 加入 $S$。可以使用对偶的线段树维护。
+    \end{itemize}
+    对于第一种操作，有以下两种常见维护方式：
+    \begin{itemize}
+        \item 线段树，每次 $O(\log n)$ 找一个点 
+        \item 只需要支持删除和查询前驱，用序列并查集做到线性
+    \end{itemize}
+    第二种操作则更加复杂一些：
+    \begin{itemize}
+        \item 在线段树上把区间分解后挂在对应的 $O(\log n)$ 个结点上，询问时把从根到叶子挂着的所有区间取出并删除。$O(q\log n)$ 空间。
+        \item 用线段树维护每个结点区间 $[l,r]$ 内满足 $a\in [l,r]$ 的 $[a,b]$ 中最大的 $b$，每次 $O(\log n)$ 找到一个叶子，然后删除这个叶子上 $b\ge x$ 的区间。每个叶子按 $b$ 排序后就是删除一段后缀。线性空间。
+    \end{itemize}
+    总复杂度 $O((n+m+q)(\log n+\log m))$（优先队列）或 $O(m+(n+q)\log n)$（Fibonacci 堆）。
+\end{solution}
+\begin{remark}
+    读者也许会在其他地方看到所谓“线段树优化建图”的做法，这相当于把我们维护两个操作的过程\textbf{显式连边}了。对于无负权的最短路问题，隐式连边的做法在复杂度和常数上总是不劣于显式连边。
+\end{remark}
+
+\section{动态最短路}
+
+\begin{example}
+    多次询问：如果在图中添加一条边，新的 $(1,u)$ 最短路是多少？
+\end{example}
+
+% TODO
+
+
+\section{常用建模}
+
+\subsection{差分约束}
+
+差分约束是指 $x_j-x_i\le w_{ij}$ 形式的约束。最短路可以用来判断一个差分约束系统是否有解。
+
+\begin{theorem}
+    对每个约束 $x_j-x_i\le w_{ij}$，以边权 $w_{ij}$ 连边 $i\to j$。差分约束系统有解当且仅当图中无负环。
+\end{theorem}
+\begin{proof}
+    若存在负环，则将环上的不等式相加可得 $0<\text{负数}$，故无解。反过来，若图中无负环，则添加超级源点 $s$ 并向每个点连 $0$ 边，$x_i=d(s,i)$ 即为一组合法解。
+\end{proof}
+\begin{corollary}
+    对任何合法解都有 $x_j-x_i\le d(i,j)$。如果所有 $w_{ij}$ 都是整数，则有解等价于有整数解。
+\end{corollary}
+
+
+\begin{exercise}
+    通常，我们也允许差分约束系统包含以下非标准形式的约束：
+    \begin{itemize}
+        \item $x_i-x_j\ge w_{ij}$
+        \item $x_i-x_j=w_{ij}$
+        \item $x_i\le w_i$
+        \item $x_i\ge w_i$
+    \end{itemize}
+    将其改为标准形式。说明如何求出每个 $x_i$ 的最大和最小可行值。
+\end{exercise}
+\begin{solution}
+    添加变量 $x_0=0$ 即可处理单变量约束，$d_0(i)$ 即为 $x_i$ 的最大可能值，最小可能值则为 $-d(i,0)$。 
+\end{solution}
+
+\begin{exercise}[P5590 赛车游戏]
+    给一个有向图，需要给每条边标一个 $0$ 到 $9$ 的整数权值，使得每条从 $1$ 到 $n$ 的路径长度都相同。
+\end{exercise}
+
+\subsection{分层图}
+
+有时候最优化问题具有多个维度，其中某些维度是有自然顺序的，另一些则没有。此时，可以考虑在有顺序的维度上 DP，在没有顺序的维度上运行最短路算法。或者也可以将最短路理解为求解有循环依赖的 DP 的方法，并尽量将依赖性限制在某些维度上。
+
+\begin{example}[P4568 [JLOI2011] 飞行路线]
+    允许把至多 $k$ 条边变为 $0$，求 $s$ 出发到每个点的最短路。$O(k(m+n\log n))$，要求 $O(n+m)$ 空间。
+\end{example}
+
+\begin{exercise}[$k$-hop 负权最短路]
+    在 $O(k(m+n\log n))$ 时间内计算经过不超过 $k$ 条负权边的最短路。
+\end{exercise}
+
+\section{代数路径}
+
+对于普通的最短路，我们计算的是
+$$
+d(s,t)=\min_{P_{st}} \sum_{e\in P_{st}} w(e).
+$$
+不难发现这是 $(\min,+)$ 矩阵乘法下的
+$$
+\bigoplus_{i\ge 0} \mathbf A^i.
+$$
+\begin{exercise}
+    计算两两点对之间经过至多/恰好 $k$ 条边的最短路。$O(n^3\log k)$。
+\end{exercise}
+
+
+如果将其一般化为任意的 $(\oplus,\odot)$ 半环，就得到
+$$
+f(s,t)=\bigoplus_{P_{st}} \bigodot_{e\in P_{st}} w(e),
+$$
+这就是\textbf{代数路径}问题。例如，如果我们取 $(\oplus,\odot)=(+,\times)$，就得到
+$$
+\sum_{P_{st}}\prod_{e\in P_{st}} w(e),
+$$
+这就是所有路径的边权乘积之和。
+
+\begin{exercise}
+    计算两两点对之间经过至多/恰好 $k$ 条边的路径的边权乘积之和。$O(n^3\log k)$。
+\end{exercise}
+
+对于一般的 $(\oplus,\odot)$，无限长度的路径的贡献不一定能够处理。在无负环图最短路这种环路贡献可忽略的半环 $(\oplus,\odot)$ 中，Floyd 与 Bellman-Ford 算法作为动态规划算法可以正确计算答案，而 Dijkstra 算法则需要额外的贪心性质。
+
+\begin{exercise}[最大瓶颈路]
+    令 $(\oplus,\odot)=(\max,\min)$。固定起点 $s$，以最短路同复杂度计算所有 $f(s,u)$。
+\end{exercise}
+\begin{exercise}[（严格）前 $k$ 短路]
+    在 $k$ 元素集合/多重集上定义 $A\oplus B$ 为 $A\cup B$ 中的（严格）前 $k$ 小，$A\odot B$ 为 $\{a+b:a\in A,b\in B\}$ 中的（严格）前 $k$ 小，验证这是半环。$(\oplus,\odot)$ 的代数路径对应（严格）前 $k$ 短路。以 $k$ 倍最短路复杂度计算所有 $f(s,u)$。
+\end{exercise}
+\begin{remark}
+    % 利用最短路树的结构，可以在正权图上以 $k$ 短 TODO
+\end{remark}
+
+
+
+\begin{example}
+    对于一个定义在 $S$ 上的半环 $(\oplus_2,\odot_2)$，令图的边权扩充为 $(w,z)$，其中 $z\in S$。定义 $(x,a)\oplus (y,b)=\begin{cases}(x,a\oplus_2 b) &x=y\\ (x,a)&x<y\\ (y,b)&x>y\end{cases}$，$(x,a)\odot (y,b)=(x+y,a\odot_2 b)$，验证这是一个半环。构造 $(\oplus_2,\odot_2)$ 使得 $(\oplus,\odot)$ 的代数路径对应 
+    \begin{itemize}
+        \item 最短路计数
+        \item 先按 $w_1$，再按 $w_2$ 比较的最短路
+    \end{itemize}
+    在正权图上，使用 Dijkstra 算法计算 $(\oplus,\odot)$ 的代数路径。在无负环图上，说明可以在第一维的最短路图上计算第二维的代数路径。
+\end{example}
+
+
+
+
+
+
+
+% \begin{summary}
+%     \begin{itemize}
+%     \item zkw 线段树：合适的标号，自下而上的合并
+%     \item 动态开点：只构建修改时访问的结点
+%     \item 线段树上二分：利用区间分解定理来在线段树上进行二分查找
+%     \end{itemize}
+% \end{summary}

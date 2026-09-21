@@ -1,0 +1,323 @@
+\chapter{连通性问题}
+
+
+\section{无向图连通性}
+
+需要将点按照所在的连通分量分类
+
+静态：遍历每个连通分量
+
+只加边：并查集
+
+只删边（离线）：时间倒流，并查集
+
+加边删边（离线）：线段树分治
+
+加边删边（在线）：动态图连通性
+
+\section{无向图双连通性}
+
+\subsection{边双连通}
+
+\begin{definition}[边双连通性]
+    对于无向图 $G$，若 $u,v$ 在删除任意一条边后仍然连通，则称 $u,v$ 是\textbf{边双连通}的。若 $G$ 中任意两个点都是边双连通的，则称 $G$ 是\textbf{边双连通图}。
+\end{definition}
+\begin{exercise}
+    证明边双连通性是一个等价关系。
+\end{exercise}
+\begin{definition}[桥]
+    对于无向图 $G$，若删掉边 $e$ 后 $G$ 的连通分量数量增加，则称 $e$ 是一个\textbf{桥}。
+\end{definition}
+\begin{exercise}
+    证明一条边是桥当且仅当它不在任何简单环上。
+\end{exercise}
+
+\begin{lemma}[边双连通的刻画]
+    以下四点等价：
+\begin{itemize}
+    \item $G$ 是边双连通图
+    \item $G$ 中没有桥
+    \item $G$ 中任何边都在一个简单环上
+    \item $G$ 中任意两点之间都有两条边不交的路径。
+\end{itemize}
+\end{lemma}
+
+
+\begin{definition}[边双连通分量]
+    一个极大（在包含关系下）的边双连通子图称为一个\textbf{边双连通分量}。在 OI 中通常简称为“边双”。
+\end{definition}
+\begin{exercise}[边双缩点]
+    \begin{itemize}
+        \item 说明边双连通分量构成了点集的一个划分。
+        \item 证明该划分与边连通性的等价类划分相同。
+        \item 证明该划分与删掉所有桥后得到的连通块集合相同。
+        \item 证明把每个边双连通分量缩成一个点后会得到一棵恰包含所有桥的树。
+    \end{itemize}
+\end{exercise}
+
+\subsection{点双连通}
+
+\begin{exercise}
+    在有至少三个点的图中，证明桥的至少一个端点是割点。
+\end{exercise}
+
+\begin{definition}[点双连通性]
+    对于无向图 $G$，若 $u,v$ 在删除任意一个点后仍然连通，则称 $u,v$ 是\textbf{点双连通}的。若 $G$ 中任意两个点都是点双连通的，则称 $G$ 是\textbf{点双连通图}。
+\end{definition}
+\begin{remark}
+    注意点双连通性\textbf{不是}等价关系。
+\end{remark}
+\begin{definition}[割点]
+    对于无向图 $G$，若删掉点 $v$ 后 $G$ 的连通分量数量增加，则称 $v$ 是一个\textbf{割点}。
+\end{definition}
+\begin{remark}
+    在 $G$ 只有两个或一个点时，点双连通和割点定义会变得比较微妙。一般来说，我们认为只有一个点或两个点的连通图也是点双连通的。
+\end{remark}
+\begin{exercise}
+    在 $|V(G)|\ge 3$ 时，证明
+    \begin{itemize}
+        \item 桥 $e$ 的端点 $u$ 是割点当且仅当删除 $e$ 后 $u$ 所在的连通块大小至少为 $2$
+        \item 点双连通蕴含边双连通
+    \end{itemize}
+\end{exercise}
+
+\begin{lemma}[点双连通的刻画]
+    设 $G$ 至少有三个点。以下四条等价：
+\begin{itemize}
+    \item $G$ 是点双连通图
+    \item $G$ 中没有割点
+    \item $G$ 中任意两点之间都有两条除起终点外点不交的路径。
+    \item $G$ 中任意两点都在一个简单环上
+\end{itemize}
+\end{lemma}
+
+
+
+\begin{definition}[点双连通分量]
+    一个极大（在包含关系下）的点双连通子图称为一个\textbf{点双连通分量}。在 OI 中通常简称为“点双”。
+\end{definition}
+\begin{exercise}[点双缩点]
+    \begin{itemize}
+        \item 证明两个点双连通分量至多有一个交点，且该交点是割点
+        \item 证明一条边或一个简单环恰好属于一个点双连通分量
+        \item 对每个点双连通分量 $S$ 建立一个方点，原图中的点 $u$ 建立一个圆点。若 $u\in S$ 则在 $u,S$ 之间连无向边。证明这样会得到一棵树。这就是\textbf{圆方树（Block-Cut Tree）}。
+    \end{itemize}
+\end{exercise}
+
+\subsection{DFS 树与双连通性}
+
+\begin{lemma}
+    一个双连通分量中最早被 DFS 到的点是这个双连通分量中所有点在 DFS 树中的祖先
+\end{lemma}
+\begin{proof}
+    设这个点为 $u$，考虑其所在双连通分量 $B$ 中的另一个点 $v$。由于 $B$ 连通，故存在一条完全位于 $B$ 中的路径 $u\leadsto v$，从而 DFS 的性质说明 $v$ 在 $u$ 的子树中。
+\end{proof}
+\begin{corollary}
+    一个双连通分量在 DFS 树中是一个连通块。
+\end{corollary}
+\begin{proof}
+    考虑双连通分量中最早被 DFS 到的点 $u$ 和另一个点 $v$，我们说明 $u,v$ 之间的树路径 $P$ 上的所有点和边都在双连通分量内即可。
+
+    边双连通的情况：若 $P$ 中存在一个桥，则删除后 $u,v$ 将处于不同的连通块，从而 $u,v$ 不是边双连通的，矛盾。
+    
+    点双连通的情况：设 $u,v$ 在同一个点双连通分量 $B$ 中，考虑 $P$ 上任何不等于 $u,v$ 的点 $x$。删掉 $x$ 后 $u,v$ 仍然连通，故存在一条 $u$ 到 $v$ 且完全位于 $B-\{x\}$ 中的简单路径 $Q$。取 $Q$ 在 $x$ 两侧与 $P$ 相交的最近两个点 $s,t$，则 $Q$ 上的 $s\leadsto t$ 段与 $P$ 上的 $s\leadsto t$ 段拼起来就得到了一个包含 $x$ 的简单环 $C$。由于 $Q$ 完全位于 $B$ 中且与 $C$ 至少交于 $s,t$ 两点，故 $B$ 和 $C$ 至少有两个交点，从而 $B\cup C$ 也是点双连通的，故 $x$ 也在这个点双连通分量中。
+\end{proof}
+
+我们可以在 DFS 的过程中维护目前的连通块划分。当加入新的边时，有可能导致一些根不再能够成为根，即发生了连通块的合并。对于双连通分量，合并的判据如下：
+\begin{lemma}
+    对于一条非树边，其对应的树路径上的所有点都在同一个边双连通分量中，所有边都在同一个点双连通分量中。
+\end{lemma}
+不难发现这样的合并都发生在整棵树根到当前点的路径上，且合并的都是一段后缀。我们维护根到当前点路径上每个块的根（对于边双，根是一个点；对于点双，边是一个根），需要合并时将根进行合并。根据 DFS 的性质，这些块中的点/边已经按照被 DFS 到的顺序划分好了；换句话说，如果我们把所有这些块中的点/边按照被 DFS 到的顺序排列，那么每个块都对应一个连续段，且块的根是连续段中的第一个。于是可以用一个栈来维护这些块中的点/边，只需要维护出所有根就能知道每个块中的点/边。
+
+当一个点/边 DFS 结束后，如果它还是一个根，那么其对应的块以后不会再继续合并，将这个块弹出栈并输出。特别地，对于点双，需要注意根是边而不是点，即弹出这条边的浅点后还要再加回来。
+
+以上描述的过程实际上更接近 Gabow 算法，其显式维护了根的合并。常用的 Tarjan 算法则是通过维护子树内由非树边可达的最小 \texttt{dfn} 来判断一个点/边是否需要合并到父亲上的。
+
+% TODO 添加算法。
+\subsection{耳分解}
+
+\begin{definition}[耳和耳分解]
+    图的一个\textbf{耳分解}是一个由一个圈和若干个简单路径或简单环组成的序列 $(C,P_1,\ldots,P_k)$，其中 $C$ 是一个简单环，$P_i$ 是一个起点和终点在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中、中间点都不在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中的简单路径或简单环（环的起点和终点视为同一个点）。这样的 $P_i$ 称为\textbf{耳（Ear）}。
+\end{definition}
+
+\begin{theorem}
+    一个图是边双连通的当且仅当存在耳分解。
+\end{theorem}
+\begin{proof}
+    存在耳分解时，显然每条边都在一个环中。反过来，假设图是边双连通的。找一个极大的存在耳分解的子图 $H$ 并假设 $H\ne G$。注意若 $e\notin H$ 但是 $e$ 的两个端点都在 $H$ 中，则这条边本身就是一个耳，故 $H$ 是 $V(H)$ 的导出子图。任取一个 $(H,G\backslash H)$ 之间的边 $e=(u,v)$，则存在一条 $v$ 到 $u$ 的不经过 $e$ 的路径 $P$，取 $P$ 进入 $H$ 之前的一段 $P_0$，则 $e+P_0$ 是一个耳，与 $H$ 极大矛盾。
+\end{proof}
+
+对于点双连通图，有类似的结果成立。
+\begin{definition}[开耳和开耳分解]
+    图的一个\textbf{开耳分解}是一个由一个圈和若干个简单路径组成的序列 $(C,P_1,\ldots,P_k)$，其中 $C$ 是一个简单环，$P_i$ 是一个起点和终点在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中、中间点都不在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中的简单路径。这样的 $P_i$ 称为\textbf{开耳（Open Ear）}。
+\end{definition}
+\begin{remark}
+    也就是说不再允许 $P_i$ 是环。
+\end{remark}
+\begin{theorem}
+    对于有至少三个点的无向图 $G$，$G$ 是点双连通的当且仅当存在开耳分解。
+\end{theorem}
+\begin{proof}
+    存在开耳分解时，逐个开耳加进去，可以始终维持点双连通。
+    
+    反过来，假设图是点双连通的。找一个极大的存在开耳分解的子图 $H$ 并假设 $H\ne G$。注意若 $e\notin H$ 但是 $e$ 的两个端点都在 $H$ 中，则这条边本身就是一个开耳，故 $H$ 是 $V(H)$ 的导出子图。任取一个 $(H,G\backslash H)$ 之间的边 $e=(u,v)$，则存在一条 $v$ 到 $u$ 的不经过 $e$ 且经过 $H$ 中 $v$ 以外的某个点的路径 $P$，取 $P$ 进入 $H$ 之前的一段 $P_0$，则 $e+P_0$ 是一个开耳，与 $H$ 极大矛盾。
+\end{proof}
+% \section{无向图 $k$-连通性}
+
+以下算法可以计算耳分解。
+\begin{descbox}{算法}[耳分解]
+    任取一棵 DFS 生成树，初始将所有点标记为未访问。按照 DFS 序遍历所有点 $u$，然后遍历所有与 $u$ 相连的非树边 $(u,v)$。从 $v$ 到 $u$ 遍历树路径上的点并标记为已访问，直到遇到一个已访问的点，这些访问到的点构成一个耳。
+\end{descbox}
+\begin{theorem}
+    \begin{itemize}
+        \item $G$ 边（点）双连通当且仅当此算法给出一个（开）耳分解
+        \item 一条边是桥当且仅当它不在任何算法得到的耳中
+        \item 若 $G$ 的所有点度数都 $\ge 2$，则一个点是割点当且仅当它是一条桥边的端点或者是算法得到的某个耳的起点。
+    \end{itemize}
+\end{theorem}
+
+耳分解提供了理解边双和点双的十分方便的视角。
+\begin{example}[强连通定向]
+    给一张无向图的边定向，使其成为强连通图。证明可以强连通定向 $\Longrightarrow$ 边双连通 $\Longrightarrow$ 存在耳分解 $\Longrightarrow$ 可以强连通定向。
+\end{example}
+
+% TODO
+
+\section{有向图连通性}
+
+
+
+\begin{definition}[连通性]
+
+在有向图中，我们定义以下几种关系：
+
+\begin{itemize}
+    \item 弱连通性：若 $u,v$ 在忽略边的方向得到的无向图中连通，则称 $u,v$ 是弱连通的。
+    \item 可达性：如果存在从 $u$ 到 $v$ 的有向路径，则称 $u$ 可以到达 $v$。
+    \item 强连通性：如果 $u,v$ 可以互相到达，则称 $u,v$ 是强连通的。
+\end{itemize}
+\end{definition}
+\begin{exercise}
+    证明弱连通和强连通都是等价关系。
+\end{exercise}
+\begin{definition}[强连通分量]
+    由强连通性划分出的等价类称为强连通分量（Strongly Connected Component, SCC）。
+\end{definition}
+\begin{theorem}
+    把每个 SCC 缩成一个点后会得到一个有向无环图（DAG）。
+\end{theorem}
+
+与无向图的双连通性类似，我们可以利用 DFS 树的性质求出强连通分量。
+\begin{property}
+    在树边、回边、前向边、横叉边的分类下，只有树边和前向边可以到达 DFS 序比自己大的点，且到达的必定是子树内的点。
+\end{property}
+\begin{lemma}
+    一个 SCC 中最早被 DFS 到的点是这个 SCC 中所有点在 DFS 树中的祖先
+\end{lemma}
+\begin{proof}
+    设这个点为 $u$，考虑 SCC 中的另一个点 $v$。对于任何从 $u$ 到 $v$ 的路径，这条路径上不可能包含比 $u$ 更早被 DFS到的点 $w$，否则可以得到回路 $u\to w\to v\to u$，从而 $w$ 也在 SCC 中，与 $u$ 是最早 DFS 到的点矛盾。于是在 $\mathtt{dfs}(u)$ 结束后，所有这些点 $v$ 都会被通过某条路径 $u\to v$ 发现，从而 $v$ 在 $u$ 的子树中。
+
+    % 设这个点为 $u$，需要证明 $u$ 子树外的点和 $u$ 不在同一个 SCC 中。由于 $u$ 是最早 DFS 到的点，DFS 序小于 $u$ 的点必然和 $u$ 不在同一个 SCC 中。对于 DFS 序大于 $u$ 且不在 $u$ 子树内的点 $v$，根据 DFS 树的性质，$u$ 只能通过 $u$ 的某个祖先 $w$ 走树边或前向边到达 $v$。而这说明 $u$ 可以到达 $w$，但 $w$ 作为 $u$ 的祖先可以走树边到达 $u$，从而 $u,w$ 在同一个 SCC 中，与 $u$ 是最早 DFS 到的点矛盾。
+\end{proof}
+\begin{corollary}
+    一个 SCC 在 DFS 树中是一个连通块。
+\end{corollary}
+\begin{proof}
+    考虑 SCC 中最早被 DFS 到的点 $u$，则 $u$ 是 SCC 中所有点的祖先。若 $v$ 在这个 SCC 中，则对于任何 $u,v$ 路径上的点 $w$，都存在 $u\to w\to v\to u$ 的路径，故 $w$ 也在这个 SCC 中。
+\end{proof}
+
+\begin{lemma}
+    按照结束 DFS 的时间从大到小排序可以得到缩点后 DAG 的一个拓扑序。
+\end{lemma}
+
+\begin{descbox}{算法}[Kosaraju 算法]
+    首先用一遍 DFS 算出此拓扑序，然后按照拓扑序在反图上 DFS，每次新访问到的点构成一个 SCC。
+\end{descbox}
+
+\begin{descbox}{算法}[Tarjan 算法]
+    在 DFS 时维护目前还没有“封闭”为 SCC 的候选点集栈。一个点可以成为一个 SCC 的根的充要条件是它无法沿着一条只经过子树与候选点集的路径到达它的祖先。找到一个根时，其子树对应候选点集栈的末尾一段，将其构建为一个 SCC 并从栈中弹出即可。
+
+    维护一个数组 $\mathrm{low}$ 表示每个点沿着只经过子树与候选点集的路径可以到达的最浅祖先即可。通常用最小 DFS 时间戳 $\mathrm{dfn}$ 来记录最浅祖先。
+\end{descbox}
+\begin{lstlisting}[language=C++,caption=Tarjan 算法]
+void tarjan(int u){
+    dfn[u]=low[u]=++time_stamp;
+    stk.push(u);
+    in_stk[u]=true;
+    for(int v:G[u]){
+        if(!dfn[v]){
+            tarjan(v);
+            low[u]=min(low[u],low[v]);
+        }else if(in_stk[v]){
+            low[u]=min(low[u],low[v]);    
+        }
+    }
+    if(dfn[u]==low[u]){
+        // u 是一个 SCC 的根
+        while(stk.top()!=u){
+            int v=stk.top();stk.pop();
+            in_stk[v]=false;
+            // v 属于这个 SCC
+        }
+        stk.pop();
+        in_stk[u]=false;
+        // u 属于这个 SCC
+    }
+}
+\end{lstlisting}
+\begin{remark}
+    在标准的 Tarjan 算法中，在 \texttt{in\_stk[v]} 时使用 \texttt{dfn[v]} 来更新 \texttt{low[u]}，而按我们的描述则是用 \texttt{low[v]} 更新 \texttt{low[u]}。证明它们都是正确的。
+\end{remark}
+
+\begin{descbox}{算法}[Gabow 算法]
+    在 Tarjan 算法中，直接使用一个单调栈来维护目前候选点集的每个候选 SCC 的根。如果 $u$ 能够到达一个目前候选点集中的点 $v$，则所有 $\mathrm{dfn}>\mathrm{dfn}_v$ 的点都无法成为 SCC 的根，将其从单调栈中弹出即可。
+\end{descbox}
+
+\section{有向无环图}
+
+DAG 给出了一个偏序关系。可以通过\textbf{拓扑排序}将其扩展为一个全序。任意一个这样的全序都称为一个\textbf{拓扑序}。通过按照拓扑序 DP，以下问题都可以快速计算：
+
+\begin{itemize}
+    \item 最短路
+    \item 最长路
+    \item 从每个点出发的路径数量
+\end{itemize}
+
+很多一般有向图上的问题可以通过缩点等方式变为 DAG 上的问题。
+
+\begin{example}[DAG 可达性/传递闭包]
+    对每个点计算出它能到达的结点集合。$O(nm/w)$。
+\end{example}
+\begin{exercise}
+    对每个点计算它能到达的结点数量。需要线性空间。
+\end{exercise}
+
+\begin{example}[QOJ4420. Range Reachability Query]
+    有一个 DAG。每次询问给出 $x_i,y_i,l_i,r_i$，判断能否从 $x_i$ 只经过编号在 $[l_i,r_i]$ 内的边到达 $y_i$。
+\end{example}
+\begin{solution}
+    设 $f_{x,i}$ 表示能否从 $x$ 出发只经过编号在 $[l_i,r_i]$ 内的边到达 $y_i$。则对 $e_j=(u,v)$ 转移时的方程为 $f_{u,i}|=f_{v,i}\& [j\in [l_i,r_i]]$。使用 bitset 优化，需要对每个 $j$ 计算出 $p_{j,i}=[j\in [l_i,r_i]]$ 对应的 bitset。这里可以对 $p'_{j,i}=[j=l_i]+[j=r_i+1]$ 的第一维做前缀异或和得到。
+
+    最后可以对询问按 $B\ge w$ 大小分块做到 $O(\frac{mq}{w})$ 时间和 $O(mB/w)$ 空间。
+\end{solution}
+% \begin{summary}
+% \begin{itemize}
+%     \item 分治信息的概念与设计原则：首先将复杂的信息分解为相对简洁的信息，再从简洁的信息开始逐步添加合并信息所需的辅助信息，直到信息能够合并。
+%     \item 静态区间数据结构的设计方法：倍增（ST 表）与分治（二区间合并、线段树、多叉分治、一般的分治结构）
+%     \item 线段树的结构与区间分解过程
+% \end{itemize}
+% \end{summary}
+
+
+% \begin{table}[h]
+% \centering
+% \begin{tabular}{@{}llll@{}}
+% \toprule
+% 数据结构 & 预处理 & 查询 & 适用范围 \\ \midrule
+% 前缀和 & $O(n)$ & $O(1)$ & 具有逆元 (群) \\
+% ST 表 & $O(n \log n)$ & $O(1)$ & 可重复贡献 (半格) \\
+% 线段树 & $O(n)$ & $O(\log n)$ & 一般半群 \\
+% Disjoint ST & $O(n \log n)$ & $O(1)$ & 一般半群 \\
+% \bottomrule
+% \end{tabular}
+% \end{table}

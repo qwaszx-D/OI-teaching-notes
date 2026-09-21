@@ -7,11 +7,11 @@
 % \end{itemize}
 % \end{overview}
 
-问题的组合结构往往提示了我们应该按照何种方式逐步生成对象。在根据组合对象确定子结构后，还需要考虑扫描的顺序。
+问题的组合结构往往提示了我们应该按照何种方式逐步生成对象。在根据组合对象确定子结构后，还需要考虑其他需要的信息、扫描的顺序等。一般来说，可以枚举各种扫描的顺序，然后按照“缺什么补什么”的方式设计状态。
 
 \section{序列前缀/线性 DP}
 
-序列的一个自然子结构是前缀。许多情况下，在序列上 DP 时考虑的一个维度都是前 $i$ 个元素，然后通过向后扩展一个或者一段元素来转移。
+序列的一个自然子结构是前缀。许多情况下，在序列上 DP 时考虑的一个维度都是前 $i$ 个元素，然后通过向后扩展一个或者一段元素来转移。也可以用填表来理解，这样就是考虑最后一个元素的归属。
 
 \begin{example}[经典问题]
     \begin{itemize}
@@ -60,6 +60,14 @@
 \section{序列区间}
 
 序列的另一个自然子结构是区间。相比前缀，区间允许更复杂的嵌套结构。括号序列、合并类问题、从序列构造树等类型的问题常常会使用区间 DP 来处理。
+
+常见的区间 DP 类型有：
+\begin{itemize}
+    \item 约简后的合法状态具有区间分解结构，即可以分解为若干不交子区间的并（也可能再加上一些剩余元素）
+    \item 通过在两侧添加元素来扩展区间
+\end{itemize}
+
+可以考虑最后一个/第一个的情况来导出区间 DP 结构。
 
 \begin{example}[{[NOI1995] 石子合并}]
     
@@ -189,7 +197,11 @@
 \end{example}
 
 \begin{example}[CF1425B Blue and Red of Our Faculty!]
-    
+    转化后变为计算
+    $$
+    \sum_i \sum_{k\in [l_i,r_i]} [x^k]\prod_{j\ne i}(x^{w_j}+x^{-w_j}+1),
+    $$
+    其中 $\sum_j w_j=n$
 \end{example}
 
     
@@ -198,7 +210,13 @@
 \end{example}
 
 \begin{example}[{[十二省联考 2019] 皮配}]
-    
+    有两种限制，因此使用两个维度，$x$ 代表阵营，$y$ 代表派系。由于总数固定，一个维度上的限制相当于限制了上下界。若选手选择蓝色则在 $x$ 一维贡献 $s_i$ 的次数，否则贡献 $0$ 的次数；选手选择鸭系则在 $y$ 一维贡献 $s_i$ 的次数，否则贡献 $0$ 的次数。
+
+    对于一个城市，设其学校总重量为 $ss$，特殊学校的集合为 $T$。对于一个特殊学校 $i$，令 $c_{i,p,q}$ 表示此学校能否选择(红(0)/蓝(1))(R(0)/鸭(1))的组合，$F_{i,p}(y)=c_{i,p,0}+c_{i,p,1}y^{s_i}$，则该城市的方案数可以被生成函数刻画为
+    $$
+    \prod_{i\notin T}(1+y^{s_i})\left(\sum_{i\in T}F_{i,0}(y)+x^{ss}\sum_{i\in T}F_{i,1}(y)\right).
+    $$
+    总的生成函数就是所有城市的生成函数的乘积。显然，每个城市是两部分 $A(y)$ 和 $B(x,y)$ 的乘积，可以分开计算 $\prod A(y)$ 和 $\prod B(x,y)$。由于 $T$ 的总大小不超过 $k$，$\prod B(x,y)$ 在 $y$ 上的次数不超过 $ks$，可以 $O(k\cdot M\cdot ks)$ 计算 $\prod B(x,y)$。$\prod A$ 可以直接 $O(nm)$ 计算。最后可以 $O(ksM)$ 枚举 $\prod B(x,y)$ 的每一项，$O(1)$ 计算这一项与 $\prod A$ 的乘积对答案的贡献。
 \end{example}
 
 \begin{example}[同余背包]
@@ -273,10 +291,6 @@
     求树上最大权独立集/最小权点覆盖/直径。
 \end{example}
 
-\begin{example}[{CF1146F Leaf Partition}]
-    
-\end{example}
-
 \subsection{树上背包}
 
 首先我们说明如果每个点的体积都是 $O(1)$，那么在只枚举必要范围转移时，树上背包的复杂度和序列背包相同。
@@ -303,6 +317,11 @@
     \end{itemize}
 \end{proof}
 
+除了常规的子树 DP 外，还有一种按 DFS 序 DP 的树上背包算法，该算法可以在点体积\textbf{不为 1} 时也做到 $O(nV)$ 的复杂度，缺点是只能计算整棵树的答案而无法计算每个子树内的答案。
+\begin{descbox}{算法}[DFS 序树上背包]
+    按 DFS 序考虑点，将树上背包的限制视为：若想要选择区间 $(\mathrm{dfn}_u,\mathrm{dfn}_u+\mathrm{size}_u)$ 中的点，则必须选择 $\mathrm{dfn}_u$。从后往前 DP，设 $f_{i,j}$ 表示考虑了 $\mathrm{dfn}_u\ge i$ 的点、总体积为 $j$ 的答案。转移时，根据 $\mathrm{dfn}_u=i$ 的点是否选择递归到子问题 $f_{i+1,j+v_u}$ 或 $f_{i+\mathrm{size}_u,j}$。
+\end{descbox}
+
 \begin{example}[{[HAOI2015] 树上染色}]
     选择 $k$ 个点染黑，其他点染白，最大化同色点对距离和。
 \end{example}
@@ -322,9 +341,9 @@
 \begin{exercise}[{[JSOI2018] 潜入行动}]
     
 \end{exercise}
-\begin{remark}
-    这个可以链分治 FFT 做到 $O(n\log^2 n)$。
-\end{remark}
+% \begin{remark}
+%     这个可以链分治 FFT 做到 $O(n\log^2 n)$。
+% \end{remark}
 
 \begin{example}[{[IOI 2005] Riv 河流}]
     
@@ -374,6 +393,26 @@
 \subsection{树路径问题}
 
 在状态中记录子树内端点个数即可拼接出路径。
+
+
+\begin{example}[{CF1146F Leaf Partition}]
+\end{example}
+\begin{solution}
+    考虑子树的情况，不难发现有以下几种可能：
+    \begin{itemize}
+        \item 子树的叶子划分中没有任何一组的 $f$ 包含 $u$，且未来也不会包含
+        \item 子树的叶子划分中没有任何一组的 $f$ 包含 $u$，但是未来会包含
+        \item 子树的叶子划分中有恰好一组的 $f$ 包含 $u$
+    \end{itemize}
+    三种情况的方案数分别记为 $f_{u,0/1/2}$。如果令 $(u,v)$ 这条边包含在某一组对应的连通块中，那么贡献为 $f_{v,1/2}$；否则，贡献为 $f_{v,0/2}$。具体转移如下：
+    \begin{itemize}
+        \item 对于 $f_{u,0}$，每个儿子都需要是 $f_{v,0/2}$，不同儿子分到不同组
+        \item 对于 $f_{u,1}$，选择一个 $f_{v,1/2}$ 继续往上延伸，其他儿子都取 $f_{v,0/2}$
+        \item 对于 $f_{u,2}$，选择至少两个 $f_{v,1/2}$，其他儿子都取 $f_{v,0/2}$
+    \end{itemize}
+    最后根的答案是 $f_{u,0/2}$，叶子的初值是 $f_{u,2}=1,f_{u,0/1}=0$。
+\end{solution}
+
 
 \begin{example}[{[SCOI2015] 小凸玩密室}]
     
@@ -427,12 +466,165 @@
     
 \end{example}
 
-\section{集合}
+\section{指数级状态}
+
+\subsection{排列}
+
+在状态中不记录排列的顺序，而是只记录存在的值来将状态数从 $n!$ 降至 $2^n$。
+
+\begin{example}[挑战 NP Hard]
+    求最长哈密顿路/哈密顿回路；计算积和式；拓扑序计数
+\end{example}
+
+\begin{example}[{P6622 [省选联考 2020 A/B 卷] 信号传递}]
+    
+\end{example}
+
+\begin{example}[{P2157 [SDOI2009] 学校食堂}]
+    
+\end{example}
+
+
+
+
+\subsection{集合与子集}
+
+首先我们给出集合操作的若干常用技巧。
+
+\begin{lstlisting}[language=C++,caption={枚举子集}]
+// 枚举 S 的非空子集 T
+for(int T=S;T;T=(T-1)&S){
+}
+\end{lstlisting}
+\begin{exercise}
+    写出枚举超集的算法。
+\end{exercise}
+
+\begin{descbox}{算法}[高维前缀和/差分]
+    给定 $f_S$，计算 $\hat f_{S}=\sum_{T\subseteq S}f_T$。
+
+    或者反过来，给定 $\hat f_S$，还原出 $f_S$。
+\end{descbox}
+
+\begin{descbox}{算法}[按位或卷积]
+    需要计算
+    $$
+    \begin{aligned}
+    h_C=\sum_{A\cup B=C}f_Ag_B.
+    \end{aligned}
+    $$
+    首先计算
+    $$
+    \begin{aligned}
+    \hat h_C&=\sum_{A\cup B\subseteq C}f_Ag_B\\
+    &=\sum_{A\subseteq C}f_A\sum_{B\subseteq C}g_B\\
+    &=\hat f_C\hat g_C,
+    \end{aligned}
+    $$
+    于是 $O(n2^n)$ 计算出 $\hat f,\hat g$，点积得到 $\hat h$，再做高维差分还原出 $h$ 即可。
+\end{descbox}
+\begin{exercise}
+    计算按位与卷积，即
+    $$
+    h_C=\sum_{A\cap B=C}f_Ag_B.
+    $$
+\end{exercise}
+\begin{exercise}
+    不做高维差分还原 $h$，而是直接利用 $\hat f$ 和 $\hat g$ 在 $O(2^n)$ 时间内计算 $h$ 的一项。
+\end{exercise}
+
+\begin{descbox}{算法}[子集卷积]
+    需要计算
+    $$
+    \begin{aligned}
+    h_C=\sum_{A\uplus B=C}f_Ag_B.
+    \end{aligned}
+    $$
+    关键在于
+    $$
+    [A\uplus B=C]=[A\cup B=C][|A|+|B|=|C|].
+    $$
+    于是使用生成函数转换为
+    $$
+    \sum_{A\cup B=C}f_Ax^{|A|}g_Bx^{|B|},
+    $$
+    可以 $O(n^22^n)$ 计算。
+\end{descbox}
+
+\begin{descbox}{算法}[$(\max,+)$ 位运算卷积]
+    需要计算
+    $$
+    h_C=\max_{A\cup B=C}(f_A+g_B).
+    $$
+    分治，变成计算
+    $$
+    h_0=f_0\ast g_0, h_1=(f_0\ast g_1)\oplus (f_1\ast (g_0\oplus g_1)).
+    $$
+    复杂度 $T(n)=3T(n-1)+O(2^n)=O(3^n)$。注意每层递归只需要 $2^{n-1}$ 的额外空间，于是可以做到总共 $2^n$ 额外空间。
+\end{descbox}
+\begin{lstlisting}[language=C++,caption={$(\max,+)$ 位运算卷积}]
+void solve(int* a, int* b, int* c, int* tmp, int n) {
+	if (n == 1)
+    {
+        c[0]=max(c[0],a[0]+b[0]);
+        return;
+    } 
+	solve(a, b, c, tmp, n >> 1);
+	solve(a, b + (n >> 1), c + (n >> 1), tmp, n >> 1);
+	rep(i, 0, (n >> 1) - 1) tmp[i] = b[i], b[i] = max(b[i], b[i + (n >> 1)]);
+	solve(a + (n >> 1), b, c + (n >> 1), tmp + (n >> 1), n >> 1);
+	rep(i, 0, (n >> 1) - 1) b[i] = tmp[i];
+}
+\end{lstlisting}
+\begin{remark}
+    也有一个直接算的做法。枚举 $A$，就有
+    $$
+    h_C=\max_{A\subseteq C}\left(f_A+\max_{C-A\subseteq B\subseteq C}g_B\right).
+    $$
+    考虑计算所有
+    $$
+    \hat g(U,V)=\max_{S\subseteq V}g_{U\cup S},
+    $$
+    对于每个 $U$ 在 $2^{n-|U|}$ 时间内递推计算出所有 $\hat g(U,V)$，总共 $O(3^n)$。于是
+    $$
+    h_C=\max_{A\subseteq C}f_A+\hat g(C-A,A).
+    $$
+    这样需要 $3^n$ 空间。可以先枚举 $C-A$，然后再枚举 $C$ 和 $A$，这样只需要同时计算一个 $U$ 的 $\hat g(U,V)$，空间变成 $O(2^n)$，但是转移代价会多一个 $n$。
+\end{remark}
+
+\begin{example}[挑战 NP Hard]
+    集合覆盖问题。带权/无权
+\end{example}
+\begin{exercise}[{P2831 [NOIP 2016 提高组] 愤怒的小鸟}]
+    
+\end{exercise}
+
+\begin{example}[{P2150 [NOI2015] 寿司晚宴}]
+    
+\end{example}
+
+
+\subsection{生成树}
+
+\begin{example}[{P3959 [NOIP 2017 提高组] 宝藏}]
+    
+\end{example}
+
+\begin{example}[最小斯坦纳树]
+    
+\end{example}
+
 
 \section{网格/轮廓线}
 
+\begin{example}[{P2704 [NOI2001] 炮兵阵地}]
+    
+\end{example}
 
+\begin{example}[{P4363 [九省联考 2018] 一双木棋 chess}]
+    
+\end{example}
 
-\begin{summary}
+% \begin{summary}
 
-\end{summary}
+% \end{summary}

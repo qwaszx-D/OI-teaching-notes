@@ -1,0 +1,675 @@
+\chapter{容斥}
+
+% \begin{overview}
+% \begin{itemize}
+%     \item 递归式的概念
+%     \item 寻找递归式的基本方法
+%     \item 数学归纳法
+%     \item 解递归式的一些方法
+% \end{itemize}
+% \end{overview}
+
+\section{拆括号容斥}
+
+至少 95\% 的容斥可以由
+$$
+[\not P]=1-[P],\quad \prod_i (1-[P_i])=\sum_{S\subseteq [n]}(-1)^{|S|}\prod_{i\in S}[P_i]
+$$
+解释，这通常被称为“拆括号容斥”。例如，问题需要计算满足至少一个 $P_i$ 的方案 $a$ 的权值和，或者需要计算不满足任何一个 $P_i$ 的方案 $a$ 的权值和，那么使用以上的容斥公式就得到
+$$
+\sum_a w(a)\prod_i (1-[P_i(a)])=\sum_{S\subseteq [n]}(-1)^{|S|}\left(\sum_a w(a)\prod_{i\in S}[P_i(a)]\right),
+$$
+其中 $\sum_a w(a)\prod_{i\in S}[P_i(a)]$ 为满足所有 $i\in S$ 的 $P_i$ 的方案 $a$ 的权值和，这常常是容易计算的。
+
+此外，很多时候 $\sum_a w(a)\prod_{i\in S}[P_i]$ 只和 $|S|$ 有关。记这个和为 $N(|S|)$，此时有
+$$
+\begin{aligned}
+&\sum_{S\subseteq [k]} (-1)^{|S|}\sum_a w(a) \prod_{i\in S}[P_i]\\
+&=\sum_{S\subseteq [k]}(-1)^{|S|}N(|S|)\\
+&=\sum_i\binom{k}{i}(-1)^i N(i).
+\end{aligned}
+$$
+更一般地，$\sum_a w(a)\prod_{i\in S}[P_i]$ 可能只和 $S$ 的某些更简单特征有关，比如 $V(S)=\sum_{i\in S}v_i$。记这个和为 $N(V(S))$，可以枚举 $v=V(S)$ 得到
+$$
+\begin{aligned}
+    &\sum_{S\subseteq [k]} (-1)^{|S|}\sum_a w(a) \prod_{i\in S}[P_i]\\
+    &=\sum_{S\subseteq [k]}(-1)^{|S|}N(V(S))\\
+    &=\sum_v N(v)\sum_{S\subseteq [k]}[V(S)=v](-1)^{|S|}.
+\end{aligned}
+$$    
+可以用其他方法（如背包）统计后面这个求和。
+
+
+
+\begin{example}
+    证明集合形式的容斥公式
+    $$
+    \left|\bigcup_{i=1}^n A_i\right|=\sum_{\varnothing \subset S\subseteq [n]}(-1)^{|S|+1}\left|\bigcap_{i\in S}A_i\right|.
+    $$
+\end{example}
+
+\begin{example}
+    考虑所有 $\{1,2,\ldots,m\}$ 组成的长为 $n$ 的序列。一个序列的价值为其中不同数的数量的，求所有序列的价值和。$O(\log n)$。
+\end{example}
+\begin{exercise}
+    考虑所有 $\{1,2,\ldots,m\}$ 组成的长为 $n$ 的序列。一个序列的价值为其中不同数的数量的 $k$ 次方，求所有序列的价值和。$O(k(k+\log n))$ 或者 $O(k(\log k+\log n))$。
+\end{exercise}
+
+\begin{example}
+    计算不定方程 $x_1+x_2+\cdots+x_n=m$ 的非负整数解的个数，额外有 $k$ 个要求 $x_i\le a_i$。$O(2^kn)$ 或者 $O(n\sum_i a_i)$。
+\end{example}
+
+
+\begin{example}[二项式反演]
+    对于一种方案 $a$，令 $P_i(a)$ 表示命题“$a$ 满足性质 $i$”。设
+    $$
+    f_i=\sum_{|S|=i}\sum_a\prod_{i\in S}[P_i]\prod_{i\notin S}[\lnot P_i]
+    $$
+    为“恰好满足 $i$ 个性质的方案数”，
+    $$
+    g_i=\sum_{|S|=i}\sum_a\prod_{i\in S}[P_i]
+    $$ 
+    为“钦定满足 $i$ 个性质的方案数”。用 $g$ 表示 $f$。
+\end{example}
+\begin{solution}
+    $$
+    \begin{aligned}
+    f_k&=\sum_{|S|=k}\sum_a \prod_{i\in S}[P_i]\prod_{j\notin S}(1-[P_j])\\
+    &=\sum_{|S|=k}\sum_a\left(\prod_{i\in S}[P_i]\right)\sum_{T\subseteq \bar S}(-1)^{|T|}\prod_{j\in T}[P_j]\\
+    &=\sum_{|S|=k}\sum_{T'\supseteq S}(-1)^{|T'|-|S|}\sum_a\prod_{i\in T'}[P_i]\qquad(T'=S\uplus T)\\
+    &=\sum_{n}\left(\sum_{|T'|=n}\sum_a\prod_{i\in T'}[P_i]\right)\left(\sum_{S\subseteq T',|S|=k}(-1)^{|T'|-|S|}\right)\\
+    &=\sum_n g_n\binom{n}{k}(-1)^{n-k}
+    \end{aligned}
+    $$
+\end{solution}
+\begin{remark}
+    这并不是二项式反演的定义，而是由组合问题导出的一个关系。不过，OI 中似乎只需要用到这个版本。
+\end{remark}
+\begin{exercise}
+    反过来用 $f$ 表示 $g$。
+    $$
+    g_k=\sum_n f_n\binom{n}{k}.
+    $$
+\end{exercise}
+\begin{exercise}[另一个方向]
+    设 $h_i=\sum_{|S|=i}\sum\prod_{i\notin S}[\overline{P_i}]$ 为“至多满足 $i$ 个性质的方案数”，找出 $h$ 和 $f$ 之间的关系。
+\end{exercise}
+
+\begin{example}[二项式反演与生成函数]\label{ex:binomial-inversion and gf}
+    注意到
+    $$
+    F(x)=\sum_a \prod_i ([P_i(a)]x+(1-[P_i(a)]))
+    $$
+    正是 $f$ 的生成函数。另一方面，
+    $$
+    G(x)=\sum_S x^{|S|}\sum_a \prod_{i\in S}[P_i(a)]=\sum_a \prod_i ([P_i(a)]x+1)
+    $$
+    则是 $g$ 的生成函数。于是 $F(x)=G(x-1),G(x)=F(x+1)$。将其展开就得到 $f$ 和 $g$ 的关系。
+\end{example}
+\begin{remark}
+    用自然语言来说，就是每一个恰好满足的性质都可以选择是否作为钦定满足的性质出现。这个生成函数关系在多元生成函数中比较方便。
+\end{remark}
+
+\begin{example}[min-max 容斥]
+    记 $x_{[k]}$ 为 $x_1,\ldots,x_n$ 中的第 $k$ 大值。设 $P_i(t)=[x_i\ge t]$，利用 $x\ge 0$ 时满足的恒等式 $x=\int_0^\infty [x\ge t] \mathrm{d}t$ 证明
+    $$
+    x_{[k]}=\sum_{|S|\ge k}\binom{|S|-1}{|S|-k}(-1)^{|S|-k}\min_{i\in S}x_i.
+    $$
+\end{example}
+\begin{solution}
+    首先有
+    $$
+    \sum_{|S|\ge k}\binom{|S|-1}{|S|-k}(-1)^{|S|-k}=\sum_{i}\binom{n}{i}\binom{i-1}{i-k}(-1)^{i-k}=\sum_i \binom{n}{i}\binom{-k}{i-k}=\binom{n-k}{n-k}=1,
+    $$
+    于是可以在通过平移将 $x_i$ 变得非负。
+    
+    注意到 $[x_{[k]}\ge t]=\left[\sum_i P_i(t)\ge k\right]$。枚举 $P_i(t)=1$ 的$i$ 得到
+    $$
+    \begin{aligned}
+        \left[\sum_i P_i(t)\ge k\right]&=\sum_{|S|\ge k}\prod_{i\in S}P_i\prod_{j\notin S}(1-P_j)\\
+        &=\sum_{|S|\ge k}\prod_{i\in S}P_i\sum_{T\subseteq \bar S}(-1)^{|T|}\prod_{j\in T}P_j\\
+        &=\sum_{|S|\ge k}\sum_{T\subseteq \bar S}(-1)^{|T|}\prod_{i\in S\uplus T}P_i\\
+        &=\sum_{|S'|\ge k}\left(\prod_{i\in S'}P_i\right)\sum_{T\subseteq S',|S'|-|T|\ge k}(-1)^{|T|}\qquad(S'=S\uplus T)\\
+        &=\sum_{|S'|\ge k}\left(\prod_{i\in S'}P_i\right)\sum_{j\le |S'|-k}\binom{|S'|}{j}(-1)^j\\
+        &=\sum_{|S'|\ge k}\left(\prod_{i\in S'}P_i\right)\binom{|S'|-1}{|S'|-k}(-1)^{|S'|-k}\\\\
+        &=\sum_{|S'|\ge k}\binom{|S'|-1}{|S'|-k}(-1)^{|S'|-k}\left[\min_{i\in S'} x_i\ge t\right]
+    \end{aligned}
+    $$
+    于是
+    $$
+    \begin{aligned}
+    x_{[k]}&=\int_0^\infty [x_{[k]}\ge t]\mathrm{d}t\\
+    &=\left[\sum_i P_i(t)\ge k\right]\mathrm{d}t\\
+    &=\int_0^{\infty}\sum_{|S'|\ge k}\binom{|S'|-1}{|S'|-k}(-1)^{|S'|-k}\left[\min_{i\in S'} x_i\ge t\right]\mathrm{d}t\\
+    &=\sum_{|S'|\ge k}\binom{|S'|-1}{|S'|-k}(-1)^{|S'|-k}\int_0^{\infty}\left[\min_{i\in S'} x_i\ge t\right]\mathrm{d}t\\
+    &=\sum_{|S'|\ge k}\binom{|S'|-1}{|S'|-k}(-1)^{|S'|-k}\min_{i\in S'} x_i
+    \end{aligned}
+    $$
+\end{solution}
+\begin{corollary}
+    对 $-x_i$ 使用公式得到
+    $$
+    \mathrm{kthmin}(x_1,\ldots,x_n)=\sum_{|S|\ge k}\binom{|S|-1}{|S|-k}(-1)^{|S|-k}\max_{i\in S}x_i.
+    $$
+
+    取 $k=1$ 得到
+    $$
+    \begin{aligned}
+    \max(x_1,\ldots,x_n)&=\sum_{S\ne \varnothing}(-1)^{|S|-1}\min_{i\in S}x_i,\\
+    \min(x_1,\ldots,x_n)&=\sum_{S\ne \varnothing}(-1)^{|S|-1}\max_{i\in S}x_i.
+    \end{aligned}
+    $$
+\end{corollary}
+\begin{corollary}
+    $$
+    \mathrm{lcm}(x_1,\ldots,x_n)=\prod_{S\ne \varnothing}\gcd(x_S)^{(-1)^{|S|-1}}
+    $$
+\end{corollary}
+\begin{exercise}
+    在 $[0,1]$ 中独立均匀随机取 $n$ 个点 $x_i$，设排序后得到 $0\le x_1\le x_2\le \cdots \le x_n\le 1$，求
+    \begin{itemize}
+        \item 第 $k$ 小的点（即 $x_k$）的期望
+        \item 所有 $n+1$ 个间隔 $x_i-x_{i-1}$ 中，第 $k$ 小的间隔的期望
+    \end{itemize}
+\end{exercise}
+
+\begin{exercise}[P4707 重返现世]
+    
+\end{exercise}
+
+\begin{exercise}[LOJ6102]
+    令 $f_i$ 为 Fibonacci 数列的第 $i$ 项。给定 $i_1,\ldots,i_n$，求
+    $$
+    \mathrm{lcm}(f_{i_1},\ldots,f_{i_n})\bmod 10^9+7.
+    $$
+\end{exercise}
+
+\section{容斥段合并}
+
+
+本节中，我们考虑一些序列计数问题，它们都带有一些“禁止子串”的限制，即不能出现某些类型的连续子序列。我们令 $P_i$ 表示“以位置 $i$ 开头出现禁止子串”，则在容斥时，$\prod_{i\in S}P_i$ 对应的禁止子串会在序列中合并成若干个连续段，我们可以通过生成函数等方式刻画所有连续段划分情况的容斥系数之和。
+
+需要注意的是，“容斥系数”并不限于一个常数。例如，如果对每次钦定的出现都乘一个形式元 $t$，那么答案就会变成一个生成函数 $G(t)$，其 $k$ 次项对应的就是“钦定了 $k$ 次出现”的方案数。根据\cref{ex:binomial-inversion and gf}，$G(t-1)$ 对应的就是恰好出现 $k$ 次的方案数。
+
+\begin{example}
+    计算长为 $n$ 且不出现子串 00 的 01 串 $s$ 的数量。
+\end{example}
+\begin{solution}
+    令 $P_i$ 表示以位置 $i$ 开头不出现 00。容斥后考察 $\prod_{i\in S}P_i$，这要求在序列中产生若干个 $0$ 连续段。例如，一个极长的 $i,i+1,i+2,\ldots,j\in S$ 会使得 $[i,j+1]$ 都变为 $0$。
+    
+    反过来，考察一个连续段的容斥系数。不难发现一个连续段的长度至少为 $2$，且长为 $l$ 的连续段必然是连续的 $l-1$ 个 $P_i$ 产生出来的，故一个长为 $l\ge 2$ 的连续段的容斥系数为 $(-1)^{l-1}$。我们将一个未被 $P_S$ 要求的单点也视为一个连续段，则 $S$ 与所有连续段划分一一对应。
+    
+    考虑如何计算 
+    $$
+    \sum_S \sum_s (-1)^{|S|}\prod_{i\in S}P_i.
+    $$
+    我们首先枚举一个连续段划分，然后考虑每个连续段对 $(-1)^{|S|}$ 和填 01 的方案数的贡献。对于一个 $P_S$ 要求的长度为 $l$ 的连续段，其贡献 $(-1)^{l-1}$ 的系数，填 01 的方案数为 $1$；对于一个未被 $P_S$ 要求的单点，其贡献 $1$ 的系数，填 01 的方案数为 $2$。总的结果为各个连续段的贡献乘积。
+
+    用生成函数枚举连续段划分就得到
+    $$
+    \frac{1}{1-\left(2x+\sum_{i\ge 2}x^i(-1)^{i-1}\right)}.
+    $$
+\end{solution}
+\begin{exercise}
+    计算长为 $n$ 且恰好出现 $k$ 次子串 00 的 01 串 $s$ 的数量。
+\end{exercise}
+
+\begin{exercise}[Mivik 的标题]
+    计算长为 $n$ 且不出现子串 $S$ 的字符串的数量。
+\end{exercise}
+\begin{exercise}
+    计算长为 $n$ 且子串 $S$ 恰好出现 $k$ 次的字符串数量。
+\end{exercise}
+
+\begin{exercise}[AGC058D Yet Another ABC String]
+    计算由 $a$ 个 $A$、 $b$ 个 $B$、$c$ 个 $C$ 组成且不出现子串 ABC,BCA,CAB 的字符串数量。
+\end{exercise}
+
+\begin{example}[{P2476 [SCOI2008] 着色方案}]
+    $c_1$ 个 $1$，$c_2$ 个 $2$，$\ldots$，$c_n$ 个 $n$ 进行多重排列，要求相邻数不同。求方案数
+\end{example}
+\begin{solution}
+    令 $P_i$ 表示第 $i$ 个位置和第 $i+1$ 个位置相同。容斥后考察 $\prod_{i\in S}P_i$，这相当于在排列中产生若干个同色连续段。反过来，一个长为 $i$ 的连续段的容斥系数为 $(-1)^{i-1}$。我们把无要求的单点也视为一个同色连续段。
+    
+    考虑如何计算 $\sum_S \sum_{\pi}(-1)^{|S|} \prod_{i\in S}P_i$。令 $x_i$ 为颜色 $i$ 的占位元，则一个连续段的 GF 为
+    $$
+    \sum_i \sum_{k\ge 1}x_i^k(-1)^{k-1}=\sum_i \frac{x_i}{1+x_i}.
+    $$
+    连续段划分和 $S$ 一一对应，故总的方案数为
+    $$
+    [x_1^{c_1}\cdots x_n^{c_n}]\frac{1}{1-\sum_i \frac{x_i}{1+x_i}}.
+    $$
+    将其展开来计算：
+    $$
+    \begin{aligned}
+    \frac{1}{1-\sum_i \frac{x_i}{1+x_i}}&=\sum_{k\ge 0}\left(\sum_{i=1}^n \frac{x_i}{1+x_i}\right)^k\\
+    &=\sum_{k\ge 0}\sum_{k_1+\cdots+k_n=k}\binom{k}{k_1,\ldots,k_n}\prod_i \left(\frac{x_i}{1+x_i}\right)^{k_i}\\
+    &=\sum_{k\ge 0}k![y^k]\prod_{i}\sum_{k_i\ge 0}\frac{y^{k_i}}{k_i!}\left(\frac{x_i}{1+x_i}\right)^{k_i}.
+    \end{aligned}
+    $$
+    对每个 $i$，
+    $$
+    [x^{c_i}]\sum_{k\ge 0}\frac{y^{k}}{k!}\left(\frac{x_i}{1+x_i}\right)^{k}
+    $$
+    可以 $O(c_i)$ 计算。最后分治 FFT 即可。
+\end{solution}
+\begin{solution}[另解]
+    我们将 $S$ 要求的同色连续段分解到每个颜色上分别枚举，即变成以下过程：
+    \begin{itemize}
+        \item 考虑颜色 $i$ 的 $c_i$ 个数，它们之间是无序的。将其排成一排，考虑中间的 $c_i-1$ 个空隙，每个空隙都可以粘合起来贡献一个 $P$
+        \item 将粘合得到的连续段做多重排列
+    \end{itemize}
+    做第二步的多重排列时只需要知道每个颜色粘合出的连续段数。令 $x$ 为数的个数的占位元，$y$ 为段数的占位元，则颜色 $i$ 的 GF 为
+    $$
+    [x^{c_i}]\frac{1}{1-y\sum_{k\ge 1}(-1)^{k-1}x^k}=\sum_{k\ge 1}\binom{c_i-1}{k-1}(-1)^{c_i-k}y^k.
+    $$
+    假设颜色 $i$ 粘合出了 $k_i$ 个连续段，则多重排列的方案数为 $\binom{k_1+\cdots+k_n}{k_1,\ldots,k_n}$。故总的关于段数的 EGF 为
+    $$
+    \prod_i \sum_{k\ge 1}\binom{c_i-1}{k-1}(-1)^{c_i-k}\frac{y^{k}}{k!}.
+    $$
+\end{solution}
+\begin{exercise}
+    计算将排列视为循环序列（即额外要求首位置和末位置的数不同）情况下的方案数。
+    \begin{hint}
+    序列构造对应 $\frac{1}{1-F(x)}$，而循环序列构造则对应 $\frac{xF'(x)}{1-F(x)}$。
+    \end{hint}
+\end{exercise}
+
+\section{极大子结构}
+
+在一些问题中，最终的方案可以唯一划分为若干极大子结构。此时，我们对方案计数的方式往往是对极大子结构进行拼接。然而，拼接过程中可能会损失极大性，即我们用两个本应极大的子结构拼出了一个更大的子结构。我们可以通过容斥来取消极大的限制，即使用带容斥系数的任意子结构来进行拼接。通过将一个真正的极大子结构在所有被拼出的方式中容斥系数的总和与其本应贡献的系数进行比较，我们就可以解出所需的容斥系数。\graffiti{似乎很多人管这个叫「符号化容斥」，但是我认为「符号化容斥」显然是一个更大的范畴。}
+
+这个想法也可以解决上一节中的一些问题。在上一节中，我们通过研究 $P_S$ 的合并关系得到每个容斥段的 GF。在 $P_S$ 的合并关系复杂（如同一种合并结果对应多个不同的 $S$）时，我们也可以直接设出所有可能合并结果的容斥系数 GF $F(x)$，然后直接使用 $F(x)$ 作为一个容斥段的 GF。为了求出 $F$，我们可以将一个极大子结构应该具有的贡献系数与被 $F(x)$ 拼出的贡献系数进行比较，从而反解出 $F(x)$。
+
+\begin{example}
+    计算长为 $n$ 且极长 $0$ 连续段长度都在集合 $L\subseteq \mathbb Z^+$ 中的 01 串 $s$ 的数量。
+\end{example}
+\begin{solution}
+    使用长度不在 $L$ 中的 0 连续段进行容斥，合并关系复杂，但是合并结果总是 0 连续段。我们直接设最终合并出的 0 连续段的容斥系数 GF 为 $F(x)$，用 $\frac{1}{1-2x-F(x)}$ 作为答案。
+
+    考察一个长度为 $l\ge 1$ 的极长 0 连续段，它被 $F$ 拼出的系数为 $[x^l]\frac{1}{1-F(x)}$。另一方面，其应有的贡献系数为 $[l\in L]$。于是我们就得到
+    $$
+    \frac{1}{1-F(x)}=1+\sum_{l\in L}x^l.
+    $$
+\end{solution}
+
+\begin{example}[jiangly 的排列数数题]
+    LOJ3395.「2020-2021 集训队作业」Yet Another Permutation Problem
+
+    对每个 $k$，计算不存在长为 $k$ 的连续上升段的排列数量。
+\end{example}
+\begin{solution}
+    使用极长上升段进行拼接，但是拼接可能损失极长性，故考虑容斥，设长为 $i$ 的上升段带有的容斥系数为 $f_i$。假设使用段长 $l_1,l_2,\ldots,l_m$ 进行拼接，则贡献系数为 $\prod f_{l_i}$，方案数为 $\frac{n!}{\prod l_i!}$。于是令 $\tilde F(x)=\sum_i f_ix^i/i!$，答案的 EGF 即为 $\frac{1}{1-\tilde F(x)}$。
+    
+    令 $F(x)=\sum_i f_ix^i$。考察一个长度为 $l\ge 1$ 的极长上升段，它在所有被拼出的方式中总的容斥系数为 $[x^l]\frac{1}{1-F(x)}$。另一方面，其应有的贡献系数为 $[l<k]$。于是我们就得到
+    $$
+    \frac{1}{1-F(x)}=1+\sum_{1\le l<k}x^l=\frac{1-x^{k}}{1-x}.
+    $$
+    这样算出 $F(x)=\frac{x-x^k}{1-x^k}$。于是 $\tilde F(x)$ 只有 $O(n/k)$ 项，求逆的复杂度是 $O(n^2/k)$，总共 $O(n^2\log n)$。一些更好的复杂度可以参见\href{https://www.luogu.com/article/35h660of}{EI 博客}。
+\end{solution}
+
+\begin{exercise}[{U162191 猫的排列计数题}]
+定义一个 $1,2,\cdots,n$ 的排列是好的，当且仅当不存在长为 $m$ 的连续段满足其中相邻两项的差的绝对值均为 $1$。给定 $n,m\le 5\times 10^6$，求好排列的数量。
+\end{exercise}
+
+\begin{exercise}[P7275 计树]
+    
+\end{exercise}
+
+
+\begin{exercise}[{P6151 [集训队作业2019] 青春猪头少年不会梦到兔女郎学姐}]
+    
+\end{exercise}
+
+\begin{example}
+    \href{https://www.luogu.com/article/edia953a}{树上极大同色连通块}    
+\end{example}
+
+
+
+
+
+
+
+
+
+
+\section{M{\"o}bius 反演}
+% \begin{overview}
+% \begin{itemize}
+%     \item 求和符号以及艾弗森括号的使用
+%     \item 化简和式的基本方法
+%     \item 化简和式的常见技巧
+%     \item 下降幂和相关结果
+%     \end{itemize}
+% \end{overview}
+
+在上几节中，我们讨论了一些常用的容斥手法，它们都可以视为以下框架的某种实现：
+\begin{itemize}
+    \item 定义一个偏序集 $(S,\prec)$（如前缀、子集、整除、集合划分加细），一个对象 $a$ 具有一个该偏序集上的状态 $\sigma(a)$。所求为 $\sum_{q\in Q}\sum_a[\sigma(a)=q] w(a)$
+    \item $f(q)=\sum_a [\sigma(a)=q] w(a)$ 不易计算，但是 $g(q)=\sum_{p\succeq q}f(p)=\sum_a [\sigma(a)\succeq q] w(a)$ 容易计算
+    \item 利用 M{\"o}bius 函数在 $f,g$ 之间进行转换：$f(q)=\sum_{p\succeq q}\mu(q,p)g(p)$。这就是\textbf{M{\"o}bius 反演公式}。
+    \item 将 $\sum_{q\in Q}f(q)$ 转换为 $\sum_{p}g(p)\sum_{q\in Q,q\preceq p}\mu(q,p)$ 进行计算。
+\end{itemize}
+
+根据 $f,g$ 的定义和 M{\"o}bius 反演公式，我们需要
+$$
+f(q)=\sum_{p\succeq q}\mu(q,p)g(p)=\sum_{p\succeq q}\mu(q,p)\sum_{r\succeq p}f(r)=\sum_{r}f(r)\left(\sum_{q\preceq p\preceq r}\mu(q,p)\right)
+$$
+对任何 $f,q,r$ 成立，这就给出了 M{\"o}bius 函数满足的方程
+$$
+\sum_{q\preceq p\preceq r}\mu(q,p)=[r=q],
+$$
+可以据此递推计算。
+
+以上过程实际上是在计算可逆线性变换的逆变换。具体来说，记偏序矩阵 $P_{q,p}=[q\preceq p]$，则 $\mathbf g=\mathbf{Pf}$，$\mathbf f=\mathbf P^{-1}\mathbf g$。令 $\mathbf M=\mathbf P^{-1}$，则 $\mu(q,p)=M_{q,p}$。根据逆矩阵的性质，我们有 $\mathbf{MP}=\mathbf{PM}=\mathbf I$。前者即为 $\sum_{q\preceq p\preceq r}\mu(q,p)=[r=q]$，后者则给出另一个方向的 $\sum_{q\preceq p\preceq r}\mu(p,r)=[r=q]$。于是我们得到另一个方向的 M{\"o}bius 反演公式：
+\begin{theorem}[M{\"o}bius 反演]
+    $$
+    \begin{aligned}
+    g(q)=\sum_{p\preceq q}f(p)&\iff f(q)=\sum_{p\preceq q}\mu(p,q)g(p)\\
+    g(q)=\sum_{p\succeq q}f(p)&\iff f(q)=\sum_{p\succeq q}\mu(q,p)g(p)
+    \end{aligned}
+    $$
+\end{theorem}
+
+有时，我们会绕过 $\mu(q,p)$ 直接计算出容斥系数
+$$
+\nu(p)=\sum_{q\in Q,q\preceq p}\mu(q,p).
+$$
+此时，$\nu$ 满足方程
+$$
+\sum_{p\preceq r}\nu(p)=\sum_{q\in Q}\sum_{q\preceq p\preceq r}\mu(q,p)=\sum_{q\in Q}[q=r]=[r\in Q],
+$$
+可以据此解出 $\nu$。
+
+
+\begin{example}[常见偏序集上的 M{\"o}bius 函数]
+    \begin{itemize}
+        \item 全序（线性序）：$\mu_{\mathrm{linear}}(i,j)=[j-i\le 1](-1)^{j-i}$，也就是差分。注意这只和 $j-i$ 有关，故 $\mu_{\mathrm{linear}}(i,j)=\mu_{\mathrm{linear}}(0,j-i)$。此时也可以直接记为 $\mu_{\mathrm{linear}}(j-i)$。
+        \item 直积：$\mu((q_1,p_1),(q_2,p_2))=\mu_1(q_1,p_1)\mu_2(q_2,p_2)$
+        \item 子集：相当于若干个大小为 $2$ 的全序集的直积，故 $\mu(S,T)=(-1)^{|T|-|S|}$
+        \item 整除：相当于每个素数上的全序集的直积，故 $\mu(d,n)=\prod_{p}(-1)^{\mu_{\mathrm{linear}}(v_p(d),v_p(n))}$。用更常见的语言就是 $\mu(d,n)=\mu(1,n/d)=\mu(n/d)$，这里 $\mu(n)=\prod_{p}\mu_{\mathrm{linear}}(v_p(n))$ 与数论中的 M{\"o}bius 函数一致。
+    \end{itemize}
+\end{example}
+
+\begin{example}[序列划分容斥]
+    考虑序列的两个连续段划分 $\pi=(\pi_1,\cdots,\pi_m)$，$\sigma=(\sigma_1,\cdots,\sigma_n)$，定义 $\pi\preceq \sigma$ 当且仅当 $\pi$ 是 $\sigma$ 的加细，即每个 $\sigma_i$ 都是连续的若干个 $\pi_j$ 合并得到的。
+
+    考察 M{\"o}bius 函数 $\mu(\pi,\sigma)$ 满足的方程
+    $$
+    \sum_{\pi\preceq \tau\preceq \sigma}\mu(\pi,\tau)=[\pi=\sigma].
+    $$
+    观察所有可能的 $\tau$，这相当于在每个 $\sigma_i$ 上将 $\pi$ 在 $\sigma_i$ 中的段做一些合并得到的。设 $\sigma_i$ 是由 $k_i$ 个 $\pi_j$ 合并成的，则 $\tau$ 在 $\sigma_i$ 上的划分相当于长为 $k_i$ 的序列上的划分，整个 $\tau$ 则是所有这些 $\sigma_i$ 的划分的直积。根据直积的性质，我们计算每段的 M{\"o}bius 函数然后乘起来即可，而每段都相当于离散划分（完全划分）$\hat 0$ 和平凡划分（完全不划分）$\hat 1$ 之间的 M{\"o}bius 函数 $f_k=\mu(\hat 0_k,\hat 1_k)$。
+    
+    为了计算 $f$，我们再次使用 M{\"o}bius 函数的方程
+    $$
+    \sum_{\tau\preceq \hat 1_k}\mu(\hat 0_k,\tau)=[k=1].
+    $$
+    对于 $\tau=(\tau_1,\tau_2,\ldots,\tau_l)$，其对应的 M{\"o}bius 函数 $\mu(\hat 0,\tau)=\prod_{i=1}^l f_{|\tau_i|}$。于是有
+    $$
+    \sum_{\tau\preceq \hat 1_k}\prod_{i} f_{|\tau_i|}=[k=1].
+    $$
+    使用 GF 枚举连续段划分就得到
+    $$
+    \left[x^k\right]\frac{1}{1-F(x)}=[k=1],
+    $$
+    其中
+    $$
+    F(x)=\sum_i f_ix^i.
+    $$
+    于是 $\frac{1}{1-F(x)}=1+x$，$F(x)=\frac{x}{1+x}$，$f_i=(-1)^{i-1}$。这样我们就得到序列划分容斥的系数 
+    $$
+    \mu(\pi,\sigma)=\prod_{i}(-1)^{\#(\pi|_{\sigma_i})-1},
+    $$
+    其中 $\#(\pi|_{\sigma_i})$ 表示 $\pi$ 对 $\sigma_i$ 划分出的连续段数。
+\end{example}
+\begin{corollary}
+    令 $Q$ 为所有连续段长度都在集合 $L$ 中的划分，需要计算
+    $$
+    \nu(p)=\sum_{q\in Q,q\preceq p}\mu(q,p).
+    $$
+    由于这可以分解为 $p$ 的每个连续段的划分的直积，有
+    $$
+    \nu(p)=\prod_i f(|p_i|),
+    $$
+    其中 $f(k)=\nu(\hat 1_k)$ 是离散划分的 $\nu$。
+
+    枚举 $\hat 1_k$ 的所有长度都在 $L$ 中的连续段划分 $q$，若划分了 $i$ 段，则 $\mu(q,\hat 1_k)=\mu(\hat 0_i,\hat 1_i)=(-1)^{i-1}$。于是
+    $$
+    f(k)=[x^k]\sum_{i\ge 1}(-1)^{i-1}L(x)^i=[x^k]\frac{L(x)}{1+L(x)}.
+    $$
+\end{corollary}
+\begin{exercise}
+    在计算 $\nu(\hat 1_k)$ 时，绕过 M{\"o}bius 函数直接求解方程
+    $$
+    \sum_{p\preceq \hat 1_k}\nu(p)=[\hat 1_k\in Q].
+    $$
+\end{exercise}
+
+\begin{example}[集合划分容斥]
+    考虑集合 $S$ 的两个划分 $\pi=\{\pi_1,\cdots,\pi_m\},\sigma=\{\sigma_1,\cdots,\sigma_n\}$，定义 $\pi\preceq \sigma$ 当且仅当 $\pi$ 是 $\sigma$ 的加细，即每个 $\sigma_i$ 都是若干个 $\pi_j$ 合并得到的。
+
+    考察 M{\"o}bius 函数 $\mu(\pi,\sigma)$ 满足的方程
+    $$
+    \sum_{\pi\preceq \tau\preceq \sigma}\mu(\pi,\tau)=[\pi=\sigma].
+    $$
+    观察所有可能的 $\tau$，这相当于在每个 $\sigma_i$ 上将 $\pi$ 在 $\sigma_i$ 中的块做一些合并得到的。设 $\sigma_i$ 是由 $k_i$ 个 $\pi_j$ 合并成的，则 $\tau$ 在 $\sigma_i$ 上的划分相当于 $[k_i]$ 的所有集合划分，整个 $\tau$ 则是所有这些 $\sigma_i$ 的划分的直积。根据直积的性质，我们计算每段的 M{\"o}bius 函数然后乘起来即可，而每段都相当于离散划分（完全划分）$\hat 0$ 和平凡划分（完全不划分）$\hat 1$ 之间的 M{\"o}bius 函数 $f_k=\mu(\hat 0_k,\hat 1_k)$。
+    
+    为了计算 $f$，我们再次使用 M{\"o}bius 函数的方程。
+    $$
+    \sum_{\tau\preceq \hat 1_k}\mu(\hat 0_k,\tau)=[k=1].
+    $$    
+    
+    对于 $\tau=\{\tau_1,\tau_2,\ldots,\tau_l\}$，其对应的 M{\"o}bius 函数 $\mu(\hat 0,\tau)=\prod_{i=1}^l f_{|\tau_i|}$。于是有
+    $$
+    \sum_{\tau\preceq \hat 1_k}\prod_{i=1}^l f_{|\tau_i|}=[k=1].
+    $$
+    使用 EGF 枚举集合划分就得到
+    $$
+    \left[\frac{x^k}{k!}\right]e^{F(x)}=[k=1],
+    $$
+    其中
+    $$
+    F(x)=\sum_i f_ix^i/i!.
+    $$
+    于是 $e^{F(x)}=1+x$，$F(x)=\ln(1+x)$，$f_i=(-1)^{i-1}(i-1)!$。这样我们就得到集合划分容斥的系数 $\mu(\pi,\sigma)=\prod_{i}(-1)^{\#(\pi|_{\sigma_i})-1}(\#\pi|_{\sigma_i}-1)!$，其中 $\#(\pi|_{\sigma_i})$ 表示 $\pi$ 对 $\sigma_i$ 划分出的块数。
+\end{example}
+\begin{corollary}[转置斯特林反演]
+    考虑集合 $S$ 的所有划分 $p$，设
+    $$
+    f_i=\sum_{|p|=i}w(p)
+    $$
+    为所有恰好 $i$ 个块的划分的总权值，
+    $$
+    g_i=\sum_{|p|=i} \sum_{q\preceq p}w(q)
+    $$
+    为钦定了 $i$ 个块时所有加细划分的总权值，则
+    $$
+    \begin{aligned}
+    g_i&=\sum_{|p|=i} \sum_{q\preceq p}w(q)\\
+    &=\sum_{k}\sum_{|q|=k}w(q)\sum_{p\succeq q,|p|=i} 1\\
+    &=\sum_k \sum_{|q|=k}w(q){k\brace i}\\
+    &=\sum_k {k\brace i}f_k.
+    \end{aligned}
+    $$
+    另一方面，我们有
+    $$
+    \begin{aligned}
+        f_i&=\sum_{|p|=i}w(p)\\
+        &=\sum_{|p|=i}\sum_{r\preceq q\preceq p}w(r)\mu(q,p)\\
+        &=\sum_{k}\sum_{|q|=k}\left(\sum_{r\preceq q}w(r)\right)\sum_{p\succeq q,|p|=i}\mu(q,p).
+    \end{aligned}
+    $$
+    我们已经知道 $\mu(q,p)=\prod_j (-1)^{c_j-1}(c_j-1)!$，其中 $c_j$ 是 $q$ 对 $p_j$ 划分出的块数。在 $q$ 固定的情况下，$\sum_{p\succeq q,|p|=i}\mu(q,p)$ 相当于把大小为 $|q|$ 的集合划分成 $|p|$ 个块，每个块贡献 $(-1)^{\mathrm{size}-1}(\mathrm{size}-1)!$ 的系数，一个方案的权值是每个块贡献系数的乘积，最后计算所有划分方案的总权值和。使用生成函数来枚举这样的划分就得到
+    $$
+    \begin{aligned}
+        \sum_{p\succeq q,|p|=i}\mu(q,p)&=\left[\frac{x^{|q|}}{|q|!}\right]\frac{1}{i!}\left(\sum_{j\ge 1}(-1)^{j-1}(j-1)!\frac{x^j}{j!}\right)^i\\
+        &=\left[\frac{x^{|q|}}{|q|!}\right]\frac{1}{i!}\left(\ln(1+x)\right)^i\\
+        &=(-1)^{|q|-i}{|q|\brack i}.
+    \end{aligned}
+    $$
+    于是
+    $$
+    \begin{aligned}
+        f_i&=\sum_k\sum_{|q|=k}\left(\sum_{r\preceq q}w(r)\right){k\brack i}(-1)^{k-i}\\
+        &=\sum_k {k\brack i}(-1)^{k-i}g_k.
+    \end{aligned}
+    $$
+\end{corollary}
+\begin{exercise}[标准斯特林反演]
+    在 $w(p)$ 只和 $|p|$ 有关时，可以沿着另一个方向做前缀和，这样可以得到标准斯特林反演。令
+    $$
+    f_{|p|}=w(|p|)
+    $$
+    为一个恰好 $i$ 个块的划分的权值，
+    $$
+    g_{|p|}=\sum_{q\succeq p}w(|q|)
+    $$
+    为一个具有 $|p|$ 个块的划分的所有加粗划分的总权值，证明
+    $$
+    g_i=\sum_k {i\brace k}f_k,\quad f_i=\sum_k {i\brack k}(-1)^{i-k}g_k.
+    $$
+\end{exercise}
+\begin{exercise}[斯特林反演与生成函数]
+    $f_i$ 的 EGF 为
+    $$
+    F(x)=\sum_i \frac{x^i}{i!}w(i),
+    $$
+    而 $g_i$ 的 EGF 则可以这样生成： $x$ 代表了合并后的一个块，在合并前它是 $(e^x-1)$，于是 $G(x)=F(e^x-1)$，$F(x)=G(\ln(1+x))$，展开就得到一种形式的斯特林反演。
+    % $$
+    % \begin{aligned}
+    % G(x)&=\sum_q w(|q|)\sum_{p\preceq q}\frac{x^{|p|}}{|p|!}\\
+    % &=\sum_i w(i)\sum_{|q|=i}\sum_{p\preceq q}\frac{x^{|p|}}{|p|!}\\
+    % &=\sum_i w(i)\sum_p \frac{x^{|p|}}{|p|!}\sum_{|q|=i,q\succeq p}1\\
+    % &= \sum_i w(i)\sum_p \frac{x^{|p|}}{|p|!}{|p|\brace i}\\
+    % &=\sum_i w(i)\sum_k {k\brace i}{n\brace k}\frac{x^k}{k!}\\
+    % &=\sum_i w(i)\sum_k {n\brace k}[x^k]\frac{(e^x-1)^i}{i!}\\
+    % &= F(e^x-1).
+    % \end{aligned}
+    % $$
+\end{exercise}
+\begin{exercise}[P10591 BZOJ4671 异或图]
+    
+\end{exercise}
+\begin{exercise}[{P10104 [GDKOI2023 提高组] 异或图}]
+    
+\end{exercise}
+\begin{example}[LOJ6728 U 群把妹王]
+    对 $n\times m$ 棋盘用 $c$ 种颜色染色，使得
+    \begin{itemize}
+        \item 每行按照涂色情况划分等价类，每个等价类大小都在集合 $S$ 中
+        \item 每列按照涂色情况划分等价类，每个等价类大小都在集合 $T$ 中
+    \end{itemize}
+    求方案数。
+\end{example}
+\begin{solution}
+    设 $P$ 为所有合法的行划分，$Q$ 为所有合法的列划分。令 $\sigma_{\mathrm{row}}(a)$ 为染色方案 $a$ 的行等价类划分，$\sigma_{\mathrm{col}}(a)$ 为染色方案 $a$ 的列等价类划分。则所求即
+    $$
+    \sum_{p\in P,q\in Q}\sum_a [\sigma_{\mathrm{row}}(a)=p][\sigma_{\mathrm{col}}(a)=q].
+    $$
+    注意到
+    $$
+    \sum_a [\sigma_{\mathrm{row}}(a)\succeq p][\sigma_{\mathrm{col}}(a)\succeq q]
+    $$
+    是容易计算的：条件相当于 $a$ 在每个 $p_i$ 的行上是同色的，在每个 $q_j$ 的列上是同色的，于是方案数为 $c^{|p||q|}$。于是
+    $$
+    \begin{aligned}
+    &\sum_{p\in P,q\in Q}\sum_a [\sigma_{\mathrm{row}}(a)=p][\sigma_{\mathrm{col}}(a)=q]\\
+    &=\sum_{p\in P,q\in Q}\sum_{p'\succeq p,q'\succeq q}\mu(p,p')\mu(q,q') c^{|p'||q'|}\\
+    &=\sum_{p',q'}c^{|p'||q'|}\left(\sum_{p\in P,p\preceq p'}\mu(p,p')\right)\left(\sum_{q\in Q,q\preceq q'}\mu(q,q')\right).\\
+    \end{aligned}
+    $$
+
+    首先计算出
+    $$
+    \nu_{\mathrm{row}}(p')=\sum_{p\in P,p\preceq p'}\mu(p,p'),\quad \nu_{\mathrm{col}}(q')=\sum_{q\in Q,q\preceq q'}\mu(q,q').
+    $$
+    由 $\nu$ 的方程，有
+    $$
+    \sum_{p'\preceq p}\nu_{\mathrm{row}}(p')=[p\in P],\quad \sum_{q'\preceq q}\nu_{\mathrm{col}}(q')=[q\in Q].
+    $$
+    由于 $\preceq$ 和 $P,Q$ 的限制都是每个块的直积，故与之前的分析类似，$\nu$ 可以分解到 $p'$ 和 $q'$ 的每个块上计算，即
+    $$
+    \nu_{\mathrm{row}}(p')=\prod_i \nu_{\mathrm{row}}(\hat 1_{|p'_i|}),\quad \nu_{\mathrm{col}}(q')=\prod_j \nu_{\mathrm{col}}(\hat 1_{|q'_j|}).
+    $$
+    而 $\nu(\hat 1_k)$ 满足方程
+    $$
+    \sum_{p'\preceq \hat 1_k}\nu_{\mathrm{row}}(p')=[k\in S],\quad \sum_{q'\preceq \hat 1_k}\nu_{\mathrm{col}}(q')=[k\in T].
+    $$
+    使用 EGF 枚举集合划分，令
+    $$
+    F_{\mathrm{row}}(x)=\sum_k \nu_{\mathrm{row}}(\hat 1_k)x^k/k!,\quad F_{\mathrm{col}}(x)=\sum_k \nu_{\mathrm{col}}(\hat 1_k)x^k/k!,
+    $$
+    就有
+    $$
+    \left[\frac{x^k}{k!}\right]\exp(F_{\mathrm{row}}(x))=[k\in S],\quad \left[\frac{x^k}{k!}\right]\exp(F_{\mathrm{col}}(x))=[k\in T],
+    $$
+    据此反解出 
+    $$
+    F_{\mathrm{row}}(x)=\ln\left(1+\sum_{k\in S}\frac{x^k}{k!}\right),\quad F_{\mathrm{col}}(x)=\ln\left(1+\sum_{k\in T}\frac{x^k}{k!}\right).
+    $$
+    
+    现在，整个问题的答案为
+    $$
+    \begin{aligned}
+    &\sum_{p',q'}c^{|p'||q'|}\nu_{\mathrm{row}}(p')\nu_{\mathrm{col}}(q')\\
+    &=\sum_{i,j}c^{ij}\left(\left[\frac{x^n}{n!}\right]\frac{F_{\mathrm{row}}(x)^i}{i!}\right)\left(\left[\frac{x^m}{m!}\right]\frac{F_{\mathrm{col}}(x)^j}{j!}\right).\\
+    \end{aligned}
+    $$
+    首先使用拉格朗日反演配合复合逆 $O(n\log^2 n)$ 计算出
+    $$
+    G_{\mathrm{row}}(u)=\left[\frac{x^n}{n!}\right]\exp\left(uF_{\mathrm{row}}(x)\right),\quad G_{\mathrm{col}}(u)=\left[\frac{x^m}{m!}\right]\exp\left(uF_{\mathrm{col}}(x)\right),
+    $$
+    再使用 $c^{ij}=c^{\binom{i+j}{2}-\binom{i}{2}-\binom{j}{2}}$ 的技巧就可以 $O(n\log n)$ 计算答案
+    $$
+    \begin{aligned}
+    &\sum_{i,j}c^{ij}g_{\mathrm{row},i}g_{\mathrm{col},j}=\sum_k c^{\binom{k}{2}}\left(\sum_{i+j=k} c^{-\binom{i}{2}}g_{\mathrm{row},i}c^{-\binom{j}{2}}g_{\mathrm{col},j}\right)\\
+    \end{aligned}
+    $$
+\end{solution}
+\begin{remark}
+    这题早在 2020 年就被 EI 出出来了，那时还没有 $O(n\log^2 n)$ 的多项式复合算法。
+\end{remark}
+
+\begin{example}[连通子图计数]
+    计算无向图的连通子图个数。$O(n^22^n)$。
+\end{example}
+\begin{solution}
+    令 $\sigma(H)$ 为子图 $H$ 的连通块划分，相当于计算有多少个子图 $H$ 满足 $\sigma(H)=\hat 1_n$。
+
+    发现 $\sigma(H)\preceq p$ 的子图个数是容易计算的：这就是 $2^{\sum_i |E(p_i)|}$。使用 M{\"o}bius 反演得到
+    $$
+    \sum_{p}\mu(p,\hat 1_n)2^{\sum_i |E(p_i)|}=\sum_p (-1)^{|p|-1}(|p|-1)!2^{\sum_i |E(p_i)|}.
+    $$
+    使用集合幂级数表示就是
+    $$
+    2^m[\mathbf x^{[n]}]\sum_{i\ge 1}\frac{(-1)^{i-1}F(\mathbf x)}{i},
+    $$
+    其中
+    $$
+    F(\mathbf x)=\sum_S 2^{|E(S)|}\mathbf x^S.
+    $$
+\end{solution}
+
+\section{反射容斥}
+
+% TODO
+
+% \begin{summary}
+%     \begin{itemize}
+%         \item 熟悉求和符号和艾弗森括号的使用
+%         \item 处理和式的基本方法：简化条件、提出无关项、拆开 $\sum (a_i+b_i)$、下标变换、交换求和号
+%         \item 处理和式的常见技巧：扰动法、对称、差分再求和、分部求和法、指示器变量、和的幂的展开
+%         \item 拆括号容斥
+%         \item 下降幂的差分与求和，普通幂和下降幂的互转
+%     \end{itemize}
+% \end{summary}
+
+
+% \begin{summary}
+%     \begin{itemize}
+%         \item 使用数学归纳法证明结论
+%         \item 写递归式：分离“最后一个”或者“最特殊的一个”元素
+%         \item 解递归式：直接展开求解；计算贡献系数求解
+%     \end{itemize}
+% \end{summary}

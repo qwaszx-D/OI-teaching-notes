@@ -357,6 +357,7 @@ struct Tag
             }
         }
     }
+    // Tag(Info)
     Info operator () (const Info& s) const
     {
         Info ans;
@@ -366,6 +367,7 @@ struct Tag
         ans.a[3]=s.a[3];
         return ans;
     }
+    // Tag(Tag)
     Tag operator () (const Tag& b) const
     {
         if(b.isid) return *this;

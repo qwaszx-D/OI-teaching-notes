@@ -1,0 +1,220 @@
+\chapter{生成树问题}
+
+\section{基本概念和性质}
+
+\begin{definition}[生成树]
+    对于无向图 $G$，如果它的一个生成子图 $H$ 是树，则称 $H$ 是一棵生成树（spanning tree）。
+
+    如果一个子图 $H$ 是由 $G$ 的每个极大连通块的一个生成树组成的，则称 $H$ 是原图的一个生成森林。
+\end{definition}
+\begin{remark}
+    一般来说，考察生成树就能自动得到生成森林的对应结论。因此我们通常只需考虑生成树。在本章中，我们都假设图连通。
+\end{remark}
+\begin{property}[割与生成树]
+    对于图 $G$ 中的一个非空点集 $S\subset V$，$S$ 和 $V\backslash S$ 之间的边称为 $G$ 的一个\textbf{割}(cut)，记作 $\mathrm{cut}(S,V\backslash S)$。一棵生成树必定包含 $\mathrm{cut}(S,V\backslash S)$ 中的至少一条边。
+\end{property}
+
+DFS 树就是一棵生成树。因此，如果只需要找出任意一棵生成树，可以使用 DFS 树。
+
+\begin{definition}[最小生成树]
+    对于带权无向图 $G$ 的所有生成树，边权和最小的那些被称为最小生成树（minimum spanning tree，MST）。
+\end{definition}
+\begin{theorem}[割性质]
+    对任何 $S$，考虑 $\mathrm{cut}(S,V\backslash S)$ 中权值最小的某条边 $e$，它必定被某个 MST 包含；反过来，每个 MST 都包含 $\mathrm{cut}(S,V\backslash S)$ 中权值最小的边中的至少一条。特别地，如果这样的边只有一条，则所有 MST 都包含它。
+\end{theorem}
+\begin{proof}
+    考虑任何一个 MST $\mathcal T$，和 $\mathrm{cut}(S,V\backslash S)$ 中权值最小的某条边 $e$。如果 $e\in\mathcal T$，则结论成立。否则，设 $e=(u,v)$，考虑 $\mathcal T$ 中 $u$ 到 $v$ 的路径，其中必然有一条边 $e'\in \mathrm{cut}(S,V\backslash S)$。将 $e'$ 替换为 $e$ 仍然得到一棵生成树，且不会变劣。可以类似地说明每个 MST 都包含 $\mathrm{cut}(S,V\backslash S)$ 中权值最小的边中的至少一条。
+\end{proof}
+
+\section{算法}
+
+使用割性质可以得到几种不同的求 MST 的算法。
+
+\begin{descbox}{算法}[Prim]
+    维护点集 $S$，初始令 $S=\{1\}$。每次寻找 $\mathrm{cut}(S,V\backslash S)$ 中权值最小的边，将其加入生成树，对应的点加入 $S$。如此反复直到 $S=V$。
+
+    $O(n^2)$（暴力）或 $O(m\log m)$（优先队列）或 $O(m+n\log n)$（支持 $O(1)$ decrease-key 的堆）。
+\end{descbox}
+
+\begin{descbox}{算法}[Borůvka]
+    维护一个连通块划分 $\{S_1,S_2,\ldots,S_k\}$，初始令每个点为一个连通块。每次对每个连通块 $S_i$，选择 $\mathrm{cut}(S_i,V\backslash S_i)$ 中权值最小的边加入生成树。如此反复直到 $k=1$。
+
+    至多 $\log n$ 轮，直接实现即为 $O(m\log n)$
+\end{descbox}
+
+
+\begin{descbox}{算法}[Kruskal]
+    将所有边按权值从小到大排序，依次考虑每条边，如果它连接的两个点不在同一个连通块中，则将其加入生成树。
+       
+    $O(m(\log m+\alpha(m,n)))$（排序、并查集）
+\end{descbox}
+\begin{proof}
+    一种理解 Kruskal 正确性的方式是，将其看做“异步”的 Borůvka 算法，也就是每次在所有 $\mathrm{cut}(S_i,V\backslash S_i)$ 中取一个权值最小的边。由于这样取出来的边权必然是不降的，我们可以改为从小到大扫描所有边并判断每条边是否合法。
+    
+    
+    除了这种理解以外，我们也给出另一个证明，它体现了生成树作为\textbf{拟阵}而具有的性质。设 Kruskal 算法过程中按顺序选择了 $e_1,\cdots,e_{n-1}$ 加入了生成树。我们逐步构造出一棵包含 $e_1,\cdots,e_i$ 的 MST $\mathcal T_i$。假设已经构造出 $\mathcal T_{i-1}$，考虑其边集 $E_{i-1}$。如果 $e_i\in E_{i-1}$，那么直接令 $\mathcal T_i=\mathcal T_{i-1}$ 即可。否则，设 $e_i=(u,v)$，考虑 $u,v$ 在 $\mathcal T_{i-1}$ 中对应的路径。这条路径中必然有一条边 $e$ 满足加入到 $\{e_1,\ldots,e_{i-1}\}$ 中后不会成环，否则它们无法令 $(u,v)$ 连通。而根据 Kruskal 算法的选择顺序，$e_i$ 的权值不大于 $e$ 的权值。于是在 $\mathcal T_{i-1}$ 中将 $e$ 替换为 $e_i$ 得到的生成树 $\mathcal T_i$ 仍然是 MST。
+\end{proof}
+\begin{remark}
+    在考虑 MST 的性质时，权值相同的边有时会造成麻烦。我们可以给这些边添加一个不同的第二关键字来进行比较，第二关键字的排序可以任意选择。对于整数边权的情况，还有一个做法是令 $\tilde w_{e_i}=w_{e_i}\cdot |E|+i$ 来让边权互不相同。
+\end{remark}
+
+\section{Kruskal 与连通性}
+
+\begin{corollary}
+    对于图 $G$，记 $G_{\le W}$ 为只保留权值 $\le W$ 的边得到的子图。则对于任何 $G$ 的 MST $\mathcal T$，$\mathcal T_{\le W}$ 的连通情况都与 $G_{\le W}$ 相同。
+\end{corollary}
+\begin{proof}
+    按 $W$ 归纳，假设 $<W$ 时成立，形成的连通块集合为 $C$。考虑所有权值等于 $W$ 的边。Kruskal 算法构造的 MST $\mathcal T^k$ 中，$\mathcal T^k_{\le W}$ 的连通情况与 $G_{\le W}$ 相同。考虑任意一棵 MST $\mathcal T$，假设其不满足此结论。那么存在 $C$ 中的两个连通块 $\alpha,\beta$，其在 $\mathcal T^k_{\le W}$ 中连通，而在 $\mathcal T_{\le W}$ 中不连通。根据前面 Kruskal 算法的证明过程，可以将 $\mathcal T$ 中的某条权值大于 $W$ 的边替换为 $\mathcal T^k_{\le W}$ 中连接 $\alpha,\beta$ 的边，这样得到一个权值严格更小的生成树，矛盾。
+\end{proof}
+\begin{corollary}
+    任何 MST 都可以通过给同权边按照某种方式定序后由 Kruskal 算法得到。所有 MST 的边权多重集都相同。
+\end{corollary}
+
+\begin{exercise}
+    计算每条边是否能出现在 MST 中；判断 MST 是否唯一。
+\end{exercise}
+\begin{exercise}[{P4208 [JSOI2008] 最小生成树计数}]
+    假设你有一个 $O(n^3)$ 计算生成树数量的算法（即矩阵树定理），设计一个 $O(n^3)$ 计算最小生成树数量的算法。
+\end{exercise}
+
+
+\begin{definition}[最小瓶颈路与最小瓶颈生成树]
+    使得最大边权最小的生成树称为最小瓶颈生成树或瓶颈生成树。
+
+    在 $u,v$ 之间的所有路径中，使得最大边权最小的路径称为 $u,v$ 的最小瓶颈路。
+\end{definition}
+\begin{remark}
+    注意这两个都可能不唯一。
+\end{remark}
+\begin{theorem}
+    MST 是最小瓶颈生成树，反之则不然。MST 中的任意两点之间的路径都是最小瓶颈路，反之则不然。
+\end{theorem}
+
+
+可以使用\textbf{ Kruskal 重构树}来刻画每个 $W$ 对应的 $G_{\le W}$ 的连通性质。
+\begin{descbox}{数据结构}[Kruskal 重构树]
+    从小到大加边合并连通块，过程中每个产生的连通块（包括初始的每个点）都用一个结点表示。一条边合并两个连通块时，将这两个连通块对应的结点作为新连通块对应结点的两个孩子，新结点的权值为这条边的权值。这样得到的二叉树称为 Kruskal 重构树，简称重构树。
+\end{descbox}
+\begin{property}
+    \begin{itemize}
+        \item Kruskal 重构树是二叉树，叶子结点对应原图的点，非叶子结点对应某个连通块。
+        \item 考虑最小的使得 $u,v$ 在 $G_{\le W}$ 中连通的 $W$，则 $W$ 即为 $u,v$ 在 Kruskal 重构树 LCA 的权值。
+        \item 若边权互不相同，则 Kruskal 重构树中一个权值为 $W$ 的结点对应的子树是 $G_{\le W}$ 中的一个连通块。 
+    \end{itemize}
+\end{property}
+
+\begin{example}[{P4768 [NOI2018] 归程}]
+    
+\end{example}
+\begin{exercise}[{P1967 [NOIP 2013 提高组] 货车运输}]
+    
+\end{exercise}
+
+\section{生成树的边交换}
+
+\begin{example}
+    对每条边求出包含/不包含它的生成树中边权和最小的一个。
+\end{example}
+
+\begin{example}[(严格)次小生成树]
+    计算权值和(严格)次小的一棵生成树。
+\end{example}
+\begin{lemma}
+    任取一棵 MST $\mathcal T$，存在一棵(严格)次小生成树与 $\mathcal T$ 只差一条边。
+
+    该结论的证明参见\cref{sec: matroid}。
+\end{lemma}
+\begin{solution}
+    任取一个 MST，枚举一条非树边，从对应的树链中去掉一条边即可。    
+\end{solution}
+
+\begin{example}[增量 MST]
+    加边，查询 MST。
+\end{example}
+\begin{remark}
+    可以配合线段树分治支持删边。
+\end{remark}
+
+\section{稠密图的 MST}
+
+在一些问题中，我们需要对边权由特殊方式给定的规模较大的图计算 MST。此时，以下几个定理可以帮助缩减图的规模。
+\begin{theorem}
+    \begin{enumerate}
+        \item 割性质：如果 $H\subseteq G$ 包含了 $G$ 的所有割的最小边，则 $H$ 的 MST 也是 $G$ 的 MST。
+        \item 环性质：一个环上严格最大的边必定不在任何 MST 中。特别地，如果 $\max(w(u,x),w(x,v))<w(u,v)$，则 $w(u,v)$ 无用。
+        \item 合并性质：$\mathrm{MSF}(\mathrm{MSF}(G) \cup \mathrm{MSF}(H))$ 是 $G\cup H$ 的一个 MSF。
+    \end{enumerate}
+\end{theorem}
+\begin{proof}
+    只证明合并性质。不妨设边权互不相同。显然左边 $\le$ 右边，只需证明右边 $\le$ 左边。考虑 $G$ 中的一条权值为 $W$ 的边 $e=(u,v)$，若 $e$ 不在 $G$ 的 MSF 中，则 $G_{<W}$ 中 $u,v$ 已经连通，故 $(G\cup H)_{<W}$ 中 $u,v$ 也已经连通，从而 $e$ 也不在 $G\cup H$ 的 MSF 中。因此，只有 $G$ 或者 $H$ 的 MSF 中的边才有可能出现在 $G\cup H$ 的 MSF 中。    
+\end{proof}
+
+Borůvka 算法常常可以配合数据结构在 $\tilde O(|S|)$ 时间内计算出 $\mathrm{cut}(S,V\backslash S)$ 的最小边。因此，Borůvka 算法在处理这种问题时常常会更加方便。
+
+\begin{example}
+    一张 $n$ 个点的完全图，对以下每种方式定义的边权，计算 MST 的边权和。
+    \begin{itemize}
+        \item $w(i,j)=a_i+a_j$
+        \item $w(i,j)=|a_i-a_j|$
+        \item $w(i,j)=\max(a_i,a_j)$
+        \item $w(i,j)=\min(a_i,a_j)$
+        \item CF888G $w(i,j)=a_i\oplus a_j$
+        \item $w(i,j)=-(a_i\oplus a_j)$
+        \item P2076 $w(i,j)=|x_i-x_j|+|y_i-y_j|$
+        \item $w(i,j)=-\gcd(a_i,a_j)$
+        \item *$w(i,j)=\gcd(a_i,a_j)$
+        \item $w(i,j)=\mathrm{lcm}(i+1,j+1)$
+        \item T182745 $w(i,j)=\max(a_i,a_j)\bmod \min(a_i,a_j)$
+    \end{itemize}
+\end{example}
+\begin{solution}
+\end{solution}
+
+
+\begin{exercise}
+    $w(i,j)=\omega(\mathrm{lcm}(i,j))$，每次询问 $[l,r]$ 这些点的导出子图的 MST。
+\end{exercise}
+\begin{solution}
+    设 $S(i)$ 为 $i$ 的质因子集合，则 $w(i,j)=|S(i)\cup S(j)|$。注意到 $w(i,j)\ge |S(i)|$，而对于素数 $p$ 总有 $w(i,p)\le |S(i)|+1$。因此，如果 $[l,r]$ 中有素数，那么 $w(i,j)\ge |S(i)|+1$ 的边都可以被 $(i,p)$ 替代。所以我们对每个 $i$ 就只需要考虑那些 $w(i,j)=|S(i)|$ 的边，这等价于 $S(j)\subseteq S(i)$。
+
+    下面假设 $[l,r]$ 中存在素数。首先将 $[l,r]$ 中的所有点按照 $S(i)$ 分类，每类内部可以先连起来。然后对于每个类 $|S|$，考虑它与其他类之间的连边。如果存在一个类 $T\subset S$，那么这个割的最小边为 $|S|$，否则为 $|S|+1$。不难发现第一种连边构成的是一个有根森林，故可以直接把这些边连上，最后再把每个根连到素数上即可。
+
+    现在考察答案的形式，若有 $m$ 个根，则不难发现答案为 $m-2+\sum_{i=l}^r \omega(i)$。设 $l_i=\max(j<i:S(j)\subset S(i))$，$r_i=\min(j>i:S(j)\subset S(i))$，则一个类可以成为根当且仅当这个类中的每个元素 $i$ 都满足 $l_i<l$ 且 $r_i>r$。再记 $\mathrm{pre}_i=\max_{j<i:S(j)=S(i)}$，则进一步有
+    $$
+    m=\sum_{i=l}^r [l_i<l\land  r_i>r \land \mathrm{pre}_i<l],
+    $$ 
+    这是一个三维数点问题，也可以通过容斥变成二维。$l_i$ 和 $r_i$ 的计算可以通过暴力枚举 $S(i)$ 的子集来寻找，这部分复杂度不超过 $\sum_i d(i)=O(n\log n)$。
+    
+    最后，如果没有素数，那么在 OI 常用范围中 $r-l+1$ 都不大，暴力计算 MST 即可。
+\end{solution}
+\begin{remark}
+    $n$ 以内的最大素数间距是多少？这个问题还是开放的。已经证明的范围是 
+    $$
+    \left[\Omega\left(\frac{\log n\log\log n\log^{(4)}n}{\log^{(3)}n}\right),O(n^{0.525})\right].
+    $$
+    Cramér 猜想认为它是 $\Theta(\log^2 n)$ 的。
+\end{remark}
+
+\begin{example}[{离线动态 MST}]
+    P3206 [HNOI2010] 城市建设
+
+    支持修改一条边的权值，询问 MST。
+\end{example}
+
+
+\section{拟阵}\label{sec: matroid}
+
+% TODO：拟阵；凸性；
+
+
+% \begin{summary}
+%     \begin{itemize}
+%         \item 静态区间数据结构的单点修改：修改所有发生变化的预处理区间
+%         \item 批量修改的概念
+%         \item 全局修改与全局询问：快速计算修改 $\Phi$ 对分治信息 $f$ 的影响 $\tau_\Phi$
+%         \item 全局修改与区间询问：修改的复合闭包
+%         \item 区间修改与区间询问：修改的分解
+%         \item 标记与信息的设计原则：1. 根据 \cref{desc: design divide-and-conquer information} 初步设计分治信息；2. 寻找修改的闭包 $\overline{\mathcal M}$；3. 取一个 $\overline{\mathcal M}$ 中的一般修改 $\Phi$，尝试计算修改对信息的影响 $\tau_{\Phi,[l,r]}$，把需要的辅助信息添加进分治信息 $f$。4. 重复第三步直到所有东西都可以计算。
+%         \item 特殊情况的优化：可交换修改的标记永久化、增量修改与前缀查询的树状数组、可差分的修改
+%     \end{itemize}
+% \end{summary}

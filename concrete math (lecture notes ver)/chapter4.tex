@@ -1,0 +1,298 @@
+\chapter{数论}
+\begin{overview}
+    \begin{itemize}
+    \item 同余等差数列的结构
+    \item 处理取整的一些技巧
+    \item 整除分块
+    \item 单位根反演
+    \end{itemize}
+\end{overview}
+\section{课前任务}
+    % 阅读《具体数学》第三章。本章中最重要的内容包括：底和顶（上/下取整）的定义与等价不等式、含有取整的求和的处理方法、$\bmod$ 的部分应用。
+    
+    % 挑选的部分习题：1 3 7 9 12 16 20 22 31 36 39 
+
+    % 课堂练习：2 5 8 10 14 17 21 23 34
+\section{整除}
+
+\begin{definition}
+对于整数 $n$ 和正整数 $m$，如果存在整数 $k$ 使得 $n=mk$，我们就称 $m$ 整除 $n$，记作 $m\mid n$。
+\end{definition}
+\begin{remark}
+    以下几种说法是大致等价的：
+    \begin{itemize}
+        \item $m\mid n$
+        \item $n/m$ 是整数
+        \item $n$ 是 $m$ 的倍数
+        \item $m$ 是 $n$ 的约数/因数/因子
+        \item $n\bmod m=0$
+        \item $n\equiv 0\pmod m$
+    \end{itemize}
+    仅有的分歧在于，在 $n$ 或者 $m$ 为负时，人们对于这些说法的接受程度不同。例如，很少有人会对负的 $n$ 使用约数的说法。
+\end{remark}
+
+\begin{property}
+    \begin{itemize}
+        \item $d\mid n,d\mid m\Rightarrow d\mid (an+bm)$
+        \item 传递性 $a\mid b,b\mid c\Rightarrow a\mid c$
+        \item $d\mid n\Leftrightarrow \frac{n}{d}\mid n$
+    \end{itemize}
+\end{property}
+
+\begin{example}[约数与倍数位置求和]
+    给定数组 $a_1,a_2,\ldots,a_n$。对每个 $i$，求
+    $$
+    b_i=\sum_{d\mid i}a_d,\quad c_i=\sum_{i\mid d}a_d.
+    $$
+\end{example}
+
+\begin{definition}
+    $\gcd,\mathrm{lcm}$；互质 $\perp$
+\end{definition}
+
+\begin{property}
+\begin{enumerate}
+    \item $\gcd(a,b)=\gcd(a,a\pm b)=\gcd(b,a\pm b)$
+    \item $\gcd(a,b)=\gcd(a,a\bmod b)=\gcd(b,a\bmod b)$
+    \item $x\mid a,x\mid b\Leftrightarrow x\mid \gcd(a,b)$
+\end{enumerate}
+\end{property}
+
+\begin{descbox}{算法}[（扩展）Euclid 算法]
+    \graffiti{Euclid 通常翻译成“欧几里得”。}
+    给定整数 $a,b$，Euclid 算法可以计算出 $\gcd(x,y)$。它的扩展可以进一步计算出一组整数 $x,y$ 使得 $ax+by=\gcd(a,b)$。
+\end{descbox}
+
+\begin{theorem}[Bézout 定理]
+    \graffiti{Bézout 通常翻译成“贝祖”或者“裴蜀”，前者发音比较正确。}
+    对于任意整数 $a,b,t$，设 $d=\gcd(a,b)$，则关于 $x,y$ 的不等方程
+    $$
+    ax+by=t
+    $$
+    有解当且仅当 $d\mid t$。假设其一组解为 $(x_0,y_0)$，则解集为
+    $$
+    \{(x_0+k\frac{b}{d}, y_0-k\frac{a}{d}): k\in\mathbb{Z}\}.
+    $$
+\end{theorem}
+
+\section{素数}
+
+如果一个正整数 $p>1$ 只有 $1$ 和 $p$ 两个因子，则称 $p$ 为素数（prime，也称质数）。如果一个正整数 $n>1$ 不是素数，则称它为合数（composite）。特别地，$1$ 既不是素数也不是合数。\graffiti{为什么 $1$ 这么特殊？这是一个不太平凡的问题。}
+
+如果素数 $p$ 整除 $n$，则称 $p$ 是 $n$ 的一个素因子/质因子。
+
+\begin{fact}
+    如果 $n$ 是合数，那么它有一个不超过 $\sqrt{n}$ 的素因子
+\end{fact}
+\begin{exercise}[素性测试]
+    据此得到一个 $O(\sqrt{n})$ 的素数判断算法。
+\end{exercise}
+\begin{remark}
+    素性测试是 $\mathbf P$ 的——AKS 算法可以在 $\tilde O(\log^{12} n)$ 复杂度\graffiti{Lenstra–Pomerance 后来将其改进至 $\tilde O(\log^6 n)$}内判断一个数是否是素数。工业上常用的 Miller-Rabin 素性测试可以在 $O(\log(1/\epsilon)\log n)$ 次加法和乘法内以至少 $1-\epsilon$ 的正确率判断一个数是否是素数。
+\end{remark}
+
+
+\begin{theorem}[素数定理]
+    令 $\pi(n)$ 表示不超过 $n$ 的素数的个数，则
+    $$
+    \frac{\pi(n)}{n}\sim \frac{1}{\ln n}.
+    $$
+    也就是说，大约有 $\frac{1}{\ln n}$ 个整数是素数。
+\end{theorem}
+\begin{corollary}
+    设 $p_n$ 为第 $n$ 个素数，则 $p_n\sim n\ln n$。
+
+    $$
+    \sum_{\text{素数 } p\le n}\frac{1}{p}=\ln\ln n+O(1).
+    $$
+\end{corollary}
+
+\begin{descbox}{算法}[Eratosthenes 筛法]
+    \graffiti{Eratosthenes 通常翻译成“埃拉托色尼”。然而这个名字还是很长，所以我们一般说“埃氏筛法”。“筛法”也常常被简化成“筛”。}
+    给定整数 $n$，埃拉托色尼筛法可以在 $O(n\log\log n)$ 的时间内计算出不超过 $n$ 的所有素数。
+\end{descbox}
+
+\begin{descbox}{算法}[线性筛/欧拉筛]
+    给定整数 $n$，线性筛法可以在 $O(n)$ 的时间内计算出不超过 $n$ 的所有素数。
+\end{descbox}
+\begin{exercise}
+    在 $O(n)$ 时间内计算出 $1,2,\ldots,n$ 中每个数的最小素因子与次数。
+\end{exercise}
+
+\begin{descbox}{算法}[区间筛]
+    可以在 $O((r-l+1)\log\log r+\sqrt{r})$ 时间内筛出 $[l,r]$ 内的所有素数。
+\end{descbox}
+
+\begin{theorem}[唯一分解定理/算数基本定理]
+    任何整数 $n$ 都可以分解成 
+    $$
+    n=\prod_p p^{v_p(n)}
+    $$
+    的形式，其中 $p$ 取遍所有素数。
+    
+    这种分解被称为素因子分解，这样的分解是唯一的。我们用 $v_p(n)$ 表示 $n$ 的素因子分解中 $p$ 的指数。
+\end{theorem}
+\begin{remark}
+    一般来说，我们会忽略 $v_p(n)=0$ 的项。
+\end{remark}
+为了证明这个定理，我们先给出一个引理。
+\begin{lemma}[Euclid 引理]
+    如果 $p$ 是素数，且 $p\mid ab$，则 $p\mid a$ 或 $p\mid b$。
+\end{lemma}
+\begin{proof}
+    若 $p\mid a$ 则定理成立；否则设 $p\not\mid a$。由于 $p$ 是素数，有 $\gcd(a,p)=1$，故存在整数 $x,y$ 使得 $ax+py=1$。那么 $b=b(ax+py)=x\cdot ab+yb\cdot p$ 是 $p$ 的倍数。
+\end{proof}
+\begin{corollary}
+    如果 $p$ 是素数，且 $p\mid a_1a_2\cdots a_n$，则存在 $i$ 使得 $p\mid a_i$。
+\end{corollary}
+\begin{exercise}
+    证明唯一分解定理。
+\end{exercise}
+
+
+\begin{exercise}
+    计算 $n!$ 的素因子分解。
+\end{exercise}
+
+
+
+\begin{lemma}[整除与素因子分解]
+    \begin{itemize}
+        \item $d\mid n$ 当且仅当对每个 $p$ 都有 $v_p(d)\le v_p(n)$
+        \item $v_p(\gcd(n,m))=\min\{v_p(n),v_p(m)\}$
+        \item $v_p(\mathrm{lcm}(n,m))=\max\{v_p(n),v_p(m)\}$
+        \item $n\perp m$ 当且仅当 $n,m$ 的质因子集合不交
+        \item $k\perp n, k\perp m\Leftrightarrow k\perp nm$
+        \item 若 $d\perp n$，则 $d\mid nm\Longleftrightarrow d\mid m$
+    \end{itemize}
+\end{lemma}
+
+\subsection{积性函数}
+
+\begin{definition}
+    若定义在正整数上的函数 $f$ 满足 $n\perp m\Rightarrow f(nm)=f(n)f(m)$，则称 $f$ 为积性函数。
+\end{definition}
+
+\begin{exercise}
+    使用线性筛 $O(n)$ 计算任意积性函数。
+\end{exercise}
+
+\section{取模和同余}
+
+如果 $(a-b)\bmod m=0$，则称 $a$ 与 $b$ 模 $m$ 同余，记作 $a\equiv b\pmod m$。同余是一种\textbf{等价关系}。由定义，$a\equiv b\pmod m\Longleftrightarrow m\mid (a-b)\Longleftrightarrow \exists k,a+km=b$。
+
+\begin{property}[同余的运算性质]
+    \begin{itemize}
+        \item 若 $a_1\equiv a_2\pmod m$，$b_1\equiv b_2\pmod m$，则 $a_1\pm b_1\equiv a_2\pm b_2\pmod m$、$a_1b_1\equiv a_2b_2\pmod m$
+        \item $ad\equiv bd\pmod{md}\Longleftrightarrow a\equiv b\pmod m$
+        \item 如果 $d\perp m$，则 $ad\equiv bd\pmod m\Longleftrightarrow a\equiv b\pmod m$
+        \item $a\equiv b\pmod{cm}\Longrightarrow a\equiv b\pmod m$
+    \end{itemize}
+\end{property}
+\begin{exercise}
+    证明 $ad\equiv bd\pmod m\Longleftrightarrow a\equiv b\pmod{\frac{m}{\gcd(d,m)}}$
+\end{exercise}
+\begin{exercise}
+    不要使用 int128 或 long double，实现以下功能：
+    \begin{itemize}
+        \item 进行一系列加减乘法运算，最后分别输出对 $m_1$，$m_2,\cdots,m_k$ 取模的结果，保证 $m_1m_2\cdots m_k\le 10^9$。只做一遍而不是做 $k$ 遍。
+        \item 进行一系列加减乘法运算，最后输出对 $2^{63}$ 取模的结果。
+    \end{itemize}
+\end{exercise}
+
+模 $m$ 同余作为一个等价关系会将整数划分为若干等价类，$i$ 所在的等价类为 $\bar i=\{i+km:k\in \mathbb Z\}$。对每个等价类选择一个代表元，这些代表元组成的集合被称为模 $m$ 的一个完全剩余系，简称剩余系。通常来说，我们会选择 $\{0,1,2,\ldots,m-1\}$ 作为模 $m$ 的剩余系。
+\begin{remark}
+    用抽象代数的语言来说，所有等价类构成的集合称为 $\mathbb Z/m\mathbb Z$，它是一个环。
+\end{remark}
+
+\subsection{逆元}
+
+如果存在 $b$ 使得 $ab\equiv 1\pmod m$，则称 $b$ 是 $a$ 在模 $m$ 下的逆或逆元，记作 $a^{-1}$。
+
+\begin{theorem}
+    $a$ 在模 $m$ 下有逆元当且仅当 $\gcd(a,m)=1$。如果 $a$ 在模 $m$ 下有逆元，则它的逆元是唯一的。
+\end{theorem}
+\begin{corollary}
+    若 $p$ 是质数，则任何非零元素在模 $p$ 下都有逆元。
+\end{corollary}
+\begin{exercise}
+    利用 Euclid 算法判断逆元存在性，如果存在则求出逆元。
+\end{exercise}
+
+\begin{descbox}{算法}[递推求逆元]
+    对于素数 $p$，可以在 $O(n)$ 时间内递推 $1,2,\ldots,n$ 在模 $p$ 下的逆元。具体来说，设 $k=\lfloor p/i\rfloor$，$r=p\bmod i$，那么 $p=ki+r$。于是
+    $$
+    \begin{aligned}
+    ki+r&\equiv 0\pmod p\\
+    k+ri^{-1}&\equiv 0\pmod p\\
+    i^{-1}&\equiv -kr^{-1}\pmod p
+    \end{aligned}
+    $$
+    由于 $r<i$，我们可以据此从小到大计算出 $i^{-1}$。
+\end{descbox}
+\begin{descbox}{算法}[线性求逆元]
+    可以在 $O(n+\log p)$ 时间内计算出 $n$ 个数在模 $p$ 下的逆元。
+\end{descbox}
+
+\begin{definition}
+    $\{1\le a<m:\gcd(a,m)=1\}$ 称为模 $m$ 的一个简化剩余系。其大小被称为\textbf{Euler 函数}\graffiti{Euler 通常被翻译为“欧拉”。欧拉是历史上最伟大的数学家之一。}，记作 $\varphi(m)$。
+\end{definition}
+\begin{exercise}
+    对于素数 $p$，证明 $\varphi(p^k)=p^k-p^{k-1}$。
+\end{exercise}
+
+\begin{theorem}[Euler 定理]
+    如果 $\gcd(a,m)=1$，则 $a^{\varphi(m)}\equiv 1\pmod m$。
+\end{theorem}
+\begin{corollary}[Fermat 小定理]
+    \graffiti{Fermat 通常被翻译为“费马”或“费尔马”。}
+    如果 $p$ 是素数，且 $p\nmid a$，则 $a^{p-1}\equiv 1\pmod p$。
+\end{corollary}
+\begin{corollary}
+    如果 $p$ 是素数，且 $p\nmid a$，则 $a^{-1}\equiv a^{p-2}\pmod p$。
+\end{corollary}
+
+
+\subsection{中国剩余定理}
+
+\begin{theorem}[中国剩余定理]
+    设 $m_1,m_2,\ldots,m_k$ 两两互素，则同余方程组
+    $$
+    \begin{cases}
+        x\equiv a_1\pmod{m_1} \\
+        x\equiv a_2\pmod{m_2} \\
+        \vdots \\
+        x\equiv a_k\pmod{m_k}
+    \end{cases}
+    $$
+    在模 $m_1m_2\cdots m_k$ 下有唯一解。
+\end{theorem}
+\begin{corollary}
+    若 $m_1,\ldots,m_k$ 两两互素，则 $\forall i,x\equiv 1\pmod m_i$ 等价于 $x\equiv 1\pmod{m_1m_2\cdots m_k}$
+\end{corollary}
+\begin{exercise}
+    证明欧拉函数是积性函数。
+\end{exercise}
+
+中国剩余定理的主要作用是将模合数转为模若干个素数幂下的运算。相比一般的合数，素数幂的性质往往要好得多。
+
+\subsection{同余等差数列}
+
+序列 $(ik\bmod n)_{i=0}^{n-1}$ 长什么样子？当 $\gcd(k,n)=1$ 时，这是 $0,\ldots,n-1$ 的一个排列。这是因为对任何 $0\le i<j<n$，$n\not|(j-i)k$，从而 $ik\bmod n\ne jk\bmod n$。
+
+当 $\gcd(k,n)=d$ 时，$ik\bmod n=d(i(k/d)\bmod (n/d))$，而 $\gcd(k/d,n/d)=1$。所以此时序列是 $0,\ldots,n/d-1$ 的一个排列重复 $d$ 次。
+
+\begin{exercise}
+    给定质数 $p\le 10^7$。$q$ 次询问，每次给定 $a,k,l,r$，计算
+    $$
+    \left(\prod_{i=l}^{r}(a+ik)\right)\bmod p
+    $$
+\end{exercise}
+\begin{exercise}
+    \begin{itemize}
+        \item 把 $p$ 换成\textbf{合数} $m\le 10^7$，保证 $m$ 是若干不同质数的乘积。
+        \item *把 $p$ 换成素数幂 $p^k$，保证 $p^k\le 10^7$
+        \item *把 $p$ 换成任意合数 $m$，保证 $m\le 10^7$
+        \item **把 $p$ 换成任意合数 $m$，保证 $qm\le 10^11$
+    \end{itemize}
+\end{exercise}

@@ -18,7 +18,20 @@ Border 具有以下的性质：
 
 因此，我们通常关注 $s$ 的最长 border。设 $f(i)$ 为 $s[1,i]$ 的最长 border 长度，则 $s$ 的所有 border 即为 $f(n),f(f(n)),f(f(f(n))),\ldots$（$n=|s|$）。
 
-KMP 算法可以线性求出一个字符串所有前缀的最长 border。注意到如果 $s[1,j]$ 是 $s[1,i]$ 的 border，那么 $s[1,j-1]$ 一定是 $s[1,i-1]$ 的 border。因此，我们可以从长到短逐个遍历 $s[1,i-1]$ 的所有 border，并判断其添加一个字符后是否能变成 $s[1,i]$ 的 border。首次成功的那一个就是 $s[1,i]$ 的最长 border。
+KMP 算法可以线性求出一个字符串所有前缀的最长 border，其核心是以下引理：
+\begin{lemma}
+    若 $s[1,j]$ 是 $s[1,i]$ 的 border，则 $s[1,j-1]$ 是 $s[1,i-1]$ 的 border。反过来，若 $s[1,j-1]$ 是 $s[1,i-1]$ 的 border 且 $s[j]=s[i]$，则 $s[1,j]$ 是 $s[1,i]$ 的 border。
+\end{lemma}
+\begin{corollary}\label{coro: border recurrence}
+    设 $B(i)$ 为 $s[1,i]$ 的所有 border 长度构成的集合，则
+    $$
+B(i)=\{j+1:j\in B(i-1),s[j+1]=s[i]\}\uplus\{0\}.
+    $$
+\end{corollary}
+
+\begin{descbox}{算法}[KMP 算法]
+    设 $1,\ldots,i-1$ 的 $f$ 均已求出。为了求出 $f_i$，从长到短逐个遍历 $s[1,i-1]$ 的所有 border $j$，判断 $s[j+1]=s[i]$ 是否成立，首次成立时有 $f_i=j+1$。
+\end{descbox}
 \begin{lstlisting}[language=C++]
 f[1]=0;
 for (int i=2, j=0; i<=n; i++) {
@@ -44,13 +57,13 @@ for (int i=2, j=0; i<=n; i++) {
     求出每个前缀 $s[1,i]$ 最长的长度不超过 $l_i$ 的 border。
 \end{exercise}
 
-除了计算每个前缀的最长 border 以外，也可以计算每个前缀的\textbf{所有} border。注意到 $s[1,j]$ 是 $s[1,i]$ 的 border 当且仅当 $s[1,j-1]$ 是 $s[1,i-1]$ 的 border 且 $s[j]=s[i]$。也就是说，我们只要在 $s[1,i-1]$ 的 border 中删去下一个字符不等于 $s[i]$ 的，然后让所有 border 的长度加一即可。删除可以这样完成：对每个 $j$，我们维护 $\texttt{next[j]}$ 表示 $s[1,j]$ 的 border 中最长的满足 $s[b+1]\ne s[j+1]$ 的 border $b$。这样，我们就可以每次 $O(1)$ 地找到一个需要删除的 border。
+\cref{coro: border recurrence} 也同时给出了维护每个 $i$ 的 border 集合 $B(i)$ 的方法：从 $B(i-1)$ 中删去所有 $s[j+1]\ne s[i]$ 的 $j$，然后让所有元素加一，最后加入 $0$ 即可。为了快速删除 $s[j+1]\ne s[i]$ 的 $j$，我们可以对 border 链进行划分。称满足 $s_{j+1}=s_{f_j+1}$ 的边 $f_j\to j$ 为\textbf{同色边}，同色边构成的链称为\textbf{同色链}。不难发现一条同色链上的点 $j$ 的 $s_{j+1}$ 都是相同的，因此它们要么都被删除，要么都不被删除。此外，若一条同色链不被删除，则这条链上方的同色链必然被删除。记 $\mathrm{tp}_j$ 为 $j$ 所在的同色链链顶结点，我们可以在 KMP 过程中顺便计算出 $\mathrm{tp}_j$。每次寻找需要删除的元素时，若当前的 $j$ 需要被删除则删除 $j$ 并令 $j\gets f_j$，否则令 $j\gets f_{\mathrm{tp}_j}$ 即可。这样，我们可以每次 $O(1)$ 地找到一个需要删除的 $j$。由于递推 $B(i)$ 时每次只会向集合中添加一个元素 $0$，故总共添加的元素数量不超过 $n$，从而总共删除的元素数量也不超过 $n$，复杂度 $O(n)$。
 \begin{exercise}[CF1286E]
     维护字符串 $S$ 和序列 $a$，定义 $i$ 的权值为 $a$ 的后缀 $\min$ 在 $i+1$ 处的值。支持在 $S$ 末尾添加一个字符同时在 $a$ 末尾添加一个数，然后查询 $S$ 的所有周期的权值之和。强制在线。
 \end{exercise}
 
 
-周期可以诱导更长的周期：
+接下来，我们研究周期的一些性质。首先，周期可以诱导更长的周期：
 \begin{fact}
     如果 $p,q$ 都是 $s$ 的周期，那么 $p+q$ 也是 $s$ 的周期。
 \end{fact}
@@ -79,7 +92,7 @@ for (int i=2, j=0; i<=n; i++) {
 
 周期引理直接刻画了所有的短周期。
 \begin{corollary}\label{cor:characterization of short periods}
-    设 $p$ 是 $s$ 的最短周期。则对于所有满足 $x+p\le |s|$ 的周期 $x$，都有 $x\bmod p=0$。反过来，任何满足 $x+p\le |s|$ 且 $x\bmod p=0$ 的正整数 $x$ 都是 $s$ 的周期。
+    设 $p$ 是 $s$ 的最短周期，$q\le |s|-p+1$，则 $q$ 是周期当且仅当 $p|q$。
 \end{corollary}
 \begin{corollary}
     $s$ 的不超过 $|s|/2$ 的所有周期构成一个等差数列，$s$ 的长度 $\ge |s|/2$ 的所有 border 构成一个等差数列，且公差均为 $s$ 的最短周期。
@@ -90,6 +103,22 @@ for (int i=2, j=0; i<=n; i++) {
 \begin{remark}
     可以这样构造一个达到 $\frac{\log_2 |s|}{2}$ 的字符串：设 $c_i$ 是两两不同的字符，令 $s_1=c_1$，$s_i=s_{i-1}c_is_{i-1}$ 即可。
 \end{remark}
+
+我们可以将周期的这些性质与失配树联系起来。
+\begin{lemma}
+    设 $p=i-f_i$，则当 $\mathrm{tp}_i\ne i$ 时有 $f_{\mathrm{tp}_i}<p-1$。
+\end{lemma}
+\begin{proof}
+    反证，假设 $f_{\mathrm{tp}_i}\ge p-1$。首先，$p$ 是 $s[1,i]$ 的最短周期。由于 $\mathrm{tp}_i$ 和 $f_{\mathrm{tp}_i}$ 都是 $s[1,i]$ 的 border，故 $i-\mathrm{tp}_i$ 和 $q=i-f_{\mathrm{tp}_i}$ 都是 $s[1,i]$ 的周期。由于 $f_{\mathrm{tp}_i}\ge p-1$，故 $q+p-1\le i$，从而\cref{cor:characterization of short periods}说明 $i$ 到 $f_{\mathrm{tp}_i}$ 这条链刚好是一个等差数列 $\{i-kp\}$，故 $f_{\mathrm{tp}_i}=\mathrm{tp}_i-p$。
+
+    由于 $p$ 是 $s[1,i]$ 的周期，有 $s_{\mathrm{tp}_i+1}=s_{tp_i+1-p}=s_{f_{\mathrm{tp}_i}+1}$，故 $f_{\mathrm{tp}_i}\to \mathrm{tp}_i$ 是同色边，与 $\mathrm{tp}_i$ 的定义矛盾。
+\end{proof}
+\begin{corollary}
+    $i$ 到根的路径上至多有 $O(\log i)$ 条异色边。
+\end{corollary}
+\begin{proof}
+    令 $p=i-f_i$。若 $p\ge i/3$，则 $f_i\le 2i/3$，跳一条边后 $i'\le 2i/3$。若 $p<i/3$ 且 $\mathrm{tp}_i\ne i$，则 $f_{\mathrm{tp}_i}<p-1<i/3$，故跳到链顶再跳一条异色边后 $i'\le i/3$。最后，若 $p<i/3$ 且 $\mathrm{tp}_i=i$，则必有 $f_{f_i}=i-2p$，$s_{f_i+1}=s_{f_{f_i}+1}$，故 $\mathrm{tp}_{f_i}\ne f_i$，从而跳两条异色边后 $i'\le i/3$。
+\end{proof}
 
 \begin{exercise}
     在预处理出 $f$ 后，$O(\log n)$ 地计算某个前缀 $s[1,i]$ 的所有 border 的等差数列表示。    

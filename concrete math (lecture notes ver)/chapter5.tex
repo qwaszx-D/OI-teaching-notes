@@ -15,6 +15,19 @@
     
 挑选的习题\graffiti{这是两周的量}：2 3 4 5 8 14 15 16 35 36 37 40 41 43 45 46 47 59 61 63 64 67 70 71 73 74 76 77 79
 
+\section{组合数的计算}
+
+有以下几种方法可以计算组合数取模：
+\begin{itemize}
+    \item 利用 $\binom{r}{k}=\frac{r^{\underline{k}}}{k!}$ 直接计算，$O(k)$，需要素数模数且 $k<p$
+    \item 利用 $\binom{n}{m}=\binom{n-1}{m}+\binom{n-1}{m-1}$ 递推预处理，$O(nm)$ 计算所有 $i\le n,j\le m$ 的 $\binom{i}{j}$。可以做任意模数
+    \item 利用 $\binom{n}{m}=\frac{n!}{m!(n-m)!}$ 计算，$O(n)$ 预处理所有 $i\le n$ 的 $i!$ 和 $(i!)^{-1}$ 后 $O(1)$ 查询。需要素数模数且 $n<p$。
+    \item 利用上一条与 Lucas 定理 $\binom{n}{m}\equiv \binom{\lfloor n/p\rfloor}{\lfloor m/p\rfloor}\binom{n \bmod p}{m \bmod p} \pmod p$，$O(p)$ 预处理后 $O(\log_p n)$ 查询。需要 $p$ 为素数
+    \item *利用中国剩余定理分解为对 $p^k$ 取模，然后将被 $p$ 整除和不被 $p$ 整除的部分分开计算。
+    \item *快速阶乘算法
+    \item *利用 $\binom{n}{m}=[x^m](1+x)^n$，快速幂计算 $(1+x)^n\bmod x^{m+1}$。$O(m^2\log n)$ 计算所有 $i\le m$ 的 $\binom{n}{i}$，可以做任意模数。
+\end{itemize}
+
 \section{组合计数原理}
 
 \subsection{加法、乘法、减法原理}

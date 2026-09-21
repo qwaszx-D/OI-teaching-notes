@@ -1,0 +1,194 @@
+\chapter{等价类计数}
+
+% \begin{overview}
+% \begin{itemize}
+%     \item 递归式的概念
+%     \item 寻找递归式的基本方法
+%     \item 数学归纳法
+%     \item 解递归式的一些方法
+% \end{itemize}
+% \end{overview}
+
+\begin{definition}[群]
+    \textbf{群（Group）}是一个集合 $G$ 与一个二元运算 $\circ$ 的组合，满足以下四个条件：
+    \begin{enumerate}
+        \item 封闭性：对于任意 $a, b \in G$，有 $a \circ b \in G$。
+        \item 结合律：对于任意 $a, b, c \in G$，有 $(a \circ b) \circ c = a \circ (b \circ c)$。
+        \item 单位元：存在一个元素 $1 \in G$，使得对于任意 $a \in G$，有 $1 \circ a = a \circ 1 = a$。
+        \item 逆元：对于任意 $a \in G$，存在一个元素 $a^{-1} \in G$，使得 $a \circ a^{-1} = a^{-1} \circ a = 1$。
+    \end{enumerate}
+    我们经常会把 $\circ$ 像乘法一样省略不写。
+
+    集合 $G$ 的大小称为群的\textbf{阶（Order）}，记为 $|G|$。
+\end{definition}
+\begin{remark}
+    不严格地说，“可逆且结合的运算”构成群。无限群也是存在的，此时其阶为 $G$ 的势。我们这里只关注有限群。
+\end{remark}
+
+\begin{example}
+    验证以下是群，并找出单位元和逆元：
+    \begin{itemize}
+        \item 在 $\mathbb F^{\times}\times \mathbb F$ 上定义 $(a_0,a_1)\circ (b_0,b_1)=(a_0b_0,a_0b_1+a_1b_0)$，其中 $\mathbb F$ 是一个域。
+    \end{itemize}
+    % TODO：加点例子
+\end{example}
+
+\begin{definition}[子群]
+    
+\end{definition}
+
+\begin{example}
+    % TODO：加点例子
+\end{example}
+
+\begin{definition}[陪集]
+    设 $H$ 是群 $G$ 的一个子群，对于 $g \in G$，定义
+    $$
+    gH=\{gh:h\in H\},\quad Hg=\{hg:h\in H\}.
+    $$
+    $gH$ 称为 $H$ 的一个\textbf{左陪集（Left Coset）}，$Hg$ 称为 $H$ 的一个\textbf{右陪集（Right Coset）}。一个陪集中的任何一个元素都可以称为该陪集的一个代表元。
+
+    $H$ 的所有左陪集构成集合 $\{gH : g \in G\}$，所有右陪集构成集合 $\{Hg:g\in G\}$。
+\end{definition}
+\begin{remark}
+    注意 $\{gH:g\in G\}$ 是以\textbf{左陪集}为元素的集合，且自动去重。
+\end{remark}
+\begin{exercise}
+    \begin{itemize}
+        \item 证明 $g_1H=g_2H\iff g_1^{-1}g_2\in H$。
+        \item 证明 $H$ 的所有左陪集构成 $G$ 的一个划分，即两个的左陪集要么不交要么相等。
+        \item 证明 $|gH|=|H|$，即每个左陪集的大小都为 $|H|$。
+    \end{itemize}
+\end{exercise}
+
+\begin{theorem}[Lagrange 定理]
+    设 $H$ 是群 $G$ 的一个子群，则 $|G|=|H|\cdot [G:H]$，其中 $[G:H]$ 为 $H$ 的左陪集个数。
+\end{theorem}
+
+\begin{definition}[群作用]
+    对于群 $G$ 、集合 $X$ 和它们之间的运算 $G \times X \to X$，记 $(g,x)$ 的运算结果为 $g\cdot x$（$\cdot$ 通常会像乘法一样省略不写）。若该运算满足以下条件：
+    \begin{enumerate}
+        \item $1x \cdot x = x$。
+        \item $(g_1 \circ g_2) \cdot x = g_1 (g_2 x)$
+    \end{enumerate}
+    则称该运算为一个 $G$ 在 $X$ 上的\textbf{群作用（Group Action）}。
+\end{definition}
+
+\begin{definition}[轨道]
+    对于群 $G$ 在集合 $X$ 上的群作用，定义元素 $x \in X$ 的\textbf{轨道（Orbit）}为
+    $$
+    Gx=\{g\cdot x:g\in G\}.
+    $$
+
+    记 $X/G=\{Gx:x\in X\}$ 为所有轨道的集合。
+\end{definition}
+\begin{exercise}
+    证明 $X/G$ 是 $X$ 的一个划分。
+\end{exercise}
+\begin{definition}[稳定化子]
+    对于群 $G$ 在集合 $X$ 上的群作用，定义元素 $x \in X$ 的\textbf{稳定化子（Stabilizer）}为
+    $$
+    G_x=\{g\in G:gx=x\}.
+    $$
+\end{definition}
+\begin{exercise}
+    \begin{itemize}
+        \item 证明 $G_x$ 是 $G$ 的一个子群。
+        \item 证明 $Gx$ 与 $G_x$ 的所有陪集一一对应
+    \end{itemize}
+\end{exercise}
+\begin{theorem}[轨道-稳定化子定理]
+    对于群 $G$ 在集合 $X$ 上的群作用，任意 $x \in X$，有
+    $$
+    |Gx|=|G:G_x|=|G|/|G_x|
+    $$
+\end{theorem}
+
+\begin{definition}
+    对于群 $G$ 在集合 $X$ 上的群作用，定义 $X^g=\{x\in X:gx=x\}$ 为元素 $g$ 的\textbf{不动点集（Fixed Point Set）}。
+\end{definition}
+\begin{lemma}[Burnside 引理]
+    $$
+    |X/G|=\frac{1}{|G|}\sum_{g\in G}|X^g|,
+    $$
+\end{lemma}
+\begin{proof}
+$$
+\begin{aligned}
+    \sum_{g\in G}|X^g|&=\sum_{g\in G}\sum_{x\in X}[gx=x]\\
+    &=\sum_{x\in X}\sum_{g\in G}[g\in G_x]\\
+    &=\sum_{x\in X}|G_x|\\
+    &=\sum_{x\in X}\frac{|G|}{|Gx|}\\
+    &=|G|\sum_{x\in X}\frac{1}{|Gx|}\\
+    &=|G||X/G|.
+\end{aligned}
+$$
+\end{proof}
+
+在 OI 中，我们通常会研究置换群的一个子群 $G\in S_n$ 在 $n$ 元集合 $[n]$ 上的自然作用 $\pi\cdot i=\pi_i$。Burnside 引理给出了计算在 $G$ 的作用下不同对象数量的方法。例如，P\'olya 计数原理给出了在 $G$ 的作用下不同染色方案的数量。
+
+\begin{corollary}[P\'olya 计数]
+    用 $m$ 种颜色给 $n$ 个球染色，若两种染色方案可以通过某个置换 $g\in G$ 的作用变得相同（另一种常见的说法是在 $G$ 的作用下等价），则认为它们是相同的方案。不同染色方案的数量为
+    $$
+    \frac{1}{|G|}\sum_{g\in G}m^{c(g)},
+    $$
+    其中 $c(g)$ 为置换 $g$ 的环分解中环的个数。
+\end{corollary}
+\begin{proof}
+    Burnside 引理给出
+    $$
+    \begin{aligned}
+        |X/G|&=\frac{1}{|G|}\sum_{\pi\in G}|X^\pi|,
+    \end{aligned}
+    $$
+    考虑 $X^\pi$ 是什么。染色 $a$ 在 $\pi$ 作用下不变相当于是说对每个 $i$ 都有 $a_i=a_{\pi_i}$。在 $\pi$ 的环分解中考虑，这等价于每个环上 $a_i$ 都相同。于是不变的 $a$ 的数量为 $m^{c(\pi)}$，这就完成了证明。
+\end{proof}
+
+在大部分应用中，我们需要把 $g$ 按照 $c(g)$ 分类，即计算
+$$
+\frac{1}{|G|}\sum_{k=1}^{n}|\{g\in G:c(g)=k\}|m^k.
+$$
+\begin{example}[{P4980 【模板】P\'olya 定理}]
+    用 $m$ 种颜色给 $n$ 个球染色，$G$ 为其所有轮换（或者说旋转），计数 $G$ 作用下的染色方案。
+\end{example}
+
+\begin{example}[P\'olya 计数+生成函数]
+    用 $m$ 种颜色给 $n$ 个球染色，$G$ 为其所有轮换，且要求第 $i$ 种颜色用了 $r_i$ 次。计算在 $G$ 的作用下的不同染色方案数。
+\end{example}
+\begin{solution}
+    使用 Burnside 引理，依旧考虑 $X^{\pi}$ 的计算。由于对每种颜色的数量有要求，使用生成函数处理这个要求。设 $x_i$ 为第 $i$ 种颜色的占位元，则 $\pi$ 的环分解中一个大小为 $k$ 的环的生成函数为
+    $$
+    \sum_{i=1}^{m}x_i^k,
+    $$
+    总的 GF 即为每个环的 GF 的乘积。故 
+    $$
+    |X^\pi|=[\mathbf x^{\mathbf r}]\prod_{i=1}^{c(\pi)}\sum_{j=1}^{m}x_j^{k_i}.
+    $$ 
+
+    我们已经知道所有可能的环分解类型：$d$ 个大小为 $n/d$ 的环，对应 $\varphi(n/d)$ 个 $\pi$。于是答案为
+    $$
+    \begin{aligned}
+    &\sum_{d\mid n}\varphi(n/d)[\mathbf x^{\mathbf r}]\left(\sum_{j=1}^{m}x_j^{n/d}\right)^d\\
+    &=\sum_{d\mid n}\varphi(d)[\mathbf x^{\mathbf r}]\left(\sum_{j=1}^{m}x_j^{d}\right)^{n/d}\\
+    &=\sum_{d\mid n}\varphi(d)[d\mid \mathbf r][\mathbf x^{\mathbf r/d}]\left(\sum_{j=1}^m x_j\right)^{n/d}\\
+    &=\sum_{d\mid n}\varphi(d)[d\mid \mathbf r]\binom{n/d}{\mathbf r/d}.
+    \end{aligned}
+    $$
+\end{solution}
+\begin{corollary}
+    % 另一个形式。TODO
+\end{corollary}
+
+\begin{example}[多边形计数]
+    考虑一个边长序列 $l_1,\ldots,l_n\in (\mathbb Z^+)^n$，它可以构成一个 $n$ 边形当且仅当最大的一个 $l_i$ 小于其他 $l_j$ 之和。
+    
+    若两个边长序列在翻转和对称下等价则认为是相同的序列。计数有多少个不同的周长不超过 $L$ 的可以构成 $n$ 边形的边长序列。
+\end{example}
+
+% \begin{summary}
+%     \begin{itemize}
+%         \item 使用数学归纳法证明结论
+%         \item 写递归式：分离“最后一个”或者“最特殊的一个”元素
+%         \item 解递归式：直接展开求解；计算贡献系数求解
+%     \end{itemize}
+% \end{summary}
