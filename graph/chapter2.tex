@@ -33,7 +33,7 @@
 \end{exercise}
 
 \begin{lemma}[边双连通的刻画]
-    以下四点等价：
+    设 $G$ 是连通图，以下四点等价：
 \begin{itemize}
     \item $G$ 是边双连通图
     \item $G$ 中没有桥
@@ -51,14 +51,14 @@
         \item 说明边双连通分量构成了点集的一个划分。
         \item 证明该划分与边连通性的等价类划分相同。
         \item 证明该划分与删掉所有桥后得到的连通块集合相同。
-        \item 证明把每个边双连通分量缩成一个点后会得到一棵恰包含所有桥的树。
+        \item 证明把每个边双连通分量缩成一个点后会得到一棵恰包含所有桥的森林。
     \end{itemize}
 \end{exercise}
 
 \subsection{点双连通}
 
 \begin{exercise}
-    在有至少三个点的图中，证明桥的至少一个端点是割点。
+    在有至少三个点的连通图中，证明桥的至少一个端点是割点。
 \end{exercise}
 
 \begin{definition}[点双连通性]
@@ -82,7 +82,7 @@
 \end{exercise}
 
 \begin{lemma}[点双连通的刻画]
-    设 $G$ 至少有三个点。以下四条等价：
+    设连通图 $G$ 至少有三个点。以下四条等价：
 \begin{itemize}
     \item $G$ 是点双连通图
     \item $G$ 中没有割点
@@ -100,7 +100,7 @@
     \begin{itemize}
         \item 证明两个点双连通分量至多有一个交点，且该交点是割点
         \item 证明一条边或一个简单环恰好属于一个点双连通分量
-        \item 对每个点双连通分量 $S$ 建立一个方点，原图中的点 $u$ 建立一个圆点。若 $u\in S$ 则在 $u,S$ 之间连无向边。证明这样会得到一棵树。这就是\textbf{圆方树（Block-Cut Tree）}。
+        \item 对每个点双连通分量 $S$ 建立一个方点，原图中的点 $u$ 建立一个圆点。若 $u\in S$ 则在 $u,S$ 之间连无向边。证明这样会得到一个森林。这就是\textbf{圆方树（Block-Cut Tree）}。
     \end{itemize}
 \end{exercise}
 
@@ -137,7 +137,7 @@
 \subsection{耳分解}
 
 \begin{definition}[耳和耳分解]
-    图的一个\textbf{耳分解}是一个由一个圈和若干个简单路径或简单环组成的序列 $(C,P_1,\ldots,P_k)$，其中 $C$ 是一个简单环，$P_i$ 是一个起点和终点在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中、中间点都不在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中的简单路径或简单环（环的起点和终点视为同一个点）。这样的 $P_i$ 称为\textbf{耳（Ear）}。
+    图的一个\textbf{耳分解}是一个由一个圈和若干个简单路径或简单环组成的序列 $(C,P_1,\ldots,P_k)$，其中 $C$ 是一个简单环，$P_i$ 是一个起点和终点在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中、中间点都不在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中的简单路径或简单环（环的起点和终点视为同一个点），且所有成分的边恰好构成原图的边集的分解。这样的 $P_i$ 称为\textbf{耳（Ear）}。
 \end{definition}
 
 \begin{theorem}
@@ -149,7 +149,7 @@
 
 对于点双连通图，有类似的结果成立。
 \begin{definition}[开耳和开耳分解]
-    图的一个\textbf{开耳分解}是一个由一个圈和若干个简单路径组成的序列 $(C,P_1,\ldots,P_k)$，其中 $C$ 是一个简单环，$P_i$ 是一个起点和终点在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中、中间点都不在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中的简单路径。这样的 $P_i$ 称为\textbf{开耳（Open Ear）}。
+    图的一个\textbf{开耳分解}是一个由一个圈和若干个简单路径组成的序列 $(C,P_1,\ldots,P_k)$，其中 $C$ 是一个简单环，$P_i$ 是一个起点和终点在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中、中间点都不在 $C\cup \bigcup_{j=1}^{i-1} P_j$ 中的简单路径，且所有成分的边恰好构成原图的边集的分解。这样的 $P_i$ 称为\textbf{开耳（Open Ear）}。
 \end{definition}
 \begin{remark}
     也就是说不再允许 $P_i$ 是环。
@@ -172,7 +172,7 @@
     \begin{itemize}
         \item $G$ 边（点）双连通当且仅当此算法给出一个（开）耳分解
         \item 一条边是桥当且仅当它不在任何算法得到的耳中
-        \item 若 $G$ 的所有点度数都 $\ge 2$，则一个点是割点当且仅当它是一条桥边的端点或者是算法得到的某个耳的起点。
+        \item 若 $G$ 的所有点度数都 $\ge 2$，则一个点是割点当且仅当它是一条桥边的端点或者是算法得到的某个开耳的起点。
     \end{itemize}
 \end{theorem}
 

@@ -1,62 +1,196 @@
 \chapter{图论基础}
 
-% \begin{overview}
-% \begin{itemize}
-%     \item \texttt{vector}、栈、队列、链表、堆支持的操作，及其实现
-%     \item 常见的可以使用这些数据结构解决的问题
-% \end{itemize}
-% \end{overview}
+\textbf{图(graph)}是描述对象之间的关系的有力工具。本章中我们给出图论的一些基本概念和表示方式，并讨论图的遍历、DFS 树和 BFS 树的性质。
 
 \section{基本概念}
 
+参见 OI Wiki。几个常用但对 OIer 来说也许不太熟悉的概念：导出子图、路径（walk）vs 简单路径（path） \graffiti{实际上图论的术语无论是中文还是英文都常常是模糊不清的，需要根据上下文判断。}
+
+在本讲义中，如无特殊说明，我们默认图是\textbf{简单图}。
+
 \section{图的存储}
+
+存图的方式取决于需要实现的功能，这是一个\textbf{数据结构问题}。常见的需求包括：
+\begin{itemize}
+    \item （有序）遍历一个点的所有出边
+    \item 判断一对点之间有没有边
+    \item 插入删除边
+\end{itemize}
+\begin{remark}
+    在理论中常见但在 OI 中不常见的需求还包括随机选择一条边、随机选择某个点的一条出边等。
+\end{remark}
+
+常用的方式包括：
+\begin{itemize}
+    \item[邻接矩阵] 维护一个二维矩阵。可以 $O(1)$ 判断一对点之间是否有边、插入删除边；$O(n)$ 遍历一个点的所有出边。
+    \item[邻接表] 对每个点用一个数据结构维护其所有出边。可以 $O(\deg u)$ 遍历一个点的所有出边。更多的操作取决于具体使用的数据结构：
+        \begin{itemize}
+            \item 计算出每个点的度数后，使用指针实现不定长二维数组。常数最小的方式，但是不支持其他操作；
+            \item 使用 \texttt{vector}，可以 $O(1)$ 在结尾插入一条边。常数和数组接近；
+            \item 使用链表，可以进一步支持 $O(1)$ 删除一条以指针方式给出的边。遍历性能低于前两种。
+            \item 使用平衡树或哈希表，可以支持 $O(\log\deg u)$ 或 $O(1)$ 判断一条边是否存在/插入删除一条以点对形式给出的边；平衡树还可以维护出边的有序性。遍历性能进一步降低（但是注意复杂度仍然是线性的）
+        \end{itemize}
+\end{itemize}
+
 
 \section{图的遍历}
 
+可以使用 DFS 或 BFS 遍历图。
+
+\begin{exercise}
+    证明图遍历算法的正确性，即从 $u$ 开始遍历图时，所有从 $u$ 出发可以到达的点都会被访问到。
+    \begin{hint}
+        若访问了一个点，那么其所有出边都会访问到。
+    \end{hint}
+\end{exercise}
+\begin{proof}[证明一]
+    假设存在一条路径 $u\leadsto v$ 但是 $v$ 未被访问到。考虑这条路径上最后一个被访问到了的点 $w$，则处理 $w$ 时会访问到其下一个点，矛盾。 
+\end{proof}
+\begin{proof}[证明二]
+    归纳证明：设进入 $\mathtt{dfs}(u)$ 时，还未被访问过的结点集合为 $S$；则 $\mathtt{dfs}(u)$ 结束时，新增的被访问过的点恰好是所有从 $u$ 出发\textbf{只经过} $S$ 中的点可达的点。这里可以按照 DFS 访问点的逆序来进行归纳。
+\end{proof}
+
+\begin{exercise}
+    设计一个线性算法判断图中是否有环。证明你的算法的正确性。
+\end{exercise}
+\begin{solution}
+    拓扑排序/DFS。
+\end{solution}
+\begin{remark}
+    DFS 的正确性证明并不容易。不过，利用我们接下来介绍的 \textbf{DFS 树}的基本性质，这个算法的正确性将会变得显然。
+\end{remark}
+
+
 \subsection{DFS 树}
 
+在遍历中首次访问一个点时，保留进入它的那条边，这样会得到一棵外向树（或森林），称为 \textbf{DFS 树}。
+DFS 树有许多重要的性质，我们在此进行一些初步的介绍。更多的内容将在连通性问题中讨论。
 
-\begin{theorem}
-    在无向图中，边可以根据 DFS 树分成两类：树边、回边（连接祖先和后代，亦称非树边）。
-\end{theorem}
+DFS 树的结构可以由以下引理刻画：
 
-\begin{definition}[基本环]
-    每条非树边 $(u,v)$ 与 $(u,v)$ 在 DFS 树上的路径构成的环称为基本环。
-\end{definition}
-\begin{remark}
-    实际上可以对任何一个生成森林定义。
-\end{remark}
-\begin{theorem}
-    如果一个子图的每个点度数都是偶数，则称这个子图是一个欧拉子图（注意没有要求连通）。任何欧拉子图都可以唯一地表为若干基本环的异或。
+\begin{lemma}\label{lem:dfs-undiscovered-path}
+    DFS 树中 $u$ 的子树恰好是 $\mathtt{dfs}(u)$ 开始到结束之间新增的被访问过的点。从另一方面来说，
+    设进入 $\mathtt{dfs}(u)$ 时，还未被访问过的结点集合为 $S$，则 DFS 树中 $u$ 的子树恰好包含所有从 $u$ 出发\textbf{只经过} $S$ 中的点可达的点。
+\end{lemma}
+\begin{proof}
+    这里只证明：从 $u$ 出发只经过 $S$ 中的点可达的点都在 $u$ 的子树中。该证明与前面证明 DFS 遍历算法正确性的归纳证明类似。
+    
+    按照 DFS 访问点的逆序归纳。若 $\mathtt{dfs}(u)$ 没有访问到新的点，则结论显然；否则，设 $v$ 是一个可以从 $u$ 出发只经过 $S$ 中的点到达的点。设 $u$ 只走一条边能到达的在 $S$ 中的点按顺序依次为 $u_1,u_2,\ldots,u_k$。由于 $v$ 可以从 $u$ 出发只经过 $S$ 中的点到达，故存在一个最小的 $i$ 满足存在一条只经过 $S$ 中的点的路径 $u\to u_i\leadsto v$。由于 $i$ 是最小的，故 DFS 完 $u_1,\ldots,u_{i-1}$ 后，$u_i\leadsto v$ 路径上的任何一个点都还没有被访问（否则，某个更小的 $u_{i'}$ 可以只经过 $S$ 中的点到达某个 $v'\in [u_i\leadsto v]$，进而到达 $v$）。于是对 $u_i$ 应用归纳假设可知 $v$ 在 $u_i$ 的子树中，进而在 $u$ 的子树中。
+\end{proof}
+
+假设每访问一个新点就记录一次时间，令 $\mathrm{dfn}(u)$ 为首次进入 $u$ 的时间戳，$\mathrm{out}(u)$ 为退出 $u$ 时的时间戳，则 $u$ 的子树对应的时间戳区间为
+\[
+    [\mathrm{dfn}(u),\mathrm{out}(u)].
+\]
+不同点的时间戳区间要么不交要么包含。$u$ 是 $v$ 的祖先当且仅当 $\mathrm{dfn}(u)\le\mathrm{dfn}(v)\le\mathrm{out}(u)$。
+
+\begin{theorem}[无向图的边分类]
+    对于无向图，将其位于 DFS 树上的边称为树边，其他边称为回边\graffiti{也叫返祖边}，则每条回边的两端都有祖孙关系。
 \end{theorem}
 \begin{proof}
-    考虑任何欧拉子图 $H$，对其包含的每条非树边 $e$，将 $H$ 异或上 $e$ 对应的基本环。最终会得到一个只由树边构成的欧拉子图，树边构成的欧拉子图只能是空图。
-
-    由于每个基本环只能控制一条非树边，这种表示是唯一的。
+    对每条边 $(u,v)$，不妨设 $u$ 先被发现，由于 $u$ 可以沿着这条边不经过其他点走到 $v$，故 $v$ 在 $u$ 的子树中。
 \end{proof}
-\begin{exercise}
-    给定一张无向图，计算其欧拉子图数量。
-\end{exercise}
-\begin{exercise}[P3907 环的异或]
-    
-\end{exercise}
 
-
-
-\begin{theorem}
-    在有向图中，边可以根据 DFS 树分成四类：树边、回边（从后代指向祖先）、前向边（从祖先指向后代）、横叉边（指向非祖先后代的先前结点）。
+\begin{theorem}[有向图的边分类]
+    对于有向图，其所有边 $u\to v$ 可以分为四类：
+    \begin{itemize}
+        \item DFS 树中的边，称为树边。
+        \item 由后代指向祖先的边，称为回边。
+        \item 由祖先指向后代的边，称为前向边。
+        \item 从 $\mathrm{dfn}$ 较大的点指向 $\mathrm{dfn}$ 较小的点，且无祖孙关系，称为横叉边。
+    \end{itemize}
 \end{theorem}
 
+\begin{corollary}
+    有向图无环当且仅当 DFS 中没有回边。
+\end{corollary}
+\begin{proof}
+    回边与树路径组成有向环。反过来，取有向环上最先发现的点 $u$，由引理~\ref{lem:dfs-undiscovered-path}，环上其余点都在 $u$ 的子树中，故指回 $u$ 的环边必为回边。
+\end{proof}
+
+\subsection{基本环与欧拉子图}
+
+以下讨论无向图。固定任意生成森林 $T$。
+
+\begin{definition}[基本环与欧拉子图]
+    每条非树边 $e=(u,v)$ 与 $T$ 中 $u,v$ 间的唯一路径构成其\textbf{基本环} $C_e$；自环对应它本身。生成子图 $(V,F)$ 若各点度数均为偶数，则称为\textbf{欧拉子图}，不要求连通，允许 $F=\varnothing$。
+\end{definition}
+
+将生成子图与其边集等同，以各边是否被选作 $0/1$ 坐标。边集异或即对称差 $\triangle$，对应 $\mathbb F_2^E$ 中的模 $2$ 加法；偶度条件在异或下封闭，故欧拉子图构成一个子空间，称为\textbf{环空间}。每个基本环 $C_e$ 恰含一条非树边 $e$，可以独立消去这个坐标。
+
+\begin{theorem}
+    任何欧拉子图都可以唯一地表示为若干基本环的异或。具体地，
+    \[
+        F=\mathop{\triangle}_{e\in F\setminus E(T)} C_e.
+    \]
+\end{theorem}
+\begin{proof}
+    对 $F$ 中每条非树边 $e$ 异或上 $C_e$，消去所有非树边，且保持各点度数为偶数。剩余边集是森林的欧拉子图，只能为空：含边的森林必有度数为 $1$ 的点。因此得到上述表示。又因为 $e$ 只出现在自己的基本环中，是否选取 $C_e$ 由 $e\in F$ 唯一确定。
+\end{proof}
+
+所以基本环构成环空间的一组基。这里生成的是所有欧拉子图，未必是单个环，也未必连通。
+
+\begin{exercise}
+    有 $n$ 个点、$m$ 条边、$c$ 个连通分量的无向图有多少个欧拉子图？
+\end{exercise}
+\begin{solution}
+    非树边有 $m-n+c$ 条，故环空间维数为 $m-n+c$，欧拉子图数为 $2^{m-n+c}$。
+\end{solution}
+
+\begin{exercise}[P3907 环的异或]
+    给定无向图，边权为非负整数，判断每个环的边权异或和是否都为 $0$。$n,m\le 50$，$0\le w_e<10^5$。
+\end{exercise}
+\noindent 题目出处：\href{https://www.luogu.com.cn/problem/P3907}{洛谷 P3907「环的异或」}。
+\begin{solution}
+    只需检查基本环：任意环都是基本环的异或，而被消去的边在边权异或中也成对抵消。
+
+    为避免逐个枚举基本环的树路径，在每棵树中任选根，令 $x_u$ 为根到 $u$ 的树路径边权异或和。两条根路径的公共部分抵消，故对非树边 $e=(u,v)$，
+    \[
+        \bigoplus_{f\in C_e}w_f=x_u\oplus x_v\oplus w_e.
+    \]
+    遍历求 $x$，再对所有边 $e=(u,v)$ 检查 $x_u\oplus x_v=w_e$，树边按构造自动满足。时间 $O(n+m)$，额外空间 $O(n)$；自环要求权值为 $0$，平行边分别检查。
+\end{solution}
+
+这个做法还建立了环条件与点势之间的联系：
+\[
+    \text{所有环的边权异或和为 }0
+    \quad\Longleftrightarrow\quad
+    \exists(x_u)_{u\in V},\ \forall e=(u,v),\ w_e=x_u\oplus x_v.
+\]
+正向由上述构造得到；反向沿闭合路径异或，各点的贡献成对抵消。因此，同端点的任意路径都有相同的边权异或和。这种“先沿生成树确定点势，再用非树边检查一致性”的方法可以用于其他边约束问题。
 
 \subsection{BFS 树}
 
+BFS 将起点 $s$ 的层数设为 $0$，用队列按层扩展；首次发现 $v$ 时沿父边 $u\to v$ 令 $d(v)=d(u)+1$ 并入队。入队即标记。父边构成 BFS 树，未访问的点不可达。
 
+\begin{theorem}[距离分层]
+    BFS 层数 $d(v)$ 等于 $s$ 到 $v$ 的最少边数。对于可达点之间的边，
+    \[
+        u\to v\ \Longrightarrow\ d(v)\le d(u)+1;
+        \qquad
+        (u,v)\text{ 为无向边}\ \Longrightarrow\ |d(u)-d(v)|\le 1.
+    \]
+\end{theorem}
+\begin{proof}
+    队列中的层数不降，且至多相差 $1$。扫描 $u\to v$ 时，若 $v$ 未发现，就令 $d(v)=d(u)+1$；否则它已经入队，仍有 $d(v)\le d(u)+1$。沿任意 $s\leadsto v$ 路径累加此不等式，得 $d(v)$ 不超过路径边数；父边又给出一条恰有 $d(v)$ 条边的路径，故 $d(v)$ 就是最短距离。无向边反向再用一次不等式即可。
+\end{proof}
 
+这里父边给出一条实现 $d(v)$ 的路径，边上的不等式则排除了更短的路径。DFS 限制非树边的祖先关系，BFS 限制边的层差：无向边只能连接同层或相邻层，但可以跨越树的不同分支；有向边则可以从深层指回任意浅层。普通 BFS 求的是最少边数，不能直接处理不同边权。
 
-% \begin{summary}
-% \begin{itemize}
-%     \item 熟知讲过的几种线性数据结构的功能，能够把问题与数据结构进行对应
-%     \item 扩展类问题的思路
-% \end{itemize}
-% \end{summary}
+\begin{example}[多源 BFS]
+    给定无权图与非空点集 $S$，计算 $\min_{s\in S}d(s,v)$。
+\end{example}
+\begin{solution}
+    将 $S$ 作为整个第 $0$ 层，全部标记并入队，再运行 BFS，仍为 $O(n+m)$。有向图中若要求 $\min_{s\in S}d(v,s)$，则在反图上运行。
+\end{solution}
 
+\begin{exercise}[二分图与奇环]
+    无向图可将点集分成两侧，使每条边的两端分属两侧，当且仅当没有奇环。证明并给出线性时间的判定算法。
+\end{exercise}
+\begin{solution}
+    二分图的环在两侧交替，长度必为偶数。反过来，在每个连通分量中做 BFS，按深度奇偶染色。若有同色边 $(u,v)$，由层差至多为 $1$ 得 $d(u)=d(v)$。设其 BFS 树上的最近公共祖先为 $a$，两段树路径与 $(u,v)$ 构成长度为
+    \[
+        2(d(u)-d(a))+1
+    \]
+    的奇环（自环对应长度 $1$）；否则染色就是二分图划分。总时间 $O(n+m)$。
+\end{solution}

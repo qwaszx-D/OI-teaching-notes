@@ -59,12 +59,13 @@ for(int k=1;k<=n;k++)
     这是要求最短路至少包含一条边时的情况。如果可以不包含边，那么还需要补充初值 $d_0(u,u)=0$。
 \end{remark}
 \begin{remark}
-    目前，人们既不知道 APSP 是否有 $O(n^{3-\epsilon})$ 的算法，也不能证明 $\tilde \Omega(n^3)$ 的下界。因此，APSP 是精细复杂性（Fine-Grained Complexity）中的一个重要问题。有许多问题可以和 APSP 互相归约：
+    一直以来，人们都不知道 APSP 是否有 $O(n^{3-\epsilon})$ 的算法，于是以 APSP 问题以及其他一些问题的困难性为基础发展了\bf{精细复杂度理论（Fine-Grained Complexity）}。有许多问题可以和 APSP 互相归约：
     \begin{itemize}
         \item 判断图中是否存在负权三角形
         \item min+矩阵乘法
         \item 求图中最小环
     \end{itemize}
+    然而，2026 年，Anthropic 的研究人员用 Claude 发现了一个突破 $n^3$ 界限的算法，并在 9 月交给该领域的专家 Josh Alman 和 Virginia Vassilevska Williams 进行了进一步整理，参见\href{https://arxiv.org/abs/2610.06783v1}{此处}。至此，整个精细复杂度理论的大厦轰然倒塌。\graffiti{在这个评注最早被写下时，人们还对此一无所知，而一切仅仅在两个月后就不复存在了。}
 \end{remark}
 
 \begin{exercise}
