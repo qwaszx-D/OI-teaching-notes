@@ -16,6 +16,9 @@
 
     有向图和无向图的最短路在许多情况下性质都是相同的。如无特殊说明，本章中提到的图既可以是有向图，也可以是无向图。
 \end{definition}
+\begin{remark}
+    是否允许路径为空会影响 $d(u,u)$ 的值。在本章中，方便起见，我们都默认路径可以为空。我们的理论中使用了形式权值 $\pm\infty$，实际实现时需要改为特判。
+\end{remark}
 \begin{lemma}
     $|d(u,v)|<\infty$ 当且仅当存在一条 $u$ 到 $v$ 的简单路径的权值和等于 $d(u,v)$，也即存在一条最短路为简单路径。
 \end{lemma}
@@ -27,7 +30,7 @@
 \end{remark}
 
 \begin{property}[三角不等式]
-    最短路长度满足 $d(u,v)\le d(u,w)+d(w,v)$。当 $d(u,v)<+\infty$ 时，等号成立当且仅当 $w$ 在某条 $u\to v$ 的最短路上。
+    最短路长度满足 $d(u,v)\le d(u,w)+d(w,v)$。当 $|d(u,v)|<+\infty$ 时，等号成立当且仅当 $w$ 在某条 $u\to v$ 的最短路上。
 \end{property}
 
 
@@ -48,7 +51,7 @@
     其中 $d_0(u,v)$ 为初始的边权，即 $d_0(u,v)=w(u,v)$。最终答案为 $d_n(u,v)$。可以滚动数组省去 $i$ 一维。时间 $O(n^3)$，空间 $O(n^2)$。  
 \end{descbox}
 \begin{lstlisting}[language=c++, caption=Floyd 算法]
-// 没有边则 w=+inf
+// 没有边则 w=+inf; d[u][u]=0
 d=w;
 for(int k=1;k<=n;k++)
     for(int i=1;i<=n;i++)
@@ -56,7 +59,7 @@ for(int k=1;k<=n;k++)
             d[i][j]=min(d[i][j],d[i][k]+d[k][j]);
 \end{lstlisting}
 \begin{remark}
-    这是要求最短路至少包含一条边时的情况。如果可以不包含边，那么还需要补充初值 $d_0(u,u)=0$。
+    如果不允许空路径，那么需要改成 $d_0(u,u)=+\infty$。
 \end{remark}
 \begin{remark}
     一直以来，人们都不知道 APSP 是否有 $O(n^{3-\epsilon})$ 的算法，于是以 APSP 问题以及其他一些问题的困难性为基础发展了\bf{精细复杂度理论（Fine-Grained Complexity）}。有许多问题可以和 APSP 互相归约：
@@ -72,8 +75,9 @@ for(int k=1;k<=n;k++)
     在无负环的图上证明 Floyd 算法的正确性。进一步修改 Floyd 算法使其能够在有负环的图上正确计算 $d_i(u,v)$。
 \end{exercise}
 \begin{solution}
-    在计算过程中的任何时刻，若更新后产生了 $d[u][u]<0$，则令 $d[u][u]=-\infty$。
-    % 归纳证明 $d_i(u,v)>-\infty$ 时，$d_i(u,v)$ 正确计算了所有不经过编号 $>i$ 的路径的最小权值和。$d_0$ 显然正确。考虑一条不经过编号 $>i$ 的最小权值和路径 $u\to v$，若其经过的最大编号 $<i$，则被 $d_{i-1}$ 正确计算； 考虑一条 $(u,v)$ 简单最短路径上编号最大的结点 $x$，则 $u\to x$ 和 $x\to v$ 都是简单路径，且它们分别是 $(u,x)$ 和 $(x,v)$ 的简单最短路径。于是由归纳假设，在转移 $x$ 时正确计算了 $$
+    在开始计算 $d_i$ 之前，若 $d_{i-1}(i,i)<0$，则令 $d_i(i,i)=-\infty$。更新时用 $d_i(u,v)=\min(d_{i-1}(u,v),d_{i-1}(u,i)+d_{i-1}(i,i)+d{i-1}(i,v))$。
+    
+    % 归纳证明 $d_i(u,v)>-\infty$ 时，$d_i(u,v)$ 正确计算了所有不经过编号 $>i$ 的路径的最小权值和；$d_{i}(u,v)=-\infty$ 当且仅当存在一条 $u$ 到 $v$ 的中间点编号都 $\le i$ 的有负环路径。
 \end{solution}
 
 \begin{exercise}
@@ -83,7 +87,9 @@ for(int k=1;k<=n;k++)
     在存在负环的情况下，计算权值和最小的简单环不弱于判定 Hamilton 回路的存在性，这也是一个 NPC 问题。
 \end{remark}
 \begin{solution}
-    对每个环，考虑其上编号最大的点 $x$，则 $d_{x-1}(u,x)+d_{x-1}(x,v)+d_{x-1}(v,u)$ 对应的环的权值不超过此环的权值。
+    对每个环，考虑其上编号最大的点 $x$，则 $w(u,x)+w(x,v)+d_{x-1}(v,u)$ 对应的环的权值不超过此环的权值。
+
+    对有向图，也可以简单地取 $w(u,v)+d(v,u)$
 \end{solution}
 
 \begin{exercise}
@@ -154,7 +160,7 @@ while(!pq.empty()){
 在有负权的图上，可以使用 Bellman-Ford 算法计算单源最短路，其想法在于递推计算经过至多 $i$ 条边的最短路。每轮用每条边松弛一次即可得到至多经过 $i+1$ 条边的最短路。若图中无负环，则 $n-1$ 轮后可以正确计算出最短路。反过来，若第 $n$ 轮仍能成功松弛，则说明存在负环。
 
 \begin{descbox}{算法}[Bellman-Ford 算法]
-    初始化 $\tilde d(s)=0$，$\tilde d(v)=+\infty$（$v\ne s$）。重复 $n-1$ 轮，每轮用每条边 $(u,v)$ 进行松弛。若第 $n$ 轮仍能成功松弛，则说明存在负环。
+    初始化 $d_0(s)=0$，$d_0(v)=+\infty$（$v\ne s$）。重复 $n-1$ 轮，每轮枚举每条边 $(u,v)$ 进行松弛 $d_i(v)\gets \min(d_i(v),d_{i-1}(u)+w(u,v))$。若第 $n$ 轮仍能成功松弛，则说明存在负环。
 
     时间复杂度 $O(nm)$，空间 $O(n+m)$。
 \end{descbox}
@@ -169,7 +175,17 @@ while(!pq.empty()){
     计算从 $s$ 出发经过至多/恰好 $k$ 条边的最短路。$O(km)$。
 \end{exercise}
 
-由于只有被成功松弛的结点才有可能进一步对其出边进行松弛，我们可以调整松弛结点的顺序。一种方式是像 BFS 一样进行松弛，这就是队列优化的 Bellman-Ford 算法。在国内也常被称为 SPFA 算法。
+我们也可以将上面的 DP 改成任意松弛的版本。
+\begin{descbox}{算法}[Bellman-Ford 算法]
+    初始化 $\tilde d(s)=0$，$\tilde d(v)=+\infty$（$v\ne s$）。重复 $n-1$ 轮，每轮用每条边 $(u,v)$ 进行松弛。若第 $n$ 轮仍能成功松弛，则说明存在负环。
+
+    时间复杂度 $O(nm)$，空间 $O(n+m)$。
+\end{descbox}
+\begin{lemma}
+    在 $i$ 轮后，$\tilde d(u)\le d_i(u)$。
+\end{lemma}
+
+由于只有被成功松弛的结点才有可能进一步对其出边进行松弛，我们可以进一步调整松弛结点的顺序。一种方式是像 BFS 一样进行松弛，这就是队列优化的 Bellman-Ford 算法。在国内也常被称为 SPFA 算法。
 \begin{descbox}{算法}[队列优化的 Bellman-Ford 算法/SPFA]
     初始化 $\tilde d(s)=0$，$\tilde d(v)=+\infty$（$v\ne s$）。维护一个队列 $q$，初始将 $s$ 入队。每次从队列中取出一个点 $u$，用其所有出边 $(u,v)$ 进行松弛，若成功松弛且 $v$ 不在队列中，则将 $v$ 入队。若某个点入队次数达到了 $n$ 或者最短路边数达到了 $n$，则说明存在负环。
 
@@ -352,7 +368,7 @@ while(!pq.empty()){
 \end{solution}
 
 \begin{exercise}[P5590 赛车游戏]
-    给一个有向图，需要给每条边标一个 $0$ 到 $9$ 的整数权值，使得每条从 $1$ 到 $n$ 的路径长度都相同。
+    给一个有向图，需要给每条边标一个 $1$ 到 $9$ 的整数权值，使得每条从 $1$ 到 $n$ 的路径长度都相同。
 \end{exercise}
 
 \subsection{分层图}

@@ -28,7 +28,7 @@ DFS 树就是一棵生成树。因此，如果只需要找出任意一棵生成�
 
 \section{算法}
 
-使用割性质可以得到几种不同的求 MST 的算法。
+使用割性质可以得到几种不同的求 MST 的算法。不过，由于同权边可能造成麻烦，我们可以先进行一些处理来使得边权两两不同。简单的做法是给每条边添加一个不同的第二关键字来进行比较，第二关键字的排序可以任意选择。对于整数边权的情况，还有一个做法是令 $\tilde w_{e_i}=w_{e_i}\cdot |E|+i$ 来让边权互不相同。在下面的算法中，我们都假设边权两两不同。
 
 \begin{descbox}{算法}[Prim]
     维护点集 $S$，初始令 $S=\{1\}$。每次寻找 $\mathrm{cut}(S,V\backslash S)$ 中权值最小的边，将其加入生成树，对应的点加入 $S$。如此反复直到 $S=V$。
@@ -54,9 +54,7 @@ DFS 树就是一棵生成树。因此，如果只需要找出任意一棵生成�
     
     除了这种理解以外，我们也给出另一个证明，它体现了生成树作为\textbf{拟阵}而具有的性质。设 Kruskal 算法过程中按顺序选择了 $e_1,\cdots,e_{n-1}$ 加入了生成树。我们逐步构造出一棵包含 $e_1,\cdots,e_i$ 的 MST $\mathcal T_i$。假设已经构造出 $\mathcal T_{i-1}$，考虑其边集 $E_{i-1}$。如果 $e_i\in E_{i-1}$，那么直接令 $\mathcal T_i=\mathcal T_{i-1}$ 即可。否则，设 $e_i=(u,v)$，考虑 $u,v$ 在 $\mathcal T_{i-1}$ 中对应的路径。这条路径中必然有一条边 $e$ 满足加入到 $\{e_1,\ldots,e_{i-1}\}$ 中后不会成环，否则它们无法令 $(u,v)$ 连通。而根据 Kruskal 算法的选择顺序，$e_i$ 的权值不大于 $e$ 的权值。于是在 $\mathcal T_{i-1}$ 中将 $e$ 替换为 $e_i$ 得到的生成树 $\mathcal T_i$ 仍然是 MST。
 \end{proof}
-\begin{remark}
-    在考虑 MST 的性质时，权值相同的边有时会造成麻烦。我们可以给这些边添加一个不同的第二关键字来进行比较，第二关键字的排序可以任意选择。对于整数边权的情况，还有一个做法是令 $\tilde w_{e_i}=w_{e_i}\cdot |E|+i$ 来让边权互不相同。
-\end{remark}
+
 
 \section{Kruskal 与连通性}
 
@@ -87,8 +85,11 @@ DFS 树就是一棵生成树。因此，如果只需要找出任意一棵生成�
     注意这两个都可能不唯一。
 \end{remark}
 \begin{theorem}
-    MST 是最小瓶颈生成树，反之则不然。MST 中的任意两点之间的路径都是最小瓶颈路，反之则不然。
+    MST 是最小瓶颈生成树，且 MST 中的任意两点之间的路径都是最小瓶颈路。
 \end{theorem}
+\begin{remark}
+    注意反过来不成立：最小瓶颈生成树未必是 MST；最小瓶颈路也可能不在任何 MST 上。
+\end{remark}
 
 
 可以使用\textbf{ Kruskal 重构树}来刻画每个 $W$ 对应的 $G_{\le W}$ 的连通性质。
@@ -120,17 +121,30 @@ DFS 树就是一棵生成树。因此，如果只需要找出任意一棵生成�
     计算权值和(严格)次小的一棵生成树。
 \end{example}
 \begin{lemma}
-    任取一棵 MST $\mathcal T$，存在一棵(严格)次小生成树与 $\mathcal T$ 只差一条边。
-
-    该结论的证明参见\cref{sec: matroid}。
+    任取一棵 MST $\mathcal T$，若存在(严格)次小生成树，那么存在一棵(严格)次小生成树与 $\mathcal T$ 只差一条边。
 \end{lemma}
+\begin{proof}
+    任取和 $\mathcal T$ 公共边最多的一棵(严格)次小生成树 $\mathcal T'$。那么存在一条边 $e'=(u,v)\in \mathcal T'-\mathcal T$。如果在 $\mathcal T'$ 中删去 $e'$，那么考虑 $u,v$ 在 $\mathcal T$ 中的路径，其中必然存在一条边 $e$ 能够加入到 $\mathcal T'-e'$ 中，从而 $\mathcal T'-e'+e$ 是一棵生成树。如果 $\mathcal T'-e'+e=\mathcal T$，我们就找到了符合要求的(严格)次小生成树。下设 $\mathcal T'-e'+e\ne \mathcal T$。
+    
+    注意到 $\mathcal T-e+e'$ 也是一棵生成树。由于 $\mathcal T$ 是 MST，故 $w(e')\ge w(e)$。若 $w(e')=w(e)$，那么 $\mathcal T'-e'+e$ 也是(严格)次小生成树，且与 $\mathcal T$ 的公共边更多，矛盾，于是 $w(e')>w(e)$。
+    \begin{itemize}
+        \item 对于非严格次小生成树，这说明 $\mathcal T'-e'+e$ 是一棵权值严格更小且不等于 $\mathcal T$ 的生成树，与 $\mathcal T'$ 是次小生成树矛盾。
+        \item 对于严格次小生成树，只能有 $w(\mathcal T'-e'+e)=w(\mathcal T)$，这就给出 $w(\mathcal T-e+e')=w(\mathcal T)$，从而 $\mathcal T-e+e'$ 是一棵严格次小生成树。
+    \end{itemize}
+\end{proof}
 \begin{solution}
     任取一个 MST，枚举一条非树边，从对应的树链中去掉一条边即可。    
 \end{solution}
+\begin{remark}
+    这是典型的\textbf{拟阵}性质。我们将在 \cref{sec: matroid} 中对拟阵进行更一般的讨论。
+\end{remark}
 
 \begin{example}[增量 MST]
     加边，查询 MST。
 \end{example}
+\begin{solution}
+    LCT 维护当前 MST，加边时检查对应的环能否发生替换。
+\end{solution}
 \begin{remark}
     可以配合线段树分治支持删边。
 \end{remark}
@@ -168,6 +182,20 @@ Borůvka 算法常常可以配合数据结构在 $\tilde O(|S|)$ 时间内计算
     \end{itemize}
 \end{example}
 \begin{solution}
+    $w(i,j)=a_i+a_j,\max(a_i,a_j),\min(a_i,a_j)$：以最小值为根的菊花
+
+    $w(i,j)=|a_i-a_j|$：排序后相邻点连边
+
+    $w(i,j)=a_i\oplus a_j$：直接用 Trie 优化 Borůvka；或者在压缩 Trie 上对每个结点应用一次割性质。
+
+    $w(i,j)=-(a_i\oplus a_j)$：直接用 Trie 优化 Borůvka；或者考虑 Kruskal 算法，这会变成以下的分治问题：寻找 $G[S]$ 的最大生成树，边权为 $x\oplus y$ 的低 $k$ 位。按照当前的最高位分治，若同时存在 $0,1$ 则必然是两侧之间连，据此递归进 $k-1$ 的子问题即可。
+
+    $w(i,j)=|x_i-x_j|+|y_i-y_j|$：利用环性质，在 8 个 45 度象限内，每个象限只需要考虑最近的点。
+
+    $w(i,j)=-\gcd(a_i,a_j)$：可以视为以下图的并：对每个 $d$，考虑所有 $d|a_i$ 的点，对这些点连成边权为 $d$ 的完全图。利用合并性质即可做到 $O(V\log V)$
+
+
+    $w(i,j)=\max(a_i,a_j)\bmod \min(a_i,a_j)$：利用环性质，$x$ 只需要连接到使得 $y\bmod x$ 最小的 $y$ 上，这可以利用 Dirichlet 后缀 $\min$ 在 $O(V\log\log V)$ 时间内求出。
 \end{solution}
 
 
